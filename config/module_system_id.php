@@ -19,5 +19,3 @@
 
     define( "_languages_modul_id_",                     65);
 
-    define( "_dashboard_modul_id_",                     90);
-
