@@ -6,29 +6,28 @@
 ********************************************************************************************************/
 
 /**
- * A enum indicating the entry-point for the current request, e.g. INDEX or XML
+ * A enum holding all possible values for modes regarding the handling
+ * if logically deleted objects.
  *
- * @method static class_request_entrypoint_enum INDEX()
- * @method static class_request_entrypoint_enum XML()
- * @method static class_request_entrypoint_enum DOWNLOAD()
- * @method static class_request_entrypoint_enum IMAGE()
- * @method static class_request_entrypoint_enum INSTALLER()
- * @method static class_request_entrypoint_enum DEBUG()
+ * @method static class_orm_deletedhandling_enum INCLUDED()
+ * @method static class_orm_deletedhandling_enum EXCLUDED()
+ * @method static class_orm_deletedhandling_enum EXCLUSIVE()
  *
  *
  * @package module_system
  * @author sidler@mulchprod.de
- * @since 4.6
+ * @since 4.8
  */
-class class_request_entrypoint_enum extends class_enum {
+class class_orm_deletedhandling_enum extends class_enum {
     /**
      * Return the array of possible, so allowed values for the current enum
      *
      * @return string[]
      */
     protected function getArrValues() {
-        return array("INDEX", "XML", "DOWNLOAD", "IMAGE", "INSTALLER", "DEBUG");
+        return array("INCLUDED", "EXCLUDED", "EXCLUSIVE");
     }
+
 
 }
 
