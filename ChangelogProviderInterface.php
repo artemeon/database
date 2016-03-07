@@ -2,18 +2,16 @@
 /*"******************************************************************************************************
 *   (c) 2007-2015 by Kajona, www.kajona.de                                                              *
 *       Published under the GNU LGPL v2.1, see /system/licence_lgpl.txt                                 *
-*-------------------------------------------------------------------------------------------------------*
-*	$Id$                      *
 ********************************************************************************************************/
 
 namespace Kajona\System\System;
 
 /**
- * A simple provider to separate settings-changes from the other changes
+ * A changelog provider creates a mapping of objects to target-tables
  *
- * @author sidler@mulchprod.de
+ * @package module_system
  */
-class ChangelogProviderSettings implements ChangelogProviderInterface
+interface ChangelogProviderInterface
 {
 
     /**
@@ -24,19 +22,13 @@ class ChangelogProviderSettings implements ChangelogProviderInterface
      *
      * @return string
      */
-    public function getTargetTable()
-    {
-        return "changelog_setting";
-    }
+    public function getTargetTable();
 
     /**
      * Returns an array of classes the current provider (so the target table) should cover
      *
      * @return array
      */
-    public function getHandledClasses()
-    {
-        return array("Kajona\\System\\System\\SystemSetting");
-    }
+    public function getHandledClasses();
 
 }
