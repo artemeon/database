@@ -18,6 +18,8 @@ namespace Kajona\System\System;
  * @package module_system
  * @author sidler@mulchprod.de
  * @since 4.7
+ *
+ * @deprecated
  */
 class OrmObjectlistPropertyRestriction extends OrmObjectlistRestriction
 {
@@ -33,6 +35,8 @@ class OrmObjectlistPropertyRestriction extends OrmObjectlistRestriction
      * @param string $strProperty
      * @param OrmComparatorEnum $objComparator
      * @param $strValue
+     *
+     * @deprecated
      */
     public function __construct($strProperty, OrmComparatorEnum $objComparator, $strValue)
     {

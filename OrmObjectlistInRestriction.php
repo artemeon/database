@@ -13,9 +13,12 @@ namespace Kajona\System\System;
  * A objectlist restriction may be used to create where restrictions for the objectList and objectCount queries.
  * This restrcition creates an IN statement e.g. "AND <columnname> IN (<parameters>)"
  *
+ * @deprecated
  * @package module_system
  * @author stefan.meyer1@yahoo.de
  * @since 4.8
+ *
+ * @deprecated 
  */
 class OrmObjectlistInRestriction extends OrmObjectlistRestriction
 {
@@ -29,7 +32,16 @@ class OrmObjectlistInRestriction extends OrmObjectlistRestriction
     private $strCondition = "";
     private $strInCondition = self::STR_CONDITION_IN;
 
-
+    /**
+     * OrmObjectlistInRestriction constructor.
+     *
+     * @param string $strProperty
+     * @param array $arrParams
+     * @param string $strCondition
+     * @param string $strInCondition
+     *
+     * @deprecated
+     */
     function __construct($strProperty, array $arrParams, $strCondition = "AND", $strInCondition = self::STR_CONDITION_IN)
     {
         if($strInCondition !== self::STR_CONDITION_IN && $strInCondition !== self::STR_CONDITION_NOTIN) {

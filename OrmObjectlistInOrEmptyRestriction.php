@@ -16,6 +16,8 @@ namespace Kajona\System\System;
  * @package module_system
  * @author stefan.meyer1@yahoo.de
  * @since 4.8
+ * 
+ * @deprecated
  */
 class OrmObjectlistInOrEmptyRestriction extends OrmObjectlistInRestriction
 {
@@ -27,6 +29,8 @@ class OrmObjectlistInOrEmptyRestriction extends OrmObjectlistInRestriction
      * OrmObjectlistInOrEmptyRestriction constructor.
      *
      * @param bool $bitIncludeNullOrEmptyValues
+     *
+     * @deprecated
      */
     function __construct($strProperty, array $arrParams, $strCondition = "AND", $strInCondition = self::STR_CONDITION_IN)
     {
