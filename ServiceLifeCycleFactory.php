@@ -28,6 +28,7 @@ class ServiceLifeCycleFactory
 
     /**
      * @param string $strClass
+     * @return ServiceLifeCycleInterface
      */
     public function factory($strClass)
     {
