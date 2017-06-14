@@ -109,7 +109,7 @@ class Resourceloader
 
         }
 
-
+/*
 
         //first try: load the file in the current template-pack
         $strDefaultTemplate = SystemSetting::getConfigValue("_packagemanager_defaulttemplate_");
@@ -149,7 +149,7 @@ class Resourceloader
                 }
             }
         }
-
+*/
         if ($strFilename === null) {
             throw new Exception("Required file ".$strTemplateName." could not be mapped on the filesystem.", Exception::$level_ERROR);
         }
