@@ -109,7 +109,7 @@ class Resourceloader
 
         }
 
-
+/*
 
         //first try: load the file in the current template-pack
         $strDefaultTemplate = SystemSetting::getConfigValue("_packagemanager_defaulttemplate_");
@@ -149,7 +149,7 @@ class Resourceloader
                 }
             }
         }
-
+*/
         if ($strFilename === null) {
             throw new Exception("Required file ".$strTemplateName." could not be mapped on the filesystem.", Exception::$level_ERROR);
         }
@@ -157,85 +157,6 @@ class Resourceloader
         BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, $strFilename);
 
         return $strFilename;
-    }
-
-
-    /**
-     * Looks up the real filename of a template passed.
-     * The filename is the relative path, so adding /templates/[packname] is not required and not allowed.
-     *
-     * @param string $strFolder
-     *
-     * @return array A list of templates, so the merged result of the current template-pack + default-pack + fallback-files
-     */
-    public function getTemplatesInFolder($strFolder, $bitPathAsKey = false)
-    {
-
-        $arrReturn = array();
-
-        //first try: load the file in the current template-pack
-        if (is_dir(_realpath_._templatepath_."/".SystemSetting::getConfigValue("_packagemanager_defaulttemplate_")."/tpl".$strFolder)) {
-            $arrFiles = scandir(_realpath_._templatepath_."/".SystemSetting::getConfigValue("_packagemanager_defaulttemplate_")."/tpl".$strFolder);
-            foreach ($arrFiles as $strOneFile) {
-                if (substr($strOneFile, -4) == ".tpl") {
-                    if($bitPathAsKey) {
-                        $arrReturn[_templatepath_."/".SystemSetting::getConfigValue("_packagemanager_defaulttemplate_")."/tpl".$strFolder."/".$strOneFile] = $strOneFile;
-                    }
-                    else {
-                        $arrReturn[] = $strOneFile;
-                    }
-                }
-            }
-        }
-
-        //second try: load the file from the default-pack
-        if (is_dir(_realpath_._templatepath_."/default/tpl".$strFolder)) {
-            $arrFiles = scandir(_realpath_._templatepath_."/default/tpl".$strFolder);
-            foreach ($arrFiles as $strOneFile) {
-                if (substr($strOneFile, -4) == ".tpl") {
-                    if($bitPathAsKey) {
-                        $arrReturn[_realpath_._templatepath_."/default/tpl".$strFolder."/".$strOneFile] = $strOneFile;
-                    }
-                    else {
-                        $arrReturn[] = $strOneFile;
-                    }
-                }
-            }
-        }
-
-        //third try: try to load the file from given modules
-        foreach (Classloader::getInstance()->getArrModules() as $strCorePath => $strOneModule) {
-            if (is_dir(_realpath_.$strCorePath."/templates/default/tpl".$strFolder)) {
-                $arrFiles = scandir(_realpath_.$strCorePath."/templates/default/tpl".$strFolder);
-                foreach ($arrFiles as $strOneFile) {
-                    if (substr($strOneFile, -4) == ".tpl") {
-                        if($bitPathAsKey) {
-                            $arrReturn[$strCorePath."/templates/default/tpl".$strFolder."/".$strOneFile] = $strOneFile;
-                        }
-                        else {
-                            $arrReturn[] = $strOneFile;
-                        }
-                    }
-                }
-            }
-            elseif (PharModule::isPhar(_realpath_.$strCorePath)) {
-
-                $objPhar = new PharModule($strCorePath);
-                foreach($objPhar->getContentMap() as $strFilename => $strPharPath) {
-                    if (strpos($strFilename, "/templates/default/tpl".$strFolder) !== false) {
-                        if($bitPathAsKey) {
-                            $arrReturn[$strPharPath] = basename($strPharPath);
-                        }
-                        else {
-                            $arrReturn[] = basename($strPharPath);
-                        }
-                    }
-                }
-            }
-        }
-
-
-        return $arrReturn;
     }
 
     /**
