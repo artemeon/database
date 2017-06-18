@@ -75,7 +75,7 @@ class Resourceloader
      * The filename is the relative path, so adding /templates/[packname] is not required and not allowed.
      *
      * @param string $strTemplateName
-     * @param bool $bitScanAdminSkin
+     * @internal bool $bitScanAdminSkin
      *
      * @throws Exception
      * @return string The path on the filesystem, relative to the root-folder. Null if the file could not be mapped.
@@ -90,66 +90,31 @@ class Resourceloader
         $strFilename = null;
 
 
-        //check the backend at first to avoid garbled paths
-        if ($bitScanAdminSkin) {
+        if (is_file($strTemplateName)) {
             //scan directly
-            if (is_file($strTemplateName)) {
-                $strFilename = $strTemplateName;
-            }
-
-            //prepend path
-            if (is_file(AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName)) {
-                $strFilename = AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName;
-            }
-
-            if ($strFilename !== null) {
-                BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, $strFilename);
-                return $strFilename;
-            }
-
-        }
-
-/*
-
-        //first try: load the file in the current template-pack
-        $strDefaultTemplate = SystemSetting::getConfigValue("_packagemanager_defaulttemplate_");
-        if (is_file(_realpath_._templatepath_."/".$strDefaultTemplate."/tpl".$strTemplateName)) {
-            BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, _realpath_._templatepath_."/".$strDefaultTemplate."/tpl".$strTemplateName);
-            return _realpath_._templatepath_."/".$strDefaultTemplate."/tpl".$strTemplateName;
-        }
-
-        //second try: load the file from the default-pack
-        if (is_file(_realpath_._templatepath_."/default/tpl".$strTemplateName)) {
-            BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, _realpath_._templatepath_."/default/tpl".$strTemplateName);
-            return _realpath_._templatepath_."/default/tpl".$strTemplateName;
-        }
-
-        //third try: try to load the file from a given module
-        foreach (Classloader::getInstance()->getArrModules() as $strCorePath => $strOneModule) {
-            if (is_dir(_realpath_.$strCorePath)) {
-                if (is_file(_realpath_.$strCorePath."/templates/default/tpl".$strTemplateName)) {
-                    $strFilename = _realpath_.$strCorePath."/templates/default/tpl".$strTemplateName;
-                    break;
-                }
-                if (is_file(_realpath_.$strCorePath.$strTemplateName)) {
-                    $strFilename = _realpath_.$strCorePath.$strTemplateName;
-                    break;
-                }
-            } elseif (PharModule::isPhar(_realpath_.$strCorePath)) {
-                $strAbsolutePath = PharModule::getPharStreamPath(_realpath_.$strCorePath, "/templates/default/tpl".$strTemplateName);
-                if (is_file($strAbsolutePath)) {
-                    $strFilename = $strAbsolutePath;
-                    break;
-                }
-
-                $strAbsolutePath = PharModule::getPharStreamPath(_realpath_.$strCorePath, $strTemplateName);
-                if (is_file($strAbsolutePath)) {
-                    $strFilename = $strAbsolutePath;
-                    break;
+            $strFilename = $strTemplateName;
+        } elseif (is_file(AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName)) {
+            //prepend current skin path
+            $strFilename = AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName;
+        } else {
+            //scan modules
+            foreach (Classloader::getInstance()->getArrModules() as $strCorePath => $strOneModule) {
+                if (is_dir(_realpath_.$strCorePath)) {
+                    if (is_file(_realpath_.$strCorePath.$strTemplateName)) {
+                        $strFilename = _realpath_.$strCorePath.$strTemplateName;
+                        break;
+                    }
+                } elseif (PharModule::isPhar(_realpath_.$strCorePath)) {
+                    $strAbsolutePath = PharModule::getPharStreamPath(_realpath_.$strCorePath, $strTemplateName);
+                    if (is_file($strAbsolutePath)) {
+                        $strFilename = $strAbsolutePath;
+                        break;
+                    }
                 }
             }
         }
-*/
+
+
         if ($strFilename === null) {
             throw new Exception("Required file ".$strTemplateName." could not be mapped on the filesystem.", Exception::$level_ERROR);
         }
