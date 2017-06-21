@@ -9,7 +9,7 @@ use Pimple\Container;
  *
  * @package Kajona\System\System
  * @author christoph.kappestein@gmail.com
- * @since 6.2
+ * @since 7.0
  */
 class ServiceLifeCycleFactory
 {

@@ -15,7 +15,7 @@ namespace Kajona\System\System;
  *
  * @package Kajona\System\System
  * @author christoph.kappestein@gmail.com
- * @since 6.2
+ * @since 7.0
  */
 interface ServiceLifeCycleInterface
 {
