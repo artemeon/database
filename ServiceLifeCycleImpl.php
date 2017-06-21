@@ -29,7 +29,11 @@ class ServiceLifeCycleImpl implements ServiceLifeCycleInterface
      */
     public function update(Root $objModel, $strPrevId = false)
     {
-        $objModel->updateObjectToDb($strPrevId);
+        $bitReturn = $objModel->updateObjectToDb($strPrevId);
+
+        if (!$bitReturn) {
+            //throw new ServiceLifeCycleUpdateException("Error updating object ".strip_tags($objModel->getStrDisplayName()), $objModel->getSystemid());
+        }
     }
 
     /**
@@ -40,7 +44,7 @@ class ServiceLifeCycleImpl implements ServiceLifeCycleInterface
         $bitReturn = $objModel->deleteObject();
 
         if (!$bitReturn) {
-            throw new Exception("Error deleting object ".strip_tags($objModel->getStrDisplayName()), Exception::$level_ERROR);
+            throw new ServiceLifeCycleLogicDeleteException("Error logic deleting object ".strip_tags($objModel->getStrDisplayName()), $objModel->getSystemid());
         }
     }
 
@@ -52,7 +56,7 @@ class ServiceLifeCycleImpl implements ServiceLifeCycleInterface
         $bitReturn = $objModel->deleteObjectFromDatabase();
 
         if (!$bitReturn) {
-            throw new Exception("Error deleting object ".strip_tags($objModel->getStrDisplayName()), Exception::$level_ERROR);
+            throw new ServiceLifeCycleDeleteException("Error deleting object ".strip_tags($objModel->getStrDisplayName()), $objModel->getSystemid());
         }
     }
 
@@ -64,7 +68,7 @@ class ServiceLifeCycleImpl implements ServiceLifeCycleInterface
         $bitReturn = $objModel->restoreObject();
 
         if (!$bitReturn) {
-            throw new Exception("Error restoring object ".strip_tags($objModel->getStrDisplayName()), Exception::$level_ERROR);
+            throw new ServiceLifeCycleRestoreException("Error restoring object ".strip_tags($objModel->getStrDisplayName()), $objModel->getSystemid());
         }
     }
 
@@ -76,7 +80,7 @@ class ServiceLifeCycleImpl implements ServiceLifeCycleInterface
         $bitReturn = $objModel->copyObject($strNewPrevid ?: "", $bitChangeTitle, $bitCopyChilds);
 
         if (!$bitReturn) {
-            throw new Exception("Error creating a copy of object ".strip_tags($objModel->getStrDisplayName()), Exception::$level_ERROR);
+            throw new ServiceLifeCycleCopyException("Error creating a copy of object ".strip_tags($objModel->getStrDisplayName()), $objModel->getSystemid());
         }
 
         return $objModel;
