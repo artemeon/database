@@ -27,6 +27,7 @@ interface ServiceLifeCycleInterface
      *
      * @param Root $objModel
      * @param bool $strPrevId
+     * @throws ServiceLifeCycleUpdateException
      */
     public function update(Root $objModel, $strPrevId = false);
 
@@ -35,6 +36,7 @@ interface ServiceLifeCycleInterface
      * that the entry is deleted the actual db entry still exists
      *
      * @param Root $objModel
+     * @throws ServiceLifeCycleLogicDeleteException
      */
     public function delete(Root $objModel);
 
@@ -42,6 +44,7 @@ interface ServiceLifeCycleInterface
      * Deletes a record actually from the database
      *
      * @param Root $objModel
+     * @throws ServiceLifeCycleDeleteException
      */
     public function deleteObjectFromDatabase(Root $objModel);
 
@@ -49,6 +52,7 @@ interface ServiceLifeCycleInterface
      * Restores a previously deleted record
      *
      * @param Root $objModel
+     * @throws ServiceLifeCycleRestoreException
      */
     public function restore(Root $objModel);
 
@@ -60,6 +64,7 @@ interface ServiceLifeCycleInterface
      * @param bool $bitChangeTitle
      * @param bool $bitCopyChilds
      * @return Root
+     * @throws ServiceLifeCycleCopyException
      */
     public function copy(Root $objModel, $strNewPrevid = false, $bitChangeTitle = true, $bitCopyChilds = true);
 }
