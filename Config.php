@@ -82,7 +82,6 @@ class Config
     private function setUpConstants()
     {
         define("_dbprefix_", $this->getConfig("dbprefix"));
-        define("_templatepath_", $this->getConfig("dirtemplates"));
         define("_projectpath_", $this->getConfig("dirproject"));
         define("_filespath_", $this->getConfig("dirfiles"));
         define("_langpath_", $this->getConfig("dirlang"));

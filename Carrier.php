@@ -10,8 +10,6 @@
 namespace Kajona\System\System;
 
 use Kajona\System\Admin\ToolkitAdmin;
-use Kajona\System\Portal\ToolkitPortal;
-use Kajona\System\System\CacheManager;
 
 /**
  * Heart of the system - granting access to all needed objects e.g. the database or the session-object
@@ -148,19 +146,13 @@ class Carrier
      * Managing access to the toolkit object. Use ONLY this method to
      * get an instance!
      *
-     * @param string $strArea
+     * @internal string $strArea
      *
-     * @return ToolkitAdmin|ToolkitPortal
+     * @return ToolkitAdmin
      */
     public function getObjToolkit($strArea)
     {
-        if ($strArea == "admin") {
-            return $this->objContainer[ServiceProvider::STR_ADMINTOOLKIT];
-        }
-        elseif ($strArea == "portal") {
-            return $this->objContainer[ServiceProvider::STR_PORTALTOOLKIT];
-        }
-        return null;
+        return $this->objContainer[ServiceProvider::STR_ADMINTOOLKIT];
     }
 
     /**
