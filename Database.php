@@ -385,6 +385,35 @@ class Database
     }
 
     /**
+     * Returns a generator which can be used to iterate over a section of the query without loading the complete data
+     * into the memory. This can be used to query big result sets i.e. on installation update.
+     * Make sure to have an ORDER BY in the statement, otherwise the chunks may use duplicate entries depending on the RDBMS.
+     *
+     * @param string $strQuery
+     * @param array $arrParams
+     * @param int $intChunkSize
+     * @return \Generator
+     */
+    public function getGenerator($strQuery, array $arrParams = [], $intChunkSize = 2048)
+    {
+        $intStart = 0;
+        $intEnd = $intChunkSize;
+
+        do {
+            $arrResult = $this->getPArray($strQuery, $arrParams, $intStart, $intEnd - 1);
+
+            if (!empty($arrResult)) {
+                yield $arrResult;
+            }
+
+            $intStart += $intChunkSize;
+            $intEnd += $intChunkSize;
+
+            $this->flushQueryCache();
+        } while (!empty($arrResult));
+    }
+
+    /**
      * Returns just a part of a recordset, defined by the start- and the end-rows,
      * defined by the params.
      * <b>Note:</b> Use array-like counters, so the first row is startRow 0 whereas
@@ -708,6 +737,10 @@ class Database
      */
     public function renameTable($strOldName, $strNewName)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $this->flushTablesCache();
         return $this->objDbDriver->renameTable(_dbprefix_.$strOldName, _dbprefix_.$strNewName);
     }
@@ -724,6 +757,9 @@ class Database
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
         $this->flushTablesCache();
         return $this->objDbDriver->changeColumn(_dbprefix_.$strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
     }
@@ -741,6 +777,10 @@ class Database
      */
     public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $this->flushTablesCache();
         return $this->objDbDriver->addColumn(_dbprefix_.$strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
     }
@@ -755,6 +795,10 @@ class Database
      */
     public function removeColumn($strTable, $strColumn)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $this->flushTablesCache();
         return $this->objDbDriver->removeColumn(_dbprefix_.$strTable, $strColumn);
     }

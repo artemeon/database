@@ -50,7 +50,6 @@ class Classloader
         "less/", // installer
         "pics/",
         "scripts/",
-        "templates/",
         "vendor/",
         "node_modules/",
     );

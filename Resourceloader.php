@@ -75,7 +75,7 @@ class Resourceloader
      * The filename is the relative path, so adding /templates/[packname] is not required and not allowed.
      *
      * @param string $strTemplateName
-     * @param bool $bitScanAdminSkin
+     * @internal bool $bitScanAdminSkin
      *
      * @throws Exception
      * @return string The path on the filesystem, relative to the root-folder. Null if the file could not be mapped.
@@ -90,65 +90,30 @@ class Resourceloader
         $strFilename = null;
 
 
-        //check the backend at first to avoid garbled paths
-        if ($bitScanAdminSkin) {
+        if (is_file($strTemplateName)) {
             //scan directly
-            if (is_file($strTemplateName)) {
-                $strFilename = $strTemplateName;
-            }
-
-            //prepend path
-            if (is_file(AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName)) {
-                $strFilename = AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName;
-            }
-
-            if ($strFilename !== null) {
-                BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, $strFilename);
-                return $strFilename;
-            }
-
-        }
-
-
-
-        //first try: load the file in the current template-pack
-        $strDefaultTemplate = SystemSetting::getConfigValue("_packagemanager_defaulttemplate_");
-        if (is_file(_realpath_._templatepath_."/".$strDefaultTemplate."/tpl".$strTemplateName)) {
-            BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, _realpath_._templatepath_."/".$strDefaultTemplate."/tpl".$strTemplateName);
-            return _realpath_._templatepath_."/".$strDefaultTemplate."/tpl".$strTemplateName;
-        }
-
-        //second try: load the file from the default-pack
-        if (is_file(_realpath_._templatepath_."/default/tpl".$strTemplateName)) {
-            BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, _realpath_._templatepath_."/default/tpl".$strTemplateName);
-            return _realpath_._templatepath_."/default/tpl".$strTemplateName;
-        }
-
-        //third try: try to load the file from a given module
-        foreach (Classloader::getInstance()->getArrModules() as $strCorePath => $strOneModule) {
-            if (is_dir(_realpath_.$strCorePath)) {
-                if (is_file(_realpath_.$strCorePath."/templates/default/tpl".$strTemplateName)) {
-                    $strFilename = _realpath_.$strCorePath."/templates/default/tpl".$strTemplateName;
-                    break;
-                }
-                if (is_file(_realpath_.$strCorePath.$strTemplateName)) {
-                    $strFilename = _realpath_.$strCorePath.$strTemplateName;
-                    break;
-                }
-            } elseif (PharModule::isPhar(_realpath_.$strCorePath)) {
-                $strAbsolutePath = PharModule::getPharStreamPath(_realpath_.$strCorePath, "/templates/default/tpl".$strTemplateName);
-                if (is_file($strAbsolutePath)) {
-                    $strFilename = $strAbsolutePath;
-                    break;
-                }
-
-                $strAbsolutePath = PharModule::getPharStreamPath(_realpath_.$strCorePath, $strTemplateName);
-                if (is_file($strAbsolutePath)) {
-                    $strFilename = $strAbsolutePath;
-                    break;
+            $strFilename = $strTemplateName;
+        } elseif (is_file(AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName)) {
+            //prepend current skin path
+            $strFilename = AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName;
+        } else {
+            //scan modules
+            foreach (Classloader::getInstance()->getArrModules() as $strCorePath => $strOneModule) {
+                if (is_dir(_realpath_.$strCorePath)) {
+                    if (is_file(_realpath_.$strCorePath.$strTemplateName)) {
+                        $strFilename = _realpath_.$strCorePath.$strTemplateName;
+                        break;
+                    }
+                } elseif (PharModule::isPhar(_realpath_.$strCorePath)) {
+                    $strAbsolutePath = PharModule::getPharStreamPath(_realpath_.$strCorePath, $strTemplateName);
+                    if (is_file($strAbsolutePath)) {
+                        $strFilename = $strAbsolutePath;
+                        break;
+                    }
                 }
             }
         }
+
 
         if ($strFilename === null) {
             throw new Exception("Required file ".$strTemplateName." could not be mapped on the filesystem.", Exception::$level_ERROR);
@@ -157,85 +122,6 @@ class Resourceloader
         BootstrapCache::getInstance()->addCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName, $strFilename);
 
         return $strFilename;
-    }
-
-
-    /**
-     * Looks up the real filename of a template passed.
-     * The filename is the relative path, so adding /templates/[packname] is not required and not allowed.
-     *
-     * @param string $strFolder
-     *
-     * @return array A list of templates, so the merged result of the current template-pack + default-pack + fallback-files
-     */
-    public function getTemplatesInFolder($strFolder, $bitPathAsKey = false)
-    {
-
-        $arrReturn = array();
-
-        //first try: load the file in the current template-pack
-        if (is_dir(_realpath_._templatepath_."/".SystemSetting::getConfigValue("_packagemanager_defaulttemplate_")."/tpl".$strFolder)) {
-            $arrFiles = scandir(_realpath_._templatepath_."/".SystemSetting::getConfigValue("_packagemanager_defaulttemplate_")."/tpl".$strFolder);
-            foreach ($arrFiles as $strOneFile) {
-                if (substr($strOneFile, -4) == ".tpl") {
-                    if($bitPathAsKey) {
-                        $arrReturn[_templatepath_."/".SystemSetting::getConfigValue("_packagemanager_defaulttemplate_")."/tpl".$strFolder."/".$strOneFile] = $strOneFile;
-                    }
-                    else {
-                        $arrReturn[] = $strOneFile;
-                    }
-                }
-            }
-        }
-
-        //second try: load the file from the default-pack
-        if (is_dir(_realpath_._templatepath_."/default/tpl".$strFolder)) {
-            $arrFiles = scandir(_realpath_._templatepath_."/default/tpl".$strFolder);
-            foreach ($arrFiles as $strOneFile) {
-                if (substr($strOneFile, -4) == ".tpl") {
-                    if($bitPathAsKey) {
-                        $arrReturn[_realpath_._templatepath_."/default/tpl".$strFolder."/".$strOneFile] = $strOneFile;
-                    }
-                    else {
-                        $arrReturn[] = $strOneFile;
-                    }
-                }
-            }
-        }
-
-        //third try: try to load the file from given modules
-        foreach (Classloader::getInstance()->getArrModules() as $strCorePath => $strOneModule) {
-            if (is_dir(_realpath_.$strCorePath."/templates/default/tpl".$strFolder)) {
-                $arrFiles = scandir(_realpath_.$strCorePath."/templates/default/tpl".$strFolder);
-                foreach ($arrFiles as $strOneFile) {
-                    if (substr($strOneFile, -4) == ".tpl") {
-                        if($bitPathAsKey) {
-                            $arrReturn[$strCorePath."/templates/default/tpl".$strFolder."/".$strOneFile] = $strOneFile;
-                        }
-                        else {
-                            $arrReturn[] = $strOneFile;
-                        }
-                    }
-                }
-            }
-            elseif (PharModule::isPhar(_realpath_.$strCorePath)) {
-
-                $objPhar = new PharModule($strCorePath);
-                foreach($objPhar->getContentMap() as $strFilename => $strPharPath) {
-                    if (strpos($strFilename, "/templates/default/tpl".$strFolder) !== false) {
-                        if($bitPathAsKey) {
-                            $arrReturn[$strPharPath] = basename($strPharPath);
-                        }
-                        else {
-                            $arrReturn[] = basename($strPharPath);
-                        }
-                    }
-                }
-            }
-        }
-
-
-        return $arrReturn;
     }
 
     /**
