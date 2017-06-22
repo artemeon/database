@@ -361,6 +361,41 @@ class DbSqlsrv extends DbBase
     }
 
     /**
+     * @inheritDoc
+     */
+    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
+    {
+        $arrPlaceholder = array();
+        $arrMappedColumns = array();
+        $arrKeyValuePairs = array();
+        $arrParams = [];
+
+        foreach ($arrColumns as $intKey => $strOneCol) {
+            $arrPlaceholder[] = "?";
+            $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
+            $arrKeyValuePairs[] = $this->encloseColumnName($strOneCol)." = ?";
+
+
+            if (in_array($strOneCol, $arrPrimaryColumns)) {
+                $arrPrimaryCompares[] = $strOneCol." = ? ";
+                $arrParams[] = $arrValues[$intKey];
+            }
+        }
+
+        $arrParams = array_merge($arrParams, $arrValues, $arrValues, $arrParams);
+
+        $strQuery = "
+            IF NOT EXISTS (SELECT ".implode(",", $arrPrimaryColumns)." FROM ".$this->encloseTableName(_dbprefix_.$strTable)." WHERE ".implode(",", $arrPrimaryCompares).")
+                INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") 
+                     VALUES (".implode(", ", $arrPlaceholder).")
+            ELSE
+                UPDATE ".$this->encloseTableName(_dbprefix_.$strTable)." SET " . implode(", ", $arrKeyValuePairs) . "
+                 WHERE ".implode(",", $arrPrimaryCompares);
+
+        return $this->_pQuery($strQuery, $arrParams);
+    }
+
+    /**
      * Starts a transaction
      *
      * @return void
