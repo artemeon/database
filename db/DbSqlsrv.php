@@ -385,12 +385,12 @@ class DbSqlsrv extends DbBase
         $arrParams = array_merge($arrParams, $arrValues, $arrValues, $arrParams);
 
         $strQuery = "
-            IF NOT EXISTS (SELECT ".implode(",", $arrPrimaryColumns)." FROM ".$this->encloseTableName(_dbprefix_.$strTable)." WHERE ".implode(",", $arrPrimaryCompares).")
+            IF NOT EXISTS (SELECT ".implode(",", $arrPrimaryColumns)." FROM ".$this->encloseTableName(_dbprefix_.$strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares).")
                 INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") 
                      VALUES (".implode(", ", $arrPlaceholder).")
             ELSE
                 UPDATE ".$this->encloseTableName(_dbprefix_.$strTable)." SET " . implode(", ", $arrKeyValuePairs) . "
-                 WHERE ".implode(",", $arrPrimaryCompares);
+                 WHERE ".implode(" AND ", $arrPrimaryCompares);
 
         return $this->_pQuery($strQuery, $arrParams);
     }
