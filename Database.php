@@ -728,10 +728,10 @@ class Database
     /**
      * @param string $strTable
      * @param string $strName
-     * @param string $arrColumns
+     * @param array $arrColumns
      * @param bool $bitUnique
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
