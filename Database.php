@@ -726,6 +726,25 @@ class Database
     }
 
     /**
+     * @param string $strTable
+     * @param string $strName
+     * @param string $arrColumns
+     */
+    public function createIndex($strTable, $strName, $arrColumns)
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        $bitReturn = $this->objDbDriver->createIndex(_dbprefix_.$strTable, $strName, $arrColumns);
+        if (!$bitReturn) {
+            $this->getError("", array());
+        }
+
+        return $bitReturn;
+    }
+
+    /**
      * Renames a table
      *
      * @param $strOldName

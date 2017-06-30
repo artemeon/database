@@ -165,6 +165,15 @@ interface DbDriverInterface
     public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true);
 
     /**
+     * @param string $strTable
+     * @param string $strName
+     * @param array $arrColumns
+     * @param bool $bitUnique
+     * @return bool
+     */
+    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false);
+
+    /**
      * Renames a table
      *
      * @param $strOldName
