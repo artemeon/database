@@ -730,6 +730,7 @@ class Database
      * @param string $strName
      * @param array $arrColumns
      * @param bool $bitUnique
+     * @return bool
      */
     public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
     {
