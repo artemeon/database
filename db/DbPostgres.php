@@ -378,7 +378,7 @@ class DbPostgres extends DbBase
      */
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
     {
-        return $this->_pQuery("CREATE INDEX ".$strName." ON ".$this->encloseTableName($strTable)." (".implode(",", $arrColumns).")", []);
+        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$this->encloseTableName($strTable)." (".implode(",", $arrColumns).")", []);
     }
 
     /**

@@ -373,7 +373,7 @@ class DbMysqli extends DbBase
      */
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
     {
-        return $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." ADD INDEX ".$strName." (" . implode(",", $arrColumns) . ")", []);
+        return $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." ADD ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." (" . implode(",", $arrColumns) . ")", []);
     }
 
     /**

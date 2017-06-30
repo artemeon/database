@@ -729,14 +729,15 @@ class Database
      * @param string $strTable
      * @param string $strName
      * @param string $arrColumns
+     * @param bool $bitUnique
      */
-    public function createIndex($strTable, $strName, $arrColumns)
+    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
 
-        $bitReturn = $this->objDbDriver->createIndex(_dbprefix_.$strTable, $strName, $arrColumns);
+        $bitReturn = $this->objDbDriver->createIndex(_dbprefix_.$strTable, $strName, $arrColumns, $bitUnique);
         if (!$bitReturn) {
             $this->getError("", array());
         }
