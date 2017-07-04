@@ -165,6 +165,9 @@ interface DbDriverInterface
     public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true);
 
     /**
+     * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
+     * where each index can only occur once in the table
+     *
      * @param string $strTable
      * @param string $strName
      * @param array $arrColumns
@@ -174,6 +177,8 @@ interface DbDriverInterface
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false);
 
     /**
+     * Checks whether the table has an index with the provided name
+     *
      * @param string $strTable
      * @param string $strName
      * @return bool
