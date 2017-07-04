@@ -514,14 +514,6 @@ class DbSqlite3 extends DbBase
     /**
      * @inheritdoc
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
-    {
-        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$this->encloseTableName($strTable)." (".implode(",", $arrColumns).")", []);
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function hasIndex($strTable, $strName)
     {
         $arrIndex = $this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]);

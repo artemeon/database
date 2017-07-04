@@ -375,14 +375,6 @@ class DbPostgres extends DbBase
     /**
      * @inheritdoc
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
-    {
-        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$this->encloseTableName($strTable)." (".implode(",", $arrColumns).")", []);
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function hasIndex($strTable, $strName)
     {
         $arrIndex = $this->getPArray("SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?", [$strTable, $strName]);

@@ -493,14 +493,6 @@ class DbOci8 extends DbBase
     /**
      * @inheritdoc
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
-    {
-        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$this->encloseTableName($strTable)." (" . implode(",", $arrColumns) . ")", []);
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function hasIndex($strTable, $strName)
     {
         $arrIndex = $this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [$strTable, $strName]);
