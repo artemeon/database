@@ -381,6 +381,15 @@ class DbPostgres extends DbBase
     }
 
     /**
+     * @inheritdoc
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        $arrIndex = $this->getPArray("SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?", [$strTable, $strName]);
+        return count($arrIndex) > 0;
+    }
+
+    /**
      * Starts a transaction
      *
      * @return void

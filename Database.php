@@ -747,6 +747,20 @@ class Database
     }
 
     /**
+     * @param string $strTable
+     * @param string $strName
+     * @return bool
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        return $this->objDbDriver->hasIndex(_dbprefix_.$strTable, $strName);
+    }
+
+    /**
      * Renames a table
      *
      * @param $strOldName

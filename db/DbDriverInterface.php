@@ -174,6 +174,13 @@ interface DbDriverInterface
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false);
 
     /**
+     * @param string $strTable
+     * @param string $strName
+     * @return bool
+     */
+    public function hasIndex($strTable, $strName);
+
+    /**
      * Renames a table
      *
      * @param $strOldName
