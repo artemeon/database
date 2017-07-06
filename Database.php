@@ -726,6 +726,46 @@ class Database
     }
 
     /**
+     * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
+     * where each index can only occur once in the table
+     *
+     * @param string $strTable
+     * @param string $strName
+     * @param array $arrColumns
+     * @param bool $bitUnique
+     * @return bool
+     */
+    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        $bitReturn = $this->objDbDriver->createIndex(_dbprefix_.$strTable, $strName, $arrColumns, $bitUnique);
+        if (!$bitReturn) {
+            $this->getError("", array());
+        }
+
+        return $bitReturn;
+    }
+
+    /**
+     * Checks whether the table has an index with the provided name
+     *
+     * @param string $strTable
+     * @param string $strName
+     * @return bool
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        return $this->objDbDriver->hasIndex(_dbprefix_.$strTable, $strName);
+    }
+
+    /**
      * Renames a table
      *
      * @param $strOldName

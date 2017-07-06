@@ -369,6 +369,23 @@ class DbMysqli extends DbBase
     }
 
     /**
+     * @inheritdoc
+     */
+    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    {
+        return $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." ADD ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." (" . implode(",", $arrColumns) . ")", []);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        $arrIndex = $this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]);
+        return count($arrIndex) > 0;
+    }
+
+    /**
      * Starts a transaction
      *
      * @return void
