@@ -495,7 +495,7 @@ class DbOci8 extends DbBase
      */
     public function hasIndex($strTable, $strName)
     {
-        $arrIndex = $this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [$strTable, $strName]);
+        $arrIndex = $this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [strtoupper($strTable), $strName]);
         return count($arrIndex) > 0;
     }
 
