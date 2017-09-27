@@ -842,6 +842,25 @@ class Database
     }
 
     /**
+     * Checks whether a table has a specific column
+     *
+     * @param string $strTable
+     * @param string $strColumn
+     * @return bool
+     */
+    public function hasColumn($strTable, $strColumn)
+    {
+        $arrColumns = $this->getColumnsOfTable(_dbprefix_.$strTable);
+        foreach ($arrColumns as $arrColumn) {
+            if (strtolower($arrColumn["columnName"]) == strtolower($strColumn)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Dumps the current db
      * Takes care of holding just the defined number of dumps in the filesystem, defined by _system_dbdump_amount_
      *
