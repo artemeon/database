@@ -144,7 +144,8 @@ class DbOci8 extends DbBase
 
         foreach ($arrParams as $intPos => $strValue) {
             if (!@oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos])) {
-                echo "oci_bind_by_name failed to bind at pos >".$intPos."<, \n value: ".$strValue."\nquery: ".$strQuery;
+                //echo "oci_bind_by_name failed to bind at pos >".$intPos."<, \n value: ".$strValue."\nquery: ".$strQuery;
+                return false;
             }
         }
 
