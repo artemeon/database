@@ -148,17 +148,35 @@ class Resourceloader
 
                 $objPhar = new PharModule($strCorePath);
                 foreach($objPhar->getContentMap() as $strFilename => $strPharPath) {
-                    if (strpos($strFilename, _langpath_."/".$strFolder."/") !== false) {
+
+                    //load all lang files placed directly under /lang for the requested module
+                    if ($strSingleModule == substr($strFolder, 7) && strpos($strFilename, _langpath_."/lang") !== false) {
+                        $arrReturn[$strPharPath] = basename($strPharPath);
+                    } elseif (strpos($strFilename, _langpath_."/".$strFolder."/") !== false) {
+                        //legacy way
                         $arrReturn[$strPharPath] = basename($strPharPath);
                     }
                 }
 
-            } elseif (is_dir(_realpath_.$strCorePath._langpath_."/".$strFolder)) {
-                $arrContent = scandir(_realpath_.$strCorePath._langpath_."/".$strFolder);
-                foreach ($arrContent as $strSingleEntry) {
+            } elseif (is_dir(_realpath_.$strCorePath._langpath_)) {
 
-                    if (substr($strSingleEntry, -4) == ".php") {
-                        $arrReturn[_realpath_.$strCorePath._langpath_."/".$strFolder."/".$strSingleEntry] = $strSingleEntry;
+                if ($strFolder == $strSingleModule) {
+                    //load all lang files placed directly under /lang for the requested module
+                    $arrContent = scandir(_realpath_.$strCorePath._langpath_);
+                    foreach ($arrContent as $strSingleEntry) {
+                        if (substr($strSingleEntry, -4) == ".php") {
+                            $arrReturn[_realpath_.$strCorePath._langpath_."/".$strSingleEntry] = $strSingleEntry;
+                        }
+                    }
+                }
+
+                //legacy
+                if (is_dir(_realpath_.$strCorePath._langpath_."/".$strFolder)) {
+                    $arrContent = scandir(_realpath_.$strCorePath._langpath_."/".$strFolder);
+                    foreach ($arrContent as $strSingleEntry) {
+                        if (substr($strSingleEntry, -4) == ".php") {
+                            $arrReturn[_realpath_.$strCorePath._langpath_."/".$strFolder."/".$strSingleEntry] = $strSingleEntry;
+                        }
                     }
                 }
 
@@ -166,12 +184,26 @@ class Resourceloader
 
 
             //check if there are overwrites in the project-folder
-            if (is_dir(_realpath_._projectpath_."/".$strSingleModule."/"._langpath_."/".$strFolder)) {
-                $arrContent = scandir(_realpath_._projectpath_."/".$strSingleModule."/"._langpath_."/".$strFolder);
-                foreach ($arrContent as $strSingleEntry) {
+            if (is_dir(_realpath_._projectpath_."/".$strSingleModule."/"._langpath_)) {
 
-                    if (substr($strSingleEntry, -4) == ".php") {
-                        $arrReturn[_realpath_._projectpath_."/".$strSingleModule."/"._langpath_."/".$strFolder."/".$strSingleEntry] = $strSingleEntry;
+                if ($strFolder == $strSingleModule) {
+                    //placed directly
+                    $arrContent = scandir(_realpath_._projectpath_."/".$strSingleModule."/"._langpath_);
+                    foreach ($arrContent as $strSingleEntry) {
+                        if (substr($strSingleEntry, -4) == ".php") {
+                            $arrReturn[_realpath_._projectpath_."/".$strSingleModule."/"._langpath_."/".$strSingleEntry] = $strSingleEntry;
+                        }
+                    }
+                }
+
+                //legacy
+                if (is_dir(_realpath_._projectpath_."/".$strSingleModule."/"._langpath_."/".$strFolder)) {
+                    $arrContent = scandir(_realpath_._projectpath_."/".$strSingleModule."/"._langpath_."/".$strFolder);
+                    foreach ($arrContent as $strSingleEntry) {
+
+                        if (substr($strSingleEntry, -4) == ".php") {
+                            $arrReturn[_realpath_._projectpath_."/".$strSingleModule."/"._langpath_."/".$strFolder."/".$strSingleEntry] = $strSingleEntry;
+                        }
                     }
                 }
             }
