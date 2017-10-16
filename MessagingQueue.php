@@ -37,7 +37,6 @@ class MessagingQueue extends Model implements ModelInterface
      * @var Date
      * @tableColumn messages_queue.queue_send_date
      * @tableColumnDatatype long
-     * @blockEscaping
      */
     private $objSendDate;
 

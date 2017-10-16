@@ -143,7 +143,10 @@ class DbOci8 extends DbBase
         }
 
         foreach ($arrParams as $intPos => $strValue) {
-            oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos]);
+            if (!@oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos])) {
+                //echo "oci_bind_by_name failed to bind at pos >".$intPos."<, \n value: ".$strValue."\nquery: ".$strQuery;
+                return false;
+            }
         }
 
         $bitAddon = OCI_COMMIT_ON_SUCCESS;
