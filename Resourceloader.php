@@ -150,7 +150,7 @@ class Resourceloader
                 foreach($objPhar->getContentMap() as $strFilename => $strPharPath) {
 
                     //load all lang files placed directly under /lang for the requested module
-                    if ($strSingleModule == substr($strFolder, 7) && strpos($strFilename, _langpath_."/lang") !== false) {
+                    if ($strSingleModule == $strFolder && strpos($strFilename, _langpath_."/lang") !== false) {
                         $arrReturn[$strPharPath] = basename($strPharPath);
                     } elseif (strpos($strFilename, _langpath_."/".$strFolder."/") !== false) {
                         //legacy way
