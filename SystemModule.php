@@ -11,8 +11,6 @@ namespace Kajona\System\System;
 
 use Kajona\System\Admin\AdminController;
 use Kajona\System\Admin\AdminInterface;
-use Kajona\System\Portal\PortalInterface;
-
 
 /**
  * Model for a single system-module
@@ -35,13 +33,6 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
      * @tableColumnDatatype char254
      */
     private $strName = "";
-
-    /**
-     * @var string
-     * @tableColumn system_module.module_filenameportal
-     * @tableColumnDatatype char254
-     */
-    private $strNamePortal = "";
 
     /**
      * @var string
@@ -257,7 +248,6 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
         }
 
         return null;
-
     }
 
 
@@ -356,43 +346,6 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
         }
 
         return null;
-
-    }
-
-    /**
-     * Factory method, creates an instance of the portal-module referenced by the current
-     * module-object.
-     * The object returned is being initialized with the config-array optionally.
-     *
-     * @param string $arrElementData
-     *
-     * @return PortalInterface
-     */
-    public function getPortalInstanceOfConcreteModule($arrElementData = null)
-    {
-
-        /** @var \Kajona\System\System\ObjectBuilder $objBuilder */
-        $objBuilder = Carrier::getInstance()->getContainer()->offsetGet(ServiceProvider::STR_OBJECT_BUILDER);
-
-        $strClassname = $this->getStrNamePortal();
-        if (StringUtil::indexOf($strClassname, ".php") !== false) {
-            $strFullpath = Resourceloader::getInstance()->getPathForFile("/portal/".$strClassname);
-            if ($strFullpath == "") {
-                $strFullpath = Resourceloader::getInstance()->getPathForFile("/legacy/".$strClassname);
-            }
-            $strClassname = Classloader::getInstance()->getClassnameFromFilename($strFullpath);
-        }
-
-        if ($strClassname != "") {
-            if (is_array($arrElementData)) {
-                return $objBuilder->factory($strClassname, array($arrElementData));
-            } else {
-                return $objBuilder->factory($strClassname, array());
-            }
-        }
-
-        return null;
-
     }
 
     /**
@@ -433,14 +386,6 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
     public function getStrName()
     {
         return $this->strName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getStrNamePortal()
-    {
-        return $this->strNamePortal;
     }
 
     /**
@@ -491,16 +436,6 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
     public function setStrName($strName)
     {
         $this->strName = $strName;
-    }
-
-    /**
-     * @param string $strPortal
-     *
-     * @return void
-     */
-    public function setStrNamePortal($strPortal)
-    {
-        $this->strNamePortal = $strPortal;
     }
 
     /**
