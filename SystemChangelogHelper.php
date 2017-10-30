@@ -15,6 +15,8 @@ namespace Kajona\System\System;
  * @package module_system
  * @author stefan.meyer1@yahoo.de
  *
+ * @deprecated please move to SystemChangelogRenderer!
+ *
  * @module system
  * @moduleId _system_modul_id_
  */
