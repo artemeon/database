@@ -71,6 +71,9 @@ class SystemChangelogHelper
             if ($objObject instanceof ModelInterface) {
                 $arrNames[] = $objObject->getStrDisplayName();
             }
+            else {
+                $arrNames[] = $strSystemId;
+            }
         }
 
         return implode(", ", $arrNames);
