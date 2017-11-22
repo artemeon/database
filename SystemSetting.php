@@ -24,6 +24,7 @@ namespace Kajona\System\System;
  */
 class SystemSetting extends Model implements ModelInterface, VersionableInterface
 {
+    use VersionableDefaultImplTrait;
 
     /**
      * @var SystemSetting[]
@@ -247,26 +248,6 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
         }
 
         return null;
-    }
-
-    public function getVersionActionName($strAction)
-    {
-        return $strAction;
-    }
-
-    public function renderVersionValue($strProperty, $strValue)
-    {
-        return $strValue;
-    }
-
-    public function getVersionPropertyName($strProperty)
-    {
-        return $strProperty;
-    }
-
-    public function getVersionRecordName()
-    {
-        return Carrier::getInstance()->getObjLang()->getLang("change_type_setting", "system");
     }
 
     public function getStrName()
