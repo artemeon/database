@@ -74,6 +74,16 @@ class Date
     }
 
     /**
+     * Validates if the passed param is a valid date timestamp
+     * @param $longValue
+     * @return bool
+     */
+    public static function isDateValue($longValue)
+    {
+        return StringUtil::matches($longValue, "([0-9]){14}") !== false;
+    }
+
+    /**
      * Returns the string-based version of the long-value currently maintained.
      *
      * @return string
@@ -660,7 +670,7 @@ class Date
      */
     public function setLongTimestamp($longTimestamp)
     {
-        if (StringUtil::matches($longTimestamp, "([0-9]){14}")) {
+        if (self::isDateValue($longTimestamp)) {
             $this->longTimestamp = $longTimestamp;
         }
         return $this;
