@@ -228,6 +228,7 @@ class Filesystem
         $bitReturn = false;
 
         $strSource = $this->prependRealpath($strSource);
+        $strTarget = $this->prependRealpath($strTarget);
 
         if (is_file($strSource)) {
             //bitForce: overwrite existing file
