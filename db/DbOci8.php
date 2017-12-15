@@ -143,7 +143,10 @@ class DbOci8 extends DbBase
         }
 
         foreach ($arrParams as $intPos => $strValue) {
-            oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos]);
+            if (!@oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos])) {
+                //echo "oci_bind_by_name failed to bind at pos >".$intPos."<, \n value: ".$strValue."\nquery: ".$strQuery;
+                return false;
+            }
         }
 
         $bitAddon = OCI_COMMIT_ON_SUCCESS;
@@ -480,15 +483,23 @@ class DbOci8 extends DbBase
         if ($bitCreate && count($arrIndices) > 0) {
             foreach ($arrIndices as $strOneIndex) {
                 if (is_array($strOneIndex)) {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$strName." ( ".implode(", ", $strOneIndex).") ";
+                    $bitCreate = $bitCreate && $this->createIndex($strName, "ix_".generateSystemid(), $strOneIndex);
                 } else {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$strName." ( ".$strOneIndex.") ";
+                    $bitCreate = $bitCreate && $this->createIndex($strName, "ix_".generateSystemid(), [$strOneIndex]);
                 }
-                $bitCreate = $bitCreate && $this->_pQuery($strQuery, array());
             }
         }
 
         return $bitCreate;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        $arrIndex = $this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [strtoupper($strTable), strtoupper($strName)]);
+        return count($arrIndex) > 0;
     }
 
     /**

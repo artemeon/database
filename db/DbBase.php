@@ -104,6 +104,14 @@ abstract class DbBase implements DbDriverInterface
     }
 
     /**
+     * @inheritdoc
+     */
+    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    {
+        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$strTable." (" . implode(",", $arrColumns) . ")", []);
+    }
+
+    /**
      * Removes a column from a table
      *
      * @param $strTable

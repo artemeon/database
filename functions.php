@@ -365,7 +365,7 @@ function getLinkAdminPopup($strModule, $strAction, $strParams = "", $strText = "
  */
 function getLinkAdminDialog($strModule, $strAction, $strParams = "", $strText = "", $strAlt = "", $strImage = "", $strTitle = "", $bitTooltip = true, $bitPortalEditor = false, $strOnClick = "", $intWidth = null, $intHeight = null)
 {
-    return Link::getLinkAdminDialog($strModule, $strAction, $strParams, $strText, $strAlt, $strImage, $strTitle, $bitTooltip, $bitPortalEditor, $strOnClick, $intWidth, $intHeight);
+    return Link::getLinkAdminDialog($strModule, $strAction, $strParams, $strText, $strAlt, $strImage, $strTitle, $bitTooltip, $bitPortalEditor, $strOnClick);
 }
 
 /**
@@ -597,71 +597,6 @@ function rgb2hex($arrRGB)
     return "#".$strHex;
 }
 
-
-/**
- * Creates a Link for the portal
- *
- * @deprecated
- *
- * @param string $strPageI
- * @param string $strPageE
- * @param string $strTarget
- * @param string $strText
- * @param string $strAction
- * @param string $strParams
- * @param string $strSystemid
- * @param string $strCssClass
- * @param string $strLanguage
- * @param string $strSeoAddon
- *
- * @return string
- */
-function getLinkPortal($strPageI, $strPageE, $strTarget = "_self", $strText = "", $strAction = "", $strParams = "", $strSystemid = "", $strCssClass = "", $strLanguage = "", $strSeoAddon = "")
-{
-    return Link::getLinkPortal($strPageI, $strPageE, $strTarget, $strText, $strAction, $strParams, $strSystemid, $strCssClass, $strLanguage, $strSeoAddon);
-}
-
-/**
- * Creates a raw Link for the portal (just the href)
- *
- * @deprecated
- *
- * @param string $strPageI
- * @param string $strPageE
- * @param string $strAction
- * @param string $strParams
- * @param string $strSystemid
- * @param string $strLanguage
- * @param string $strSeoAddon Only used if using mod_rewrite
- *
- * @return string
- */
-function getLinkPortalHref($strPageI, $strPageE = "", $strAction = "", $strParams = "", $strSystemid = "", $strLanguage = "", $strSeoAddon = "")
-{
-    return Link::getLinkPortalHref($strPageI, $strPageE, $strAction, $strParams, $strSystemid, $strLanguage, $strSeoAddon);
-}
-
-/**
- * Generates a link opening in a popup in portal-area
- *
- * @deprecated
- *
- * @param string $strPageI
- * @param string $strPageE
- * @param string $strAction
- * @param string $strParams
- * @param string $strSystemid
- * @param string $strTitle
- * @param int|string $intWidth
- * @param int|string $intHeight
- *
- * @return string
- */
-function getLinkPortalPopup($strPageI, $strPageE, $strAction = "", $strParams = "", $strSystemid = "", $strTitle = "", $intWidth = "500", $intHeight = "500")
-{
-    return Link::getLinkPortalPopup($strPageI, $strPageE, $strAction, $strParams, $strSystemid, $strTitle, $intWidth, $intHeight);
-}
-
 /**
  * Splits up a html-link into its parts, such as
  * link, name, href
@@ -810,32 +745,6 @@ function saveUrlEncode($strText)
     return str_replace($arraySearch, $arrayReplace, $strText);
 }
 
-/**
- * Replaces some special characters with url-safe characters and removes any other special characters.
- * Should be used whenever a string is placed into an URL
- *
- * @param string $strText
- *
- * @return string
- */
-function urlSafeString($strText)
-{
-    if ($strText == "") {
-        return "";
-    }
-
-    $strText = html_entity_decode($strText, ENT_COMPAT, "UTF-8");
-
-    $arrSearch = array(" ", "/", "&", "+", ".", ":", ",", ";", "=", "ä", "Ä", "ö", "Ö", "ü", "Ü", "ß");
-    $arrReplace = array("-", "-", "-", "-", "-", "-", "-", "-", "-", "ae", "Ae", "oe", "Oe", "ue", "Ue", "ss");
-
-    $strReturn = str_replace($arrSearch, $arrReplace, $strText);
-
-    //remove all other special characters
-    $strReturn = preg_replace("/[^A-Za-z0-9_-]/", "", $strReturn);
-
-    return $strReturn;
-}
 
 /**
  * A helper to remove xss relevant chars from a string. To be used when embedding user-content into a js-call
@@ -950,39 +859,6 @@ function checkEmailaddress($strAddress)
 }
 
 /**
- * Validates, if the passed value is numeric
- *
- * @param int $intNumber
- *
- * @return bool
- * @deprecated use NumericValidator instead
- */
-function checkNumber($intNumber)
-{
-    $objValidator = new NumericValidator();
-    return $objValidator->validate($intNumber);
-}
-
-/**
- * Validates, if the passed Param represents a valid folder in the filesystem
- *
- * @param string $strPath
- * @todo move to Filesystem
- *
- * @return bool
- */
-function checkFolder($strPath)
-{
-    $bitTest = is_dir(_realpath_.$strPath) && strlen($strPath) > 0;
-    if ($bitTest === false) {
-        return false;
-    }
-    else {
-        return true;
-    }
-}
-
-/**
  * Checks the length of a passed string
  *
  * @param string $strText
@@ -1040,21 +916,6 @@ function validateSystemid($strID)
     else {
         return false;
     }
-}
-
-/**
- * Wrapper to dbSafeString of Database
- *
- * @param string $strString
- * @param bool|string $bitHtmlEntities escape html-entities?
- *
- * @deprecated use Database::dbSafeString() instead
- * @see Database::dbSafeString($strString, $bitHtmlEntities = true)
- * @return string
- */
-function dbsafeString($strString, $bitHtmlEntities = true)
-{
-    return Carrier::getInstance()->getObjDB()->dbsafeString($strString, $bitHtmlEntities);
 }
 
 /**
@@ -1220,40 +1081,6 @@ function uniStrReplace($mixedSearch, $mixedReplace, $strSubject, $bitUnicodesafe
 function uniStrTrim($strString, $intLength, $strAdd = "…")
 {
     return StringUtil::truncate($strString, $intLength, $strAdd);
-}
-
-/**
- * Converts a given string to an array
- *
- * @param $strString
- * @param string $strDelimiter
- * @return array|null
- * @deprecated (use Kajona\System\System\StringUtil::toArray instead)
- */
-function strToArray($strString, $strDelimiter = ",") {
-    return StringUtil::toArray($strString, $strDelimiter);
-}
-
-/**
- * Converts a string to an int
- *
- * @param $strString
- * @return int|null
- * @deprecated (use Kajona\System\System\StringUtil::strToInt instead)
- */
-function strToInt($strString) {
-    return StringUtil::toInt($strString);
-}
-
-/**
- * Converts a string to a Date
- *
- * @param $strString
- * @return Date|null
- * @deprecated (use Kajona\System\System\StringUtil::strToDate instead)
- */
-function strToDate($strString) {
-    return StringUtil::toDate($strString);
 }
 
 
