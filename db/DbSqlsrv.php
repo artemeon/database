@@ -361,6 +361,23 @@ class DbSqlsrv extends DbBase
     }
 
     /**
+     * @inheritdoc
+     */
+    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    {
+        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$strTable." (" . implode(",", $arrColumns) . ")", []);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        // @TODO implement
+        return true;
+    }
+
+    /**
      * @inheritDoc
      */
     public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
