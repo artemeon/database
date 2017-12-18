@@ -221,7 +221,7 @@ class DbSqlsrv extends DbBase
         } elseif ($strType == DbDatatypes::STR_TYPE_CHAR100) {
             $strReturn .= " VARCHAR( 100 ) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_CHAR254) {
-            $strReturn .= " VARCHAR( 280 ) ";
+            $strReturn .= " VARCHAR( 254 ) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR( 500 ) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
