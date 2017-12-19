@@ -533,7 +533,7 @@ class DbSqlsrv extends DbBase
         $intLength = $intEnd - $intStart + 1;
 
         // OFFSET and FETCH can only be used with an ORDER BY
-        if (stripos($strQuery, "ORDER") === false) {
+        if (stripos($strQuery, "ORDER BY") === false) {
             $strQuery .= " ORDER BY 1 ASC ";
         }
 
