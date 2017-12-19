@@ -90,10 +90,16 @@ class DbSqlsrv extends DbBase
         $bitResult = sqlsrv_execute($objStatement);
 
         if (!$bitResult) {
-            return false;
+            // we return only false in case the error is not a warning. I.e. the sp_rename procedure returns false
+            // with a warning even if the query was successful
+            if ($this->isWarning()) {
+                $bitResult = true;
+            } else {
+                return false;
+            }
         }
 
-        $this->intAffectedRows = sqlsrv_num_rows($objStatement);
+        $this->intAffectedRows = sqlsrv_rows_affected($objStatement);
 
         sqlsrv_free_stmt($objStatement);
         return $bitResult;
@@ -236,6 +242,14 @@ class DbSqlsrv extends DbBase
     }
 
     /**
+     * @inheritdoc
+     */
+    public function renameTable($strOldName, $strNewName)
+    {
+        return $this->_pQuery("EXEC sp_rename '{$strOldName}', '{$strNewName}'", array());
+    }
+
+    /**
      * Renames a single column of the table
      *
      * @param $strTable
@@ -248,8 +262,9 @@ class DbSqlsrv extends DbBase
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
-        $bitReturn = $this->_pQuery("ALTER TABLE ".($this->encloseTableName($strTable))." RENAME COLUMN ".($this->encloseColumnName($strOldColumnName)." TO ".$this->encloseColumnName($strNewColumnName)), array());
-        return $bitReturn && $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." MODIFY ( ".$this->encloseColumnName($strNewColumnName)." ".$this->getDatatype($strNewDatatype)." )", array());
+        $bitReturn = $this->_pQuery("EXEC sp_rename '{$strTable}.{$strOldColumnName}', '{$strNewColumnName}', 'COLUMN'", array());
+        $bitReturn = $bitReturn && $this->_pQuery("ALTER TABLE {$strTable} ALTER COLUMN {$strNewColumnName} {$this->getDatatype($strNewDatatype)}", array());
+        return $bitReturn;
     }
 
     /**
@@ -373,8 +388,10 @@ class DbSqlsrv extends DbBase
      */
     public function hasIndex($strTable, $strName)
     {
-        // @TODO implement
-        return true;
+        $strQuery = "SELECT name FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)";
+
+        $arrIndex = $this->getPArray($strQuery, [$strName, $strTable]);
+        return count($arrIndex) > 0;
     }
 
     /**
@@ -515,6 +532,11 @@ class DbSqlsrv extends DbBase
     {
         $intLength = $intEnd - $intStart + 1;
 
+        // OFFSET and FETCH can only be used with an ORDER BY
+        if (stripos($strQuery, "ORDER") === false) {
+            $strQuery .= " ORDER BY 1 ASC ";
+        }
+
         return $strQuery." OFFSET {$intStart} ROWS FETCH NEXT {$intLength} ROWS ONLY";
     }
 
@@ -541,6 +563,27 @@ class DbSqlsrv extends DbBase
     public function encloseTableName($strTable)
     {
         return '"'.$strTable.'"';
+    }
+
+    /**
+     * Returns true in case all errors contain only warning errors
+     *
+     * @see https://www.ibm.com/support/knowledgecenter/en/SSEPEK_11.0.0/codes/src/tpc/db2z_sqlstatevalues.html
+     * @return bool
+     */
+    private function isWarning()
+    {
+        $arrErrors = sqlsrv_errors();
+        $arrCodes = [];
+        foreach ($arrErrors as $arrError) {
+            if (isset($arrError["SQLSTATE"])) {
+                $arrCodes[] = $arrError["SQLSTATE"];
+            }
+        }
+
+        $arrCodes = array_unique($arrCodes);
+
+        return count($arrCodes) == 1 && $arrCodes[0] == "01000";
     }
 }
 
