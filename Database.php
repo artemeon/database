@@ -335,16 +335,14 @@ class Database
         }
 
         //param validation
-        $intStart = $intStart !== null ? (int) $intStart : null;
-        $intEnd = $intEnd !== null ? (int) $intEnd : null;
-
-        if ($intStart < 0) {
+        if ((int)$intStart < 0) {
             $intStart = null;
         }
 
-        if ($intEnd < 0) {
+        if ((int)$intEnd < 0) {
             $intEnd = null;
         }
+
 
         $strQuery = $this->processQuery($strQuery);
         //Increasing global counter
@@ -367,7 +365,7 @@ class Database
         }
 
         if ($this->objDbDriver != null) {
-            if (!empty($intStart) && !empty($intEnd)) {
+            if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
                 $arrReturn = $this->objDbDriver->getPArraySection($strQuery, $this->dbsafeParams($arrParams), $intStart, $intEnd);
             } else {
                 $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams));
