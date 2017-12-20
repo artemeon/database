@@ -260,7 +260,12 @@ class DbSqlsrv extends DbBase
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
-        $bitReturn = $this->_pQuery("EXEC sp_rename '{$strTable}.{$strOldColumnName}', '{$strNewColumnName}', 'COLUMN'", array());
+        if ($strOldColumnName != $strNewColumnName) {
+            $bitReturn = $this->_pQuery("EXEC sp_rename '{$strTable}.{$strOldColumnName}', '{$strNewColumnName}', 'COLUMN'", array());
+        } else {
+            $bitReturn = true;
+        }
+
         $bitReturn = $bitReturn && $this->_pQuery("ALTER TABLE {$strTable} ALTER COLUMN {$strNewColumnName} {$this->getDatatype($strNewDatatype)}", array());
         return $bitReturn;
     }
