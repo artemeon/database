@@ -310,12 +310,11 @@ class DbPostgres extends DbBase
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
     {
         $strQuery = "";
 
@@ -354,22 +353,9 @@ class DbPostgres extends DbBase
 
         //primary keys
         $strQuery .= " PRIMARY KEY ( ".implode(" , ", $arrKeys)." ) \n";
-
-
         $strQuery .= ") ";
-        $bitCreate = $this->_pQuery($strQuery, array());
 
-        if ($bitCreate && count($arrIndices) > 0) {
-            foreach ($arrIndices as $strOneIndex) {
-                if (is_array($strOneIndex)) {
-                    $bitCreate = $bitCreate && $this->createIndex($strName, "ix_".generateSystemid(), $strOneIndex);
-                } else {
-                    $bitCreate = $bitCreate && $this->createIndex($strName, "ix_".generateSystemid(), [$strOneIndex]);
-                }
-            }
-        }
-
-        return $bitCreate;
+        return $this->_pQuery($strQuery, array());
     }
 
     /**
