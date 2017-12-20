@@ -10,6 +10,7 @@ namespace Kajona\System\System\Db;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
+use Kajona\System\System\Logger;
 use Kajona\System\System\StringUtil;
 
 /**
@@ -537,6 +538,8 @@ class DbSqlsrv extends DbBase
 
         // OFFSET and FETCH can only be used with an ORDER BY
         if (!$this->containsOrderBy($strQuery)) {
+            Logger::getInstance(Logger::DBLOG)->warning("Using a limit expression without an order by: {$strQuery}");
+
             $strQuery .= " ORDER BY 1 ASC ";
         }
 
