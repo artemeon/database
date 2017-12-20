@@ -317,12 +317,11 @@ class DbSqlsrv extends DbBase
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
     {
         $strQuery = "";
 
@@ -363,20 +362,7 @@ class DbSqlsrv extends DbBase
         $strQuery .= " CONSTRAINT pk_".generateSystemid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
 
-        $bitCreate = $this->_pQuery($strQuery, array());
-
-        if ($bitCreate && count($arrIndices) > 0) {
-            foreach ($arrIndices as $strOneIndex) {
-                if (is_array($strOneIndex)) {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$strName." ( ".implode(", ", $strOneIndex).") ";
-                } else {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$strName." ( ".$strOneIndex.") ";
-                }
-                $bitCreate = $bitCreate && $this->_pQuery($strQuery, array());
-            }
-        }
-
-        return $bitCreate;
+        return $this->_pQuery($strQuery, array());
     }
 
     /**
