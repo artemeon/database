@@ -536,11 +536,35 @@ class DbSqlsrv extends DbBase
         $intLength = $intEnd - $intStart + 1;
 
         // OFFSET and FETCH can only be used with an ORDER BY
-        if (stripos($strQuery, "ORDER BY") === false) {
+        if (!$this->containsOrderBy($strQuery)) {
             $strQuery .= " ORDER BY 1 ASC ";
         }
 
-        return $strQuery." OFFSET {$intStart} ROWS FETCH NEXT {$intLength} ROWS ONLY";
+        return $strQuery . " OFFSET {$intStart} ROWS FETCH NEXT {$intLength} ROWS ONLY";
+    }
+
+    /**
+     * @param string $strQuery
+     * @return bool
+     */
+    private function containsOrderBy($strQuery)
+    {
+        $intPos = stripos($strQuery, "ORDER BY");
+        if ($intPos === false) {
+            return false;
+        } else {
+            // here is now the most fucked up heuristic to detect whether we have an ORDER BY in the outer query and
+            // not in a sub query
+            $intLastPos = strrpos($strQuery, ')');
+
+            if ($intLastPos !== false) {
+                // in case the order by is after the closing brace we have an order by otherwise it is used in a sub
+                // query
+                return $intPos > $intLastPos;
+            } else {
+                return true;
+            }
+        }
     }
 
     /**
