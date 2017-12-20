@@ -715,9 +715,19 @@ class Database
             $this->dbconnect();
         }
 
-        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $arrIndices, $bitTxSafe);
+        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $bitTxSafe);
         if (!$bitReturn) {
             $this->getError("", array());
+        }
+
+        if ($bitReturn && count($arrIndices) > 0) {
+            foreach ($arrIndices as $strOneIndex) {
+                if (is_array($strOneIndex)) {
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), $strOneIndex);
+                } else {
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), [$strOneIndex]);
+                }
+            }
         }
 
         $this->flushTablesCache();

@@ -311,12 +311,11 @@ class DbMysqli extends DbBase
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
     {
         $strQuery = "";
 
@@ -345,18 +344,6 @@ class DbMysqli extends DbBase
 
         //primary keys
         $strQuery .= " PRIMARY KEY ( `".implode("` , `", $arrKeys)."` ) \n";
-
-        if (count($arrIndices) > 0) {
-            foreach ($arrIndices as $strOneIndex) {
-                if (is_array($strOneIndex)) {
-                    $strQuery .= ", INDEX ( `".implode("`, `", $strOneIndex)."` ) \n ";
-                } else {
-                    $strQuery .= ", INDEX ( `".$strOneIndex."` ) \n ";
-                }
-            }
-        }
-
-
         $strQuery .= ") ";
 
         if (!$bitTxSafe) {
