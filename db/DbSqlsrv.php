@@ -47,6 +47,10 @@ class DbSqlsrv extends DbBase
 
         $this->objCfg = $objParams;
 
+        // We need to set this to 0 otherwise i.e. the sp_rename procedure returns false with a warning even if the
+        // query was successful
+        sqlsrv_configure("WarningsReturnAsErrors", 0);
+
         $this->linkDB = sqlsrv_connect($this->objCfg->getStrHost(), [
             "UID" => $this->objCfg->getStrUsername(),
             "PWD" => $this->objCfg->getStrPass(),
@@ -90,13 +94,7 @@ class DbSqlsrv extends DbBase
         $bitResult = sqlsrv_execute($objStatement);
 
         if (!$bitResult) {
-            // we return only false in case the error is not a warning. I.e. the sp_rename procedure returns false
-            // with a warning even if the query was successful
-            if ($this->isWarning()) {
-                $bitResult = true;
-            } else {
-                return false;
-            }
+            return false;
         }
 
         $this->intAffectedRows = sqlsrv_rows_affected($objStatement);
@@ -563,27 +561,6 @@ class DbSqlsrv extends DbBase
     public function encloseTableName($strTable)
     {
         return '"'.$strTable.'"';
-    }
-
-    /**
-     * Returns true in case all errors contain only warning errors
-     *
-     * @see https://www.ibm.com/support/knowledgecenter/en/SSEPEK_11.0.0/codes/src/tpc/db2z_sqlstatevalues.html
-     * @return bool
-     */
-    private function isWarning()
-    {
-        $arrErrors = sqlsrv_errors();
-        $arrCodes = [];
-        foreach ($arrErrors as $arrError) {
-            if (isset($arrError["SQLSTATE"])) {
-                $arrCodes[] = $arrError["SQLSTATE"];
-            }
-        }
-
-        $arrCodes = array_unique($arrCodes);
-
-        return count($arrCodes) == 1 && $arrCodes[0] == "01000";
     }
 }
 
