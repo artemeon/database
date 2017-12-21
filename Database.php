@@ -718,7 +718,7 @@ class Database
         // check whether table already exists
         $arrTables = $this->objDbDriver->getTables();
         foreach ($arrTables as $arrTable) {
-            if ($arrTable["name"] == $strName) {
+            if ($arrTable["name"] == _dbprefix_.$strName) {
                 return true;
             }
         }
