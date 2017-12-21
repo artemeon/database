@@ -705,7 +705,7 @@ class Database
      * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
-     * @see Db_datatypes
+     * @see DbDatatypes
      *
      * @return bool
      */
