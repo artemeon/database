@@ -440,14 +440,6 @@ class DbOci8 extends DbBase
     {
         $strQuery = "";
 
-        //loop over existing tables to check, if the table already exists
-        $arrTables = $this->getTables();
-        foreach ($arrTables as $arrOneTable) {
-            if ($arrOneTable["name"] == $strName) {
-                return true;
-            }
-        }
-
         //build the oracle code
         $strQuery .= "CREATE TABLE ".$strName." ( \n";
 
