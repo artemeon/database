@@ -458,13 +458,6 @@ class DbSqlite3 extends DbBase
      */
     public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
     {
-        $arrTables = $this->getTables();
-        foreach ($arrTables as $arrTable) {
-            if ($arrTable["name"] == $strName) {
-                return true;
-            }
-        }
-
         $strQuery = "";
 
         //build the mysql code

@@ -318,14 +318,6 @@ class DbPostgres extends DbBase
     {
         $strQuery = "";
 
-        //loop over existing tables to check, if the table already exists
-        $arrTables = $this->getTables();
-        foreach ($arrTables as $arrOneTable) {
-            if ($arrOneTable["name"] == $strName) {
-                return true;
-            }
-        }
-
         //build the mysql code
         $strQuery .= "CREATE TABLE ".$this->encloseTableName($strName)." ( \n";
 

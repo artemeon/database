@@ -705,7 +705,7 @@ class Database
      * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
-     * @see Db_datatypes
+     * @see DbDatatypes
      *
      * @return bool
      */
@@ -715,11 +715,21 @@ class Database
             $this->dbconnect();
         }
 
+        // check whether table already exists
+        $arrTables = $this->objDbDriver->getTables();
+        foreach ($arrTables as $arrTable) {
+            if ($arrTable["name"] == $strName) {
+                return true;
+            }
+        }
+
+        // create table
         $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $bitTxSafe);
         if (!$bitReturn) {
             $this->getError("", array());
         }
 
+        // create index
         if ($bitReturn && count($arrIndices) > 0) {
             foreach ($arrIndices as $strOneIndex) {
                 if (is_array($strOneIndex)) {
