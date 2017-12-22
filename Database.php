@@ -135,7 +135,8 @@ class Database
                 $objCfg = Config::getInstance("module_system", "config.php");
                 $this->objDbDriver->dbconnect(new DbConnectionParams($objCfg->getConfig("dbhost"), $objCfg->getConfig("dbusername"), $objCfg->getConfig("dbpassword"), $objCfg->getConfig("dbname"), $objCfg->getConfig("dbport")));
             } catch (Exception $objException) {
-                $objException->processException();
+                echo(Exception::renderException($objException));
+                die();
             }
 
             $this->bitConnected = true;
@@ -705,7 +706,7 @@ class Database
      * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
-     * @see Db_datatypes
+     * @see DbDatatypes
      *
      * @return bool
      */
@@ -715,9 +716,29 @@ class Database
             $this->dbconnect();
         }
 
-        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $arrIndices, $bitTxSafe);
+        // check whether table already exists
+        $arrTables = $this->objDbDriver->getTables();
+        foreach ($arrTables as $arrTable) {
+            if ($arrTable["name"] == _dbprefix_.$strName) {
+                return true;
+            }
+        }
+
+        // create table
+        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $bitTxSafe);
         if (!$bitReturn) {
             $this->getError("", array());
+        }
+
+        // create index
+        if ($bitReturn && count($arrIndices) > 0) {
+            foreach ($arrIndices as $strOneIndex) {
+                if (is_array($strOneIndex)) {
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), $strOneIndex);
+                } else {
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), [$strOneIndex]);
+                }
+            }
         }
 
         $this->flushTablesCache();
