@@ -135,7 +135,8 @@ class Database
                 $objCfg = Config::getInstance("module_system", "config.php");
                 $this->objDbDriver->dbconnect(new DbConnectionParams($objCfg->getConfig("dbhost"), $objCfg->getConfig("dbusername"), $objCfg->getConfig("dbpassword"), $objCfg->getConfig("dbname"), $objCfg->getConfig("dbport")));
             } catch (Exception $objException) {
-                $objException->processException();
+                echo(Exception::renderException($objException));
+                die();
             }
 
             $this->bitConnected = true;

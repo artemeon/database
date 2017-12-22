@@ -60,7 +60,7 @@ class DbSqlsrv extends DbBase
         ]);
 
         if ($this->linkDB === false) {
-            throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
+            throw new Exception("Error connecting to database: ".$this->getError(), Exception::$level_FATALERROR);
         }
     }
 
