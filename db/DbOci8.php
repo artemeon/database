@@ -143,7 +143,10 @@ class DbOci8 extends DbBase
         }
 
         foreach ($arrParams as $intPos => $strValue) {
-            oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos]);
+            if (!@oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos])) {
+                //echo "oci_bind_by_name failed to bind at pos >".$intPos."<, \n value: ".$strValue."\nquery: ".$strQuery;
+                return false;
+            }
         }
 
         $bitAddon = OCI_COMMIT_ON_SUCCESS;
@@ -429,22 +432,13 @@ class DbOci8 extends DbBase
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
     {
         $strQuery = "";
-
-        //loop over existing tables to check, if the table already exists
-        $arrTables = $this->getTables();
-        foreach ($arrTables as $arrOneTable) {
-            if ($arrOneTable["name"] == $strName) {
-                return true;
-            }
-        }
 
         //build the oracle code
         $strQuery .= "CREATE TABLE ".$strName." ( \n";
@@ -475,20 +469,16 @@ class DbOci8 extends DbBase
         $strQuery .= " CONSTRAINT pk_".generateSystemid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
 
-        $bitCreate = $this->_pQuery($strQuery, array());
+        return $this->_pQuery($strQuery, array());
+    }
 
-        if ($bitCreate && count($arrIndices) > 0) {
-            foreach ($arrIndices as $strOneIndex) {
-                if (is_array($strOneIndex)) {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$strName." ( ".implode(", ", $strOneIndex).") ";
-                } else {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$strName." ( ".$strOneIndex.") ";
-                }
-                $bitCreate = $bitCreate && $this->_pQuery($strQuery, array());
-            }
-        }
-
-        return $bitCreate;
+    /**
+     * @inheritdoc
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        $arrIndex = $this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [strtoupper($strTable), strtoupper($strName)]);
+        return count($arrIndex) > 0;
     }
 
     /**

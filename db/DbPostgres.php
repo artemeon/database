@@ -310,22 +310,13 @@ class DbPostgres extends DbBase
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
     {
         $strQuery = "";
-
-        //loop over existing tables to check, if the table already exists
-        $arrTables = $this->getTables();
-        foreach ($arrTables as $arrOneTable) {
-            if ($arrOneTable["name"] == $strName) {
-                return true;
-            }
-        }
 
         //build the mysql code
         $strQuery .= "CREATE TABLE ".$this->encloseTableName($strName)." ( \n";
@@ -354,23 +345,18 @@ class DbPostgres extends DbBase
 
         //primary keys
         $strQuery .= " PRIMARY KEY ( ".implode(" , ", $arrKeys)." ) \n";
-
-
         $strQuery .= ") ";
-        $bitCreate = $this->_pQuery($strQuery, array());
 
-        if ($bitCreate && count($arrIndices) > 0) {
-            foreach ($arrIndices as $strOneIndex) {
-                if (is_array($strOneIndex)) {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$this->encloseTableName($strName)." ( ".implode(", ", $strOneIndex).") ";
-                } else {
-                    $strQuery = "CREATE INDEX ix_".generateSystemid()." ON ".$this->encloseTableName($strName)." ( ".$strOneIndex.") ";
-                }
-                $bitCreate = $bitCreate && $this->_pQuery($strQuery, array());
-            }
-        }
+        return $this->_pQuery($strQuery, array());
+    }
 
-        return $bitCreate;
+    /**
+     * @inheritdoc
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        $arrIndex = $this->getPArray("SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?", [$strTable, $strName]);
+        return count($arrIndex) > 0;
     }
 
     /**

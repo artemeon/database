@@ -109,6 +109,14 @@ class Classloader
                 $objServiceProvider->register($objContainer);
             }
         }
+
+        // check the project config and maybe override a service definition
+        $arrServiceProvider = Config::getInstance()->getConfig("service_provider");
+        if (!empty($arrServiceProvider) && is_array($arrServiceProvider)) {
+            foreach ($arrServiceProvider as $strName => $objCallback) {
+                $objContainer->offsetSet($strName, $objCallback);
+            }
+        }
     }
 
     /**

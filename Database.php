@@ -705,7 +705,7 @@ class Database
      * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
-     * @see Db_datatypes
+     * @see DbDatatypes
      *
      * @return bool
      */
@@ -715,14 +715,74 @@ class Database
             $this->dbconnect();
         }
 
-        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $arrIndices, $bitTxSafe);
+        // check whether table already exists
+        $arrTables = $this->objDbDriver->getTables();
+        foreach ($arrTables as $arrTable) {
+            if ($arrTable["name"] == _dbprefix_.$strName) {
+                return true;
+            }
+        }
+
+        // create table
+        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $bitTxSafe);
         if (!$bitReturn) {
             $this->getError("", array());
+        }
+
+        // create index
+        if ($bitReturn && count($arrIndices) > 0) {
+            foreach ($arrIndices as $strOneIndex) {
+                if (is_array($strOneIndex)) {
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), $strOneIndex);
+                } else {
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), [$strOneIndex]);
+                }
+            }
         }
 
         $this->flushTablesCache();
 
         return $bitReturn;
+    }
+
+    /**
+     * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
+     * where each index can only occur once in the table
+     *
+     * @param string $strTable
+     * @param string $strName
+     * @param array $arrColumns
+     * @param bool $bitUnique
+     * @return bool
+     */
+    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        $bitReturn = $this->objDbDriver->createIndex(_dbprefix_.$strTable, $strName, $arrColumns, $bitUnique);
+        if (!$bitReturn) {
+            $this->getError("", array());
+        }
+
+        return $bitReturn;
+    }
+
+    /**
+     * Checks whether the table has an index with the provided name
+     *
+     * @param string $strTable
+     * @param string $strName
+     * @return bool
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        return $this->objDbDriver->hasIndex(_dbprefix_.$strTable, $strName);
     }
 
     /**
@@ -799,6 +859,25 @@ class Database
 
         $this->flushTablesCache();
         return $this->objDbDriver->removeColumn(_dbprefix_.$strTable, $strColumn);
+    }
+
+    /**
+     * Checks whether a table has a specific column
+     *
+     * @param string $strTable
+     * @param string $strColumn
+     * @return bool
+     */
+    public function hasColumn($strTable, $strColumn)
+    {
+        $arrColumns = $this->getColumnsOfTable(_dbprefix_.$strTable);
+        foreach ($arrColumns as $arrColumn) {
+            if (strtolower($arrColumn["columnName"]) == strtolower($strColumn)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

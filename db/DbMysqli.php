@@ -311,12 +311,11 @@ class DbMysqli extends DbBase
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
      * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
     {
         $strQuery = "";
 
@@ -345,18 +344,6 @@ class DbMysqli extends DbBase
 
         //primary keys
         $strQuery .= " PRIMARY KEY ( `".implode("` , `", $arrKeys)."` ) \n";
-
-        if (count($arrIndices) > 0) {
-            foreach ($arrIndices as $strOneIndex) {
-                if (is_array($strOneIndex)) {
-                    $strQuery .= ", INDEX ( `".implode("`, `", $strOneIndex)."` ) \n ";
-                } else {
-                    $strQuery .= ", INDEX ( `".$strOneIndex."` ) \n ";
-                }
-            }
-        }
-
-
         $strQuery .= ") ";
 
         if (!$bitTxSafe) {
@@ -366,6 +353,23 @@ class DbMysqli extends DbBase
         }
 
         return $this->_pQuery($strQuery, array());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    {
+        return $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." ADD ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." (" . implode(",", $arrColumns) . ")", []);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasIndex($strTable, $strName)
+    {
+        $arrIndex = $this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]);
+        return count($arrIndex) > 0;
     }
 
     /**
