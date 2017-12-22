@@ -7,8 +7,11 @@ declare(strict_types=1);
 
 namespace Kajona\Dbdump\System;
 
+use Kajona\System\System\Config;
 use Kajona\System\System\Database;
+use Kajona\System\System\Date;
 use Kajona\System\System\Filesystem;
+use Kajona\System\System\SystemModule;
 use Kajona\System\System\Zip;
 
 /**
@@ -21,18 +24,26 @@ class DbExport
 {
 
     const LINE_SEPARATOR = "§%§%§\n";
+    const MARKER_FILE = "export.json";
     /**
      * @var Database
      */
     private $objDB;
 
     /**
+     * @var
+     */
+    private $bitPrintDebug;
+
+    /**
      * DbExport constructor.
      * @param Database $objDB
+     * @param bool $bitPrintDebug
      */
-    public function __construct(Database $objDB)
+    public function __construct(Database $objDB, $bitPrintDebug = false)
     {
         $this->objDB = $objDB;
+        $this->bitPrintDebug = $bitPrintDebug;
     }
 
 
@@ -42,6 +53,17 @@ class DbExport
 
         $objFilesystem = new Filesystem();
         $objFilesystem->folderCreate($strTarget);
+
+        //create a marker file
+        $arrVersions = [];
+        foreach (SystemModule::getAllModules() as $objModule) {
+            $arrVersions[$objModule->getStrName()] = $objModule->getStrVersion();
+        }
+        file_put_contents(_realpath_.$strTarget."/".self::MARKER_FILE, json_encode([
+            "date" => Date::getCurrentTimestamp(),
+            "driver" => Config::getInstance()->getConfig("dbdriver"),
+            "modules" => $arrVersions
+        ]));
 
         foreach ($this->objDB->getTables() as $strTable) {
             $this->exportTable($strTable, $strTarget);
@@ -80,15 +102,25 @@ class DbExport
         //fetch the columns in order to get a sort-col
         $arrColumns = $this->objDB->getColumnsOfTable($strTable);
 
-        $strTargetFile = $strTargetDir."/".$strTable;
+        $strTargetFile = $strTargetDir."/".$strTable.".ser";
 
         $objFile = new Filesystem();
         if (!$objFile->openFilePointer($strTargetFile)) {
             return false;
         }
 
-        foreach ($this->objDB->getGenerator("SELECT * FROM ".$strTable." ORDER BY ".$arrColumns[0]["columnName"]. " ASC") as $arrRow) {
-            $objFile->writeToFile(serialize($arrRow).self::LINE_SEPARATOR);
+        $intCount = 0;
+        foreach ($this->objDB->getGenerator("SELECT * FROM ".$strTable." ORDER BY ".$arrColumns[0]["columnName"]. " ASC ".(isset($arrColumns[1]) ? ", ".$arrColumns[1]["columnName"]. " ASC" : "")) as $arrRows) {
+            foreach ($arrRows as $arrRow) {
+                $objFile->writeToFile(serialize($arrRow).self::LINE_SEPARATOR);
+                $intCount++;
+            }
+        }
+
+        if ($this->bitPrintDebug) {
+            echo "Exported {$intCount} rows from table {$strTable}".PHP_EOL;
+            ob_flush();
+            flush();
         }
 
         $objFile->closeFilePointer();
