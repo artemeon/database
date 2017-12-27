@@ -659,7 +659,9 @@ class Filesystem
         //End Session
         Carrier::getInstance()->getObjSession()->sessionClose();
 
-        ob_clean();
+        if (ob_get_contents()) {
+            ob_clean();
+        };
         ResponseObject::getInstance()->sendHeaders();
 
         //Loop the file
