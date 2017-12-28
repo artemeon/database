@@ -9,6 +9,9 @@
 
 namespace Kajona\System\System;
 
+use Kajona\Dbdump\System\DbExport;
+use Kajona\Dbdump\System\DbImport;
+use Kajona\Packagemanager\System\PackagemanagerManager;
 use Kajona\System\System\Db\DbDriverInterface;
 
 /**
@@ -897,7 +900,7 @@ class Database
 
         // Check, how many dumps to keep
         $objFilesystem = new Filesystem();
-        $arrFiles = $objFilesystem->getFilelist(_projectpath_."/dbdumps/", array(".sql", ".gz"));
+        $arrFiles = $objFilesystem->getFilelist(_projectpath_."/dbdumps/", array(".sql", ".gz", ".zip"));
 
         while (count($arrFiles) >= SystemSetting::getConfigValue("_system_dbdump_amount_")) {
             $strFile = array_shift($arrFiles);
@@ -905,7 +908,7 @@ class Database
                 Logger::getInstance(Logger::DBLOG)->warning("Error deleting old db-dumps");
                 return false;
             }
-            $arrFiles = $objFilesystem->getFilelist(_projectpath_."/dbdumps/", array(".sql", ".gz"));
+            $arrFiles = $objFilesystem->getFilelist(_projectpath_."/dbdumps/", array(".sql", ".gz", ".zip"));
         }
 
         $strTargetFilename = _projectpath_."/dbdumps/dbdump_".time().".sql";
@@ -923,17 +926,29 @@ class Database
             $arrTablesFinal = $arrTables;
         }
 
-        $bitDump = $this->objDbDriver->dbExport($strTargetFilename, $arrTablesFinal);
-        if ($bitDump == true && !$this->objDbDriver->handlesDumpCompression()) {
-            $objGzip = new Gzip();
+        $objPackages = new PackagemanagerManager();
+        if (Config::getInstance()->getConfig("dbexport") == "internal" && $objPackages->getPackage("dbdump") !== null) {
+            $objDump = new DbExport($this);
             try {
-                if (!$objGzip->compressFile($strTargetFilename, true)) {
-                    Logger::getInstance(Logger::DBLOG)->warning("Failed to compress (gzip) the file ".basename($strTargetFilename)."");
+                $bitDump = $objDump->createExport();
+            } catch (Exception $objEx) {
+                $bitDump = false;
+                Logger::getInstance()->error("Failed to create dbdump: ".$objEx->getMessage());
+            }
+        } else {
+            $bitDump = $this->objDbDriver->dbExport($strTargetFilename, $arrTablesFinal);
+            if ($bitDump == true && !$this->objDbDriver->handlesDumpCompression()) {
+                $objGzip = new Gzip();
+                try {
+                    if (!$objGzip->compressFile($strTargetFilename, true)) {
+                        Logger::getInstance(Logger::DBLOG)->warning("Failed to compress (gzip) the file " . basename($strTargetFilename) . "");
+                    }
+                } catch (Exception $objExc) {
+                    $objExc->processException();
                 }
-            } catch (Exception $objExc) {
-                $objExc->processException();
             }
         }
+
         if ($bitDump) {
             Logger::getInstance(Logger::DBLOG)->info("DB-Dump ".basename($strTargetFilename)." created");
         } else {
@@ -955,30 +970,41 @@ class Database
             $this->dbconnect();
         }
 
-        //gz file?
-        $bitGzip = false;
-        if (!$this->objDbDriver->handlesDumpCompression() && substr($strFilename, -3) == ".gz") {
-            $bitGzip = true;
-            //try to decompress
-            $objGzip = new Gzip();
+        $objPackages = new PackagemanagerManager();
+        if (Config::getInstance()->getConfig("dbexport") == "internal" && $objPackages->getPackage("dbdump") !== null) {
+            $objDump = new DbImport($this);
             try {
-                if ($objGzip->decompressFile(_projectpath_."/dbdumps/".$strFilename)) {
-                    $strFilename = substr($strFilename, 0, strlen($strFilename) - 3);
-                } else {
-                    Logger::getInstance(Logger::DBLOG)->warning("Failed to decompress (gzip) the file ".basename($strFilename)."");
+                $bitImport = $objDump->importFile(_projectpath_ . "/dbdumps/".$strFilename);
+            } catch (Exception $objEx) {
+                $bitImport = false;
+                Logger::getInstance()->error("Failed to import dbdump: ".$objEx->getMessage());
+            }
+        } else {
+            //gz file?
+            $bitGzip = false;
+            if (!$this->objDbDriver->handlesDumpCompression() && substr($strFilename, -3) == ".gz") {
+                $bitGzip = true;
+                //try to decompress
+                $objGzip = new Gzip();
+                try {
+                    if ($objGzip->decompressFile(_projectpath_ . "/dbdumps/" . $strFilename)) {
+                        $strFilename = substr($strFilename, 0, strlen($strFilename) - 3);
+                    } else {
+                        Logger::getInstance(Logger::DBLOG)->warning("Failed to decompress (gzip) the file " . basename($strFilename) . "");
+                        return false;
+                    }
+                } catch (Exception $objExc) {
+                    $objExc->processException();
                     return false;
                 }
-            } catch (Exception $objExc) {
-                $objExc->processException();
-                return false;
             }
-        }
 
-        $bitImport = $this->objDbDriver->dbImport(_projectpath_."/dbdumps/".$strFilename);
-        //Delete source unzipped file?
-        if ($bitGzip) {
-            $objFilesystem = new Filesystem();
-            $objFilesystem->fileDelete(_projectpath_."/dbdumps/".$strFilename);
+            $bitImport = $this->objDbDriver->dbImport(_projectpath_ . "/dbdumps/" . $strFilename);
+            //Delete source unzipped file?
+            if ($bitGzip) {
+                $objFilesystem = new Filesystem();
+                $objFilesystem->fileDelete(_projectpath_ . "/dbdumps/" . $strFilename);
+            }
         }
         if ($bitImport) {
             Logger::getInstance(Logger::DBLOG)->warning("DB-DUMP ".$strFilename." was restored");
