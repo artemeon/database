@@ -1,7 +1,7 @@
 <?php
 /*"******************************************************************************************************
-*   (c) 2007-2017 by Kajona, www.kajona.de                                                              *
-*       Published under the GNU LGPL v2.1, see /system/licence_lgpl.txt                                 *
+*   (c) 2018 ARTEMEON                                                                                   *
+*       Published under the GNU LGPL v2.1                                                               *
 ********************************************************************************************************/
 declare(strict_types=1);
 
@@ -12,8 +12,6 @@ use Kajona\System\System\Exception;
 use Kajona\System\System\Filesystem;
 use Kajona\System\System\StringUtil;
 use Kajona\System\System\Zip;
-use PHPCodeBrowser\File;
-use RuntimeException;
 
 /**
  * Imports a database dump created by the DbExport class.
@@ -21,10 +19,10 @@ use RuntimeException;
  * @see DbExport
  *
  * @author sidler@mulchprod.de
+ * @since 7.0
  */
 class DbImport
 {
-
 
     /**
      * @var Database
@@ -45,30 +43,47 @@ class DbImport
     }
 
 
-    public function importFile($strFile)
+    /**
+     * Imports a dump file into the current database.
+     * The file must have been created by the matching exporter and needs to match the same schema version.
+     * @param $strFile
+     * @return bool
+     * @throws Exception
+     */
+    public function importFile(string $strFile): bool
     {
         if (!$this->validateFile($strFile)) {
             throw new \InvalidArgumentException("File ".$strFile." is no valid dump");
         }
 
         $strTargetDir = "/project/temp/dbimport_".generateSystemid();
-        $this->extractArchive($strFile, $strTargetDir);
+        $objZip = new Zip();
+        if (!$objZip->extractArchive($strFile, $strTargetDir)) {
+            return false;
+        }
 
-
+        $bitReturn = true;
         $objFilesystem = new Filesystem();
         $arrFiles = $objFilesystem->getFilelist($strTargetDir, [".ser"]);
         if ($this->validateTargetSchema($arrFiles, $strTargetDir)) {
             foreach ($arrFiles as $strOneFile) {
-                $this->importSingleTableFile($strTargetDir."/".$strOneFile);
+                if (!$this->importSingleTableFile($strTargetDir."/".$strOneFile)) {
+                    $bitReturn = false;
+                    break;
+                }
             }
         }
 
         $objFilesystem->folderDeleteRecursive($strTargetDir);
-        return true;
+        return $bitReturn;
     }
 
-
-    private function importSingleTableFile(string $strFile)
+    /**
+     * Imports a single file of the dump, so a single table
+     * @param string $strFile
+     * @return bool
+     */
+    private function importSingleTableFile(string $strFile): bool
     {
         $strTableName = StringUtil::substring(basename($strFile), 0, -4);
         $strTableName = StringUtil::replace(_dbprefix_, "", $strTableName);
@@ -99,7 +114,7 @@ class DbImport
                 $arrRows = [];
 
                 if ($this->bitPrintDebug) {
-                    echo "{$intCount}...";
+                    echo str_pad($intCount."", 10, " ");
 
                     if ($intPrint++ > 15) {
                         echo PHP_EOL.str_pad("", 54);
@@ -123,18 +138,25 @@ class DbImport
         return true;
     }
 
-    private function importRows($arrRows, $strTable)
+    /**
+     * Imports a set of rows into a target table
+     * @param array $arrRows
+     * @param string $strTable
+     * @return bool
+     */
+    private function importRows(array $arrRows, string $strTable): bool
     {
         if (count($arrRows) == 0) {
-            return;
+            return true;
         }
 
         $arrCols = array_keys($arrRows[0]);
-        $this->objDB->multiInsert($strTable, $arrCols, $arrRows);
+        return $this->objDB->multiInsert($strTable, $arrCols, $arrRows);
     }
 
 
     /**
+     * Compares the dump files (columns) and the currently available schema
      * @param $arrFiles
      * @param $strBaseDir
      * @return bool
@@ -198,24 +220,17 @@ class DbImport
 
             }
 
-            if ($this->bitPrintDebug) {
-//                echo "Found valid file {$strFile}".PHP_EOL;
-                ob_flush();
-                flush();
-            }
-
         }
         return true;
     }
 
-    private function extractArchive($strArchive, $strTargetDir)
-    {
-        $objZip = new Zip();
-        $objZip->extractArchive($strArchive, $strTargetDir);
-    }
 
-
-    private function validateFile($strFilename): bool
+    /**
+     * Validates the current file, e.g. if a marker-file is present
+     * @param string $strFilename
+     * @return bool
+     */
+    private function validateFile(string $strFilename): bool
     {
         $objZip = new Zip();
         if ($objZip->isZipFile($strFilename) && $objZip->getFileFromArchive($strFilename, DbExport::MARKER_FILE) !== false) {
@@ -227,7 +242,4 @@ class DbImport
 
         return false;
     }
-
-
 }
-

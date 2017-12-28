@@ -1,8 +1,9 @@
 <?php
 /*"******************************************************************************************************
-*   (c) 2007-2017 by Kajona, www.kajona.de                                                              *
-*       Published under the GNU LGPL v2.1, see /system/licence_lgpl.txt                                 *
+*   (c) 2018 ARTEMEON                                                                                   *
+*       Published under the GNU LGPL v2.1                                                               *
 ********************************************************************************************************/
+
 declare(strict_types=1);
 
 namespace Kajona\Dbdump\System;
@@ -19,12 +20,14 @@ use Kajona\System\System\Zip;
  * A file is created per table, the data itself is streamed.
  *
  * @author sidler@mulchprod.de
+ * @since 7.0
  */
 class DbExport
 {
 
     const LINE_SEPARATOR = "§%§%§\n";
     const MARKER_FILE = "export.json";
+
     /**
      * @var Database
      */
@@ -46,13 +49,18 @@ class DbExport
         $this->bitPrintDebug = $bitPrintDebug;
     }
 
-
-    public function createExport()
+    /**
+     * Exports the current database to a single zip-file
+     * @throws \Kajona\System\System\Exception
+     */
+    public function createExport(): bool
     {
         $strTarget = "/project/temp/dbexport_".generateSystemid();
 
         $objFilesystem = new Filesystem();
-        $objFilesystem->folderCreate($strTarget);
+        if (!$objFilesystem->folderCreate($strTarget)) {
+            return false;
+        }
 
         //create a marker file
         $arrVersions = [];
@@ -65,17 +73,33 @@ class DbExport
             "modules" => $arrVersions
         ]));
 
+        $bitReturn = true;
         foreach ($this->objDB->getTables() as $strTable) {
-            $this->exportTable($strTable, $strTarget);
+            if (!$this->exportTable($strTable, $strTarget)) {
+                $bitReturn = false;
+                break;
+            }
         }
 
-        $this->zipTargetDir($strTarget, "/project/dbdumps/dbdump_kj_".time().".zip");
+        if (!$this->zipTargetDir($strTarget, "/project/dbdumps/dbdump_kj_".time().".zip")) {
+            $bitReturn = false;
+        }
 
-        $objFilesystem->folderDeleteRecursive($strTarget);
+        //clean in every case
+        if (!$objFilesystem->folderDeleteRecursive($strTarget)) {
+            $bitReturn = false;
+        }
+
+        return $bitReturn;
     }
 
-
-    private function zipTargetDir($strSourceDir, $strTargetFilename): bool
+    /**
+     * Creates a zip archive of a single folder
+     * @param $strSourceDir
+     * @param $strTargetFilename
+     * @return bool
+     */
+    private function zipTargetDir(string $strSourceDir, string $strTargetFilename): bool
     {
         $objZip = new Zip();
         $objZip->openArchiveForWriting($strTargetFilename);
@@ -88,16 +112,20 @@ class DbExport
                     return false;
                 }
             }
-
-
         }
 
         $objZip->closeArchive();
         return true;
     }
 
-
-    private function exportTable($strTable, $strTargetDir): bool
+    /**
+     * Exports a single table into a single file
+     *
+     * @param $strTable
+     * @param $strTargetDir
+     * @return bool
+     */
+    private function exportTable(string $strTable, string $strTargetDir): bool
     {
         //fetch the columns in order to get a sort-col
         $arrColumns = $this->objDB->getColumnsOfTable($strTable);
@@ -109,22 +137,44 @@ class DbExport
             return false;
         }
 
+        if ($this->bitPrintDebug) {
+            echo "Exporting table ".str_pad($strTable."", 28)." rows: ";
+            ob_flush();
+            flush();
+        }
+
         $intCount = 0;
+        $intPrint = 0;
+        //sort by first an second column by default, avoids problems with combined primary keys
         foreach ($this->objDB->getGenerator("SELECT * FROM ".$strTable." ORDER BY ".$arrColumns[0]["columnName"]. " ASC ".(isset($arrColumns[1]) ? ", ".$arrColumns[1]["columnName"]. " ASC" : "")) as $arrRows) {
             foreach ($arrRows as $arrRow) {
-                $objFile->writeToFile(serialize($arrRow).self::LINE_SEPARATOR);
+                if (!$objFile->writeToFile(serialize($arrRow).self::LINE_SEPARATOR)) {
+                    return false;
+                }
                 $intCount++;
+
+                if ($this->bitPrintDebug) {
+                    if ($intCount % 500 == 0) {
+                        echo str_pad($intCount . "", 10, " ");
+
+                        if ($intPrint++ > 15) {
+                            echo PHP_EOL.str_pad("", 51);
+                            $intPrint = 0;
+                        }
+                        ob_flush();
+                        flush();
+                    }
+                }
             }
         }
 
         if ($this->bitPrintDebug) {
-            echo "Exported {$intCount} rows from table {$strTable}".PHP_EOL;
+            echo "{$intCount}".PHP_EOL;
             ob_flush();
             flush();
         }
 
         $objFile->closeFilePointer();
-
         return true;
     }
 
