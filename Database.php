@@ -890,9 +890,10 @@ class Database
      *
      * @param array $arrTablesToExclude specify a set of tables not to be included in the dump
      *
+     * @param bool $bitPrintDebug
      * @return bool
      */
-    public function dumpDb($arrTablesToExclude = array())
+    public function dumpDb($arrTablesToExclude = array(), $bitPrintDebug = false)
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -928,7 +929,7 @@ class Database
 
         $objPackages = new PackagemanagerManager();
         if (Config::getInstance()->getConfig("dbexport") == "internal" && $objPackages->getPackage("dbdump") !== null) {
-            $objDump = new DbExport($this);
+            $objDump = new DbExport($this, $arrTablesToExclude, $bitPrintDebug);
             try {
                 $bitDump = $objDump->createExport();
             } catch (Exception $objEx) {
@@ -964,22 +965,33 @@ class Database
      *
      * @return bool
      */
-    public function importDb($strFilename)
+    public function importDb($strFilename, $bitPrintDebug = false)
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
 
-        $objPackages = new PackagemanagerManager();
-        if (Config::getInstance()->getConfig("dbexport") == "internal" && $objPackages->getPackage("dbdump") !== null) {
-            $objDump = new DbImport($this);
-            try {
-                $bitImport = $objDump->importFile(_projectpath_ . "/dbdumps/".$strFilename);
-            } catch (Exception $objEx) {
-                $bitImport = false;
-                Logger::getInstance()->error("Failed to import dbdump: ".$objEx->getMessage());
+        $bitImport = null;
+
+        if (substr($strFilename, -4) == ".zip") {
+            //switch import based on filetype
+            $objPackages = new PackagemanagerManager();
+            if ($objPackages->getPackage("dbdump") !== null) {
+                $objImport = new DbImport($this, $bitPrintDebug);
+                if ($objImport->validateFile(_projectpath_ . "/dbdumps/".$strFilename)) {
+                    try {
+                        $bitImport = $objImport->importFile(_projectpath_ . "/dbdumps/".$strFilename);
+                    } catch (Exception $objEx) {
+                        $bitImport = false;
+                        Logger::getInstance()->error("Failed to import dbdump: ".$objEx->getMessage());
+                    }
+                }
             }
-        } else {
+
+        }
+
+        if ($bitImport === null) {
+            //db-driver based import required
             //gz file?
             $bitGzip = false;
             if (!$this->objDbDriver->handlesDumpCompression() && substr($strFilename, -3) == ".gz") {
