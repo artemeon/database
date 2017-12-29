@@ -230,7 +230,7 @@ class DbImport
      * @param string $strFilename
      * @return bool
      */
-    private function validateFile(string $strFilename): bool
+    public function validateFile(string $strFilename): bool
     {
         $objZip = new Zip();
         if ($objZip->isZipFile($strFilename) && $objZip->getFileFromArchive($strFilename, DbExport::MARKER_FILE) !== false) {

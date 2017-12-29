@@ -39,14 +39,20 @@ class DbExport
     private $bitPrintDebug;
 
     /**
+     * @var string[]
+     */
+    private $arrExcludedTables = [];
+
+    /**
      * DbExport constructor.
      * @param Database $objDB
      * @param bool $bitPrintDebug
      */
-    public function __construct(Database $objDB, $bitPrintDebug = false)
+    public function __construct(Database $objDB, $arrExcludedTables = [], $bitPrintDebug = false)
     {
         $this->objDB = $objDB;
         $this->bitPrintDebug = $bitPrintDebug;
+        $this->arrExcludedTables = $arrExcludedTables;
     }
 
     /**
@@ -75,6 +81,9 @@ class DbExport
 
         $bitReturn = true;
         foreach ($this->objDB->getTables() as $strTable) {
+            if (in_array($strTable, $this->arrExcludedTables)) {
+                continue;
+            }
             if (!$this->exportTable($strTable, $strTarget)) {
                 $bitReturn = false;
                 break;
