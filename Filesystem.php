@@ -659,7 +659,7 @@ class Filesystem
         //End Session
         Carrier::getInstance()->getObjSession()->sessionClose();
 
-        if (ob_get_contents()) {
+        if (ob_get_contents() !== false) {
             ob_clean();
         };
         ResponseObject::getInstance()->sendHeaders();
