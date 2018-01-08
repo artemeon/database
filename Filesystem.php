@@ -528,6 +528,20 @@ class Filesystem
     }
 
     /**
+     * Reads from a file, but uses a custom delimiter
+     *
+     * @param $strDelimiter
+     * @return bool|string
+     */
+    public function readLineByCustomDelimiterFromFile($strDelimiter)
+    {
+        if ($this->objFilePointer != null) {
+            return stream_get_line($this->objFilePointer, 4096*20, $strDelimiter);
+        }
+        return false;
+    }
+
+    /**
      * Reads a section from the end of a file.
      * This is done with pointers, reducing the amount of memory consumed.
      * Open the file by openFilePointer() before.
