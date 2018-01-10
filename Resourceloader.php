@@ -93,9 +93,9 @@ class Resourceloader
         if (is_file($strTemplateName)) {
             //scan directly
             $strFilename = $strTemplateName;
-        } elseif (is_file(AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName)) {
+        } elseif (is_file(AdminskinHelper::getPathForSkin().$strTemplateName)) {
             //prepend current skin path
-            $strFilename = AdminskinHelper::getPathForSkin(Session::getInstance()->getAdminSkin()).$strTemplateName;
+            $strFilename = AdminskinHelper::getPathForSkin().$strTemplateName;
         } else {
             //scan modules
             foreach (Classloader::getInstance()->getArrModules() as $strCorePath => $strOneModule) {

@@ -61,6 +61,17 @@ class StringUtil
         }
     }
 
+    /**
+     * Returns whether two string are equals
+     *
+     * @param string $strLeft
+     * @param string $strRight
+     * @return int
+     */
+    public static function equals($strLeft, $strRight)
+    {
+        return strcasecmp($strLeft, $strRight) === 0;
+    }
 
     /**
      * Returns the length of this string.
