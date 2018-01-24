@@ -253,7 +253,7 @@ class ResponseObject
     /**
      * @param bool $bitForceMessagePollOnRedirect
      */
-    public function setBitForceMessagePollOnRedirect(bool $bitForceMessagePollOnRedirect): void
+    public function setBitForceMessagePollOnRedirect(bool $bitForceMessagePollOnRedirect)
     {
         $this->bitForceMessagePollOnRedirect = $bitForceMessagePollOnRedirect;
     }
