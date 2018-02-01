@@ -11,6 +11,7 @@ namespace Kajona\Dbdump\System;
 use Kajona\System\System\Config;
 use Kajona\System\System\Database;
 use Kajona\System\System\Date;
+use Kajona\System\System\Exception;
 use Kajona\System\System\Filesystem;
 use Kajona\System\System\SystemModule;
 use Kajona\System\System\Zip;
@@ -57,9 +58,11 @@ class DbExport
 
     /**
      * Exports the current database to a single zip-file
-     * @throws \Kajona\System\System\Exception
+     * @param string $strTargetFilename
+     * @return bool
+     * @throws Exception
      */
-    public function createExport(): bool
+    public function createExport(&$strTargetFilename = ""): bool
     {
         $strTarget = "/project/temp/dbexport_".generateSystemid();
 
@@ -90,7 +93,8 @@ class DbExport
             }
         }
 
-        if (!$this->zipTargetDir($strTarget, "/project/dbdumps/dbdump_kj_".time().".zip")) {
+        $strTargetFilename = "/project/dbdumps/dbdump_kj_".time().".zip";
+        if (!$this->zipTargetDir($strTarget, $strTargetFilename)) {
             $bitReturn = false;
         }
 
@@ -107,6 +111,7 @@ class DbExport
      * @param $strSourceDir
      * @param $strTargetFilename
      * @return bool
+     * @throws Exception
      */
     private function zipTargetDir(string $strSourceDir, string $strTargetFilename): bool
     {
