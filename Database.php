@@ -891,9 +891,10 @@ class Database
      * @param array $arrTablesToExclude specify a set of tables not to be included in the dump
      *
      * @param bool $bitPrintDebug
+     * @param string $strDumpFilename pass a string based variable in order to fetch the filename of the dump created
      * @return bool
      */
-    public function dumpDb($arrTablesToExclude = array(), $bitPrintDebug = false)
+    public function dumpDb($arrTablesToExclude = array(), $bitPrintDebug = false, &$strDumpFilename = "")
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -919,7 +920,7 @@ class Database
 
         if (count($arrTablesToExclude) > 0) {
             foreach ($arrTables as $strOneTable) {
-                if (!in_array(StringUtil::replace(_dbprefix_, "", $strOneTable), $arrTablesToExclude)) {
+                if (!in_array($strOneTable, $arrTablesToExclude)) {
                     $arrTablesFinal[] = $strOneTable;
                 }
             }
@@ -931,7 +932,7 @@ class Database
         if (Config::getInstance()->getConfig("dbexport") == "internal" && $objPackages->getPackage("dbdump") !== null) {
             $objDump = new DbExport($this, $arrTablesToExclude, $bitPrintDebug);
             try {
-                $bitDump = $objDump->createExport();
+                $bitDump = $objDump->createExport($strTargetFilename);
             } catch (Exception $objEx) {
                 $bitDump = false;
                 Logger::getInstance()->error("Failed to create dbdump: ".$objEx->getMessage());
@@ -952,6 +953,7 @@ class Database
 
         if ($bitDump) {
             Logger::getInstance(Logger::DBLOG)->info("DB-Dump ".basename($strTargetFilename)." created");
+            $strDumpFilename = basename($strTargetFilename);
         } else {
             Logger::getInstance(Logger::DBLOG)->error("Error creating ".basename($strTargetFilename));
         }
