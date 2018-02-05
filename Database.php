@@ -328,11 +328,12 @@ class Database
      * @param int|null $intStart
      * @param int|null $intEnd
      * @param bool $bitCache
+     * @param array $arrEscapes
      *
      * @return array
      * @since 3.4
      */
-    public function getPArray($strQuery, $arrParams, $intStart = null, $intEnd = null, $bitCache = true)
+    public function getPArray($strQuery, $arrParams, $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = [])
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -370,9 +371,9 @@ class Database
 
         if ($this->objDbDriver != null) {
             if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
-                $arrReturn = $this->objDbDriver->getPArraySection($strQuery, $this->dbsafeParams($arrParams), $intStart, $intEnd);
+                $arrReturn = $this->objDbDriver->getPArraySection($strQuery, $this->dbsafeParams($arrParams, $arrEscapes), $intStart, $intEnd);
             } else {
-                $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams));
+                $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
             }
 
             if ($arrReturn === false) {
