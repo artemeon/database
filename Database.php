@@ -285,16 +285,17 @@ class Database
      * @param array $arrParams
      * @param int $intNr
      * @param bool $bitCache
+     * @param array $arrEscapes
      *
      * @return array
      */
-    public function getPRow($strQuery, $arrParams, $intNr = 0, $bitCache = true)
+    public function getPRow($strQuery, $arrParams, $intNr = 0, $bitCache = true, array $arrEscapes = [])
     {
         if ($intNr !== 0) {
             trigger_error(E_USER_DEPRECATED, "The intNr parameter is deprecated");
         }
 
-        $arrTemp = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache);
+        $arrTemp = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache, $arrEscapes);
         if (count($arrTemp) > 0) {
             return $arrTemp[$intNr];
         } else {
