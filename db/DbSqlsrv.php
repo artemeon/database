@@ -11,7 +11,6 @@ use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
 use Kajona\System\System\Logger;
-use Kajona\System\System\StringUtil;
 
 /**
  * DbSqlsrv
@@ -157,7 +156,7 @@ class DbSqlsrv extends DbBase
         $arrTemp = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array());
 
         foreach ($arrTemp as $intKey => $strValue) {
-            $arrTemp[$intKey]["name"] = StringUtil::toLowerCase($strValue["table_name"]);
+            $arrTemp[$intKey]["name"] = strtolower($strValue["table_name"]);
         }
         return $arrTemp;
     }
@@ -524,7 +523,8 @@ class DbSqlsrv extends DbBase
 
         // OFFSET and FETCH can only be used with an ORDER BY
         if (!$this->containsOrderBy($strQuery)) {
-            Logger::getInstance(Logger::DBLOG)->warning("Using a limit expression without an order by: {$strQuery}");
+            // should be fixed but produces a file write on every call so its bad for the performance
+            //Logger::getInstance(Logger::DBLOG)->warning("Using a limit expression without an order by: {$strQuery}");
 
             $strQuery .= " ORDER BY 1 ASC ";
         }
