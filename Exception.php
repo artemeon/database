@@ -45,7 +45,7 @@ class Exception extends \Exception
      * @param string $strError
      * @param int $intErrorlevel
      */
-    public function __construct($strError, $intErrorlevel, Exception $objPrevious = null)
+    public function __construct($strError, $intErrorlevel = 1, Exception $objPrevious = null)
     {
         parent::__construct($strError, 0, $objPrevious);
         $this->intErrorlevel = $intErrorlevel;
@@ -213,7 +213,7 @@ class Exception extends \Exception
     public static function globalExceptionHandler($objException)
     {
         if (!($objException instanceof Exception)) {
-            $objException = new Exception((string)$objException, Exception::$level_FATALERROR);
+            $objException = new Exception((string)$objException);
         }
         $objException->processException();
         ResponseObject::getInstance()->sendHeaders();
