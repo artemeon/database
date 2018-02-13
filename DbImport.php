@@ -151,7 +151,10 @@ class DbImport
         }
 
         $arrCols = array_keys($arrRows[0]);
-        return $this->objDB->multiInsert($strTable, $arrCols, $arrRows);
+        Database::$bitDbSafeStringEnabled = false;
+        $bitReturn = $this->objDB->multiInsert($strTable, $arrCols, $arrRows);
+        Database::$bitDbSafeStringEnabled = true;
+        return $bitReturn;
     }
 
 
