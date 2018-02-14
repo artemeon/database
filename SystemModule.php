@@ -79,12 +79,12 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
     /**
      * @var SystemModule[]
      */
-    private static $arrModules = array();
+    private static $arrModules = null;
 
     /**
      * @var string[][]
      */
-    private static $arrModuleData = array();
+    private static $arrModuleData = null;
 
 
     /**
@@ -100,7 +100,7 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
     private static function loadModuleData($bitCache = true)
     {
 
-        if ((count(self::$arrModuleData) == 0 || !$bitCache) && count(Carrier::getInstance()->getObjDB()->getTables()) > 0) {
+        if ((self::$arrModuleData === null || !$bitCache) && count(Carrier::getInstance()->getObjDB()->getTables()) > 0) {
             $strQuery = "SELECT *
                            FROM "._dbprefix_."system_module,
                                 "._dbprefix_."system
@@ -177,7 +177,7 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
     public static function getAllModules($intStart = null, $intEnd = null)
     {
 
-        if (count(self::$arrModules) == 0) {
+        if (self::$arrModules === null) {
             if (count(Database::getInstance()->getTables()) == 0) {
                 return array();
             }
@@ -376,8 +376,8 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
      */
     public static function flushCache()
     {
-        self::$arrModules = array();
-        self::$arrModuleData = array();
+        self::$arrModules = null;
+        self::$arrModuleData = null;
     }
 
     /**

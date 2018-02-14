@@ -250,7 +250,7 @@ class Config
      */
     public function loadConfigsFilesystem()
     {
-        throw new Exception("no longer supported", Exception::$level_FATALERROR);
+        throw new Exception("no longer supported");
     }
 
     /**

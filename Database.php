@@ -65,6 +65,13 @@ class Database
      */
     private $bitConnected = false;
 
+    /**
+     * Enables or disables dbsafeString in total
+     * @var bool
+     * @internal
+     */
+    public static $bitDbSafeStringEnabled = true;
+
 
     /**
      * Constructor
@@ -1153,6 +1160,10 @@ class Database
 
         if ($strString === null) {
             return null;
+        }
+
+        if (!self::$bitDbSafeStringEnabled) {
+            return $strString;
         }
 
         //escape special chars
