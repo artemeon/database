@@ -22,6 +22,7 @@ class ResponseObject
     private $strRedirectUrl = "";
     private $strContent = "";
     private $arrAdditionalHeaders = array();
+    private $bitForceMessagePollOnRedirect = false;
 
     /**
      * @var RequestEntrypointEnum
@@ -240,4 +241,22 @@ class ResponseObject
     {
         return $this->objEntryPoint;
     }
+
+    /**
+     * @return bool
+     */
+    public function getBitForceMessagePollOnRedirect(): bool
+    {
+        return $this->bitForceMessagePollOnRedirect;
+    }
+
+    /**
+     * @param bool $bitForceMessagePollOnRedirect
+     */
+    public function setBitForceMessagePollOnRedirect(bool $bitForceMessagePollOnRedirect)
+    {
+        $this->bitForceMessagePollOnRedirect = $bitForceMessagePollOnRedirect;
+    }
+
+
 }

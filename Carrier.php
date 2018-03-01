@@ -257,7 +257,7 @@ class Carrier
         }
 
         if ($intCacheType & self::INT_CACHE_TYPE_APC) {
-            CacheManager::getInstance()->flushCache();
+            CacheManager::getInstance()->flushCache(CacheManager::TYPE_APC);
         }
 
         if ($intCacheType & self::INT_CACHE_TYPE_CHANGELOG) {
