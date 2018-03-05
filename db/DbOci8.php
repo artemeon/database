@@ -203,11 +203,14 @@ class DbOci8 extends DbBase
             }
         }
 
-
-        $strQuery = "MERGE INTO ".$this->encloseTableName(_dbprefix_.$strTable)." using dual on (".implode(" AND ", $arrPrimaryCompares).") 
+        if (empty($arrKeyValuePairs)) {
+            $strQuery = "MERGE INTO ".$this->encloseTableName(_dbprefix_.$strTable)." using dual on (".implode(" AND ", $arrPrimaryCompares).") 
+                       WHEN NOT MATCHED THEN INSERT (".implode(", ", $arrMappedColumns).") values (".implode(", ", $arrPlaceholder).")";
+        } else {
+            $strQuery = "MERGE INTO ".$this->encloseTableName(_dbprefix_.$strTable)." using dual on (".implode(" AND ", $arrPrimaryCompares).") 
                        WHEN NOT MATCHED THEN INSERT (".implode(", ", $arrMappedColumns).") values (".implode(", ", $arrPlaceholder).")
                        WHEN MATCHED then update set ".implode(", ", $arrKeyValuePairs)."";
-
+        }
         return $this->_pQuery($strQuery, $arrParams);
     }
 
