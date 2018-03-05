@@ -117,7 +117,7 @@ class Objectfactory
         if ($arrCacheRow != null && isset($arrCacheRow["system_class"])) {
             $strClass = $arrCacheRow["system_class"];
         } else {
-            $strQuery = "SELECT * FROM "._dbprefix_."system where system_id = ?";
+            $strQuery = "SELECT * FROM "._dbprefix_."system WHERE system_id = ?";
             $arrRow = Carrier::getInstance()->getObjDB()->getPRow($strQuery, array($strSystemid));
             if (isset($arrRow["system_class"])) {
                 $strClass = $arrRow["system_class"];

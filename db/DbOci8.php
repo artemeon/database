@@ -359,11 +359,11 @@ class DbOci8 extends DbBase
         } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR2( 500 ) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
-            $strReturn .= " CLOB ";
+            $strReturn .= " VARCHAR2( 4000 ) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
             $strReturn .= " CLOB ";
         } else {
-            $strReturn .= " VARCHAR( 254 ) ";
+            $strReturn .= " VARCHAR2( 254 ) ";
         }
 
         return $strReturn;
