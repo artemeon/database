@@ -147,7 +147,7 @@ class Exception extends \Exception
             $objMessage = new MessagingMessage();
             $objMessage->setStrBody($strMailtext);
             $objMessage->setObjMessageProvider(new MessageproviderExceptions());
-            $objMessageHandler->sendMessageObject($objMessage, new UserGroup(SystemSetting::getConfigValue("_admins_group_id_")));
+            $objMessageHandler->sendMessageObject($objMessage, Objectfactory::getInstance()->getObject(SystemSetting::getConfigValue("_admins_group_id_")));
         }
 
 
