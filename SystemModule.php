@@ -240,9 +240,10 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
      */
     public static function getModuleByName($strName, $bitIgnoreStatus = false)
     {
-        if (isset(self::getAllModules()[$strName])) {
+        $arrModules = self::getAllModules();
+        if (isset($arrModules[$strName])) {
             /** @var SystemModule $objOneModule */
-            $objOneModule = self::getAllModules()[$strName];
+            $objOneModule = $arrModules[$strName];
             if (!$bitIgnoreStatus && $objOneModule->getIntRecordStatus() == 0) {
                 return null;
             }
