@@ -332,24 +332,9 @@ class StringUtil
         $arrParams = [];
 
         foreach (explode("&", $strParams) as $strOneVal) {
-            $arrKeyValue = explode("=", $strOneVal);
-            $strKey = urldecode($arrKeyValue[0]);
-            $strValue = urldecode($arrKeyValue[1]);
-
-            $intBracket = strpos($strKey, '[');
-            if ($intBracket !== false) {
-                $strActualKey = substr($strKey, 0, $intBracket);
-
-                if (strlen($strKey) > $intBracket+2) {
-                    $strIndex = substr($strKey, $intBracket+1, -1);
-                    $arrParams[$strActualKey][$strIndex] = $strValue;
-                } else {
-                    $arrParams[$strActualKey][] = $strValue;
-                }
-            } else {
-                $arrParams[$strKey] = $strValue;
-            }
-
+            $arrTemp = [];
+            parse_str($strOneVal, $arrTemp);
+            $arrParams = array_merge_recursive($arrParams, $arrTemp);
         }
         return $arrParams;
     }
