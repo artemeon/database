@@ -620,16 +620,13 @@ function splitUpLink($strLink)
 /**
  * Tries to find all links in a given string and creates a-tags around them.
  *
- * @param $strText
- *
+ * @param string $strText
  * @return string
  * @since 4.3
- * @todo: white-space handling is still messed up
  */
 function replaceTextLinks($strText)
 {
-    $strReplace = preg_replace('#([^href=("|\')|^>]((http|https|ftp|file)://)[^ |^<|^>]+)#', '<a href="\1">\1</a>', $strText);
-    return str_replace("a href=\" ", "a href=\"", $strReplace);
+    return preg_replace('/(^|\s)((http[s]{0,1}|ftp[s]{0,1}|file)\:\/\/(.*))($|\s)/imsU', ' <a href="$2">$2</a> ', $strText);
 }
 
 /**
