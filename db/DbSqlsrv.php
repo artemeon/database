@@ -266,8 +266,7 @@ class DbSqlsrv extends DbBase
             $bitReturn = true;
         }
 
-        $bitReturn = $bitReturn && $this->_pQuery("ALTER TABLE {$strTable} ALTER COLUMN {$strNewColumnName} {$this->getDatatype($strNewDatatype)}", array());
-        return $bitReturn;
+        return $bitReturn && $this->_pQuery("ALTER TABLE {$strTable} ALTER COLUMN {$strNewColumnName} {$this->getDatatype($strNewDatatype)}", array());
     }
 
     /**
