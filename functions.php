@@ -626,7 +626,7 @@ function splitUpLink($strLink)
  */
 function replaceTextLinks($strText)
 {
-    return preg_replace('/(^|\s)((http[s]{0,1}|ftp[s]{0,1}|file)\:\/\/(.*))($|\s)/imsU', ' <a href="$2">$2</a> ', $strText);
+    return preg_replace('/(^|\s)((http[s]{0,1}|ftp[s]{0,1}|file)\:\/\/([^\s\<\>]+))/ims', ' <a href="$2">$2</a>', $strText);
 }
 
 /**
