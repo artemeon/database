@@ -147,30 +147,13 @@ class Exception extends \Exception
             $objMessage = new MessagingMessage();
             $objMessage->setStrBody($strMailtext);
             $objMessage->setObjMessageProvider(new MessageproviderExceptions());
-            $objMessageHandler->sendMessageObject($objMessage, new UserGroup(SystemSetting::getConfigValue("_admins_group_id_")));
+            $objMessageHandler->sendMessageObject($objMessage, Objectfactory::getInstance()->getObject(SystemSetting::getConfigValue("_admins_group_id_")));
         }
 
 
         //Handle  errors.
         $strLogMessage = basename($this->getFile()).":".$this->getLine()." -- ".$this->getMessage();
         Logger::getInstance()->error($strLogMessage);
-
-        //fatal errors are displayed in every case
-        if ($this->intDebuglevel >= 1 || $this->intErrorlevel == Exception::$level_FATALERROR) {
-            print self::renderException($this);
-
-            //Execution has to be stopped here!
-            if (ResponseObject::getInstance()->getStrStatusCode() == "" || ResponseObject::getInstance()->getStrStatusCode() == HttpStatuscodes::SC_OK) {
-                ResponseObject::getInstance()->setStrStatusCode(HttpStatuscodes::SC_INTERNAL_SERVER_ERROR);
-            }
-
-        }
-
-        if ($this->intErrorlevel == Exception::$level_FATALERROR) {
-            ResponseObject::getInstance()->sendHeaders();
-            die();
-        }
-
     }
 
     /**
@@ -186,16 +169,15 @@ class Exception extends \Exception
             $strErrormessage = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
             $strErrormessage .= "<error>".xmlSafeString($objException->getMessage())."</error>";
         } else {
-            $strErrormessage = "<html><head></head><body><div style=\"border: 1px solid red; padding: 5px; margin: 20px; font-family: arial,verdana,sans-serif; font-size: 12px;  \">\n";
-            $strErrormessage .= "<div style=\"background-color: #cccccc; color: #000000; font-weight: bold; \">An error occurred:</div>\n";
-            $strErrormessage .= "<pre>".(htmlspecialchars($objException->getMessage(), ENT_QUOTES, "UTF-8", false))."</pre><br />";
+            $strErrormessage = "<div class=\"alert alert-danger\" role=\"alert\">\n";
+            $strErrormessage .= "<p>An error occurred:<br><b>".(htmlspecialchars($objException->getMessage(), ENT_QUOTES, "UTF-8", false))."</b></p>";
 
             if ($objException->intErrorlevel == Exception::$level_FATALERROR || Session::getInstance()->isSuperAdmin()) {
-                $strErrormessage .= "<pre>Stacktrace:\n".(htmlspecialchars($objException->getTraceAsString(), ENT_QUOTES, "UTF-8", false))."</pre><br />";
+                $strErrormessage .= "<br><p><pre style='font-size:12px;'>Stacktrace:\n".(htmlspecialchars($objException->getTraceAsString(), ENT_QUOTES, "UTF-8", false))."</pre></p>";
             }
 
-            $strErrormessage .= "Please contact the system admin";
-            $strErrormessage .= "</div></body></html>";
+            $strErrormessage .= "<br><p>Please contact the system admin</p>";
+            $strErrormessage .= "</div>";
         }
 
         return $strErrormessage;
@@ -217,6 +199,11 @@ class Exception extends \Exception
         }
         $objException->processException();
         ResponseObject::getInstance()->sendHeaders();
+
+        if ($objException->getErrorlevel() == Exception::$level_FATALERROR) {
+            ResponseObject::getInstance()->sendHeaders();
+            die();
+        }
     }
 
     /**

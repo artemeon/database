@@ -321,4 +321,21 @@ class StringUtil
 
         return htmlspecialchars($strJson, ENT_QUOTES | ENT_HTML401);
     }
+
+    /**
+     * Builds an associative array out of an (urlencoded) param string
+     * @param $strParams
+     * @return array
+     */
+    public static function parseUrlString($strParams)
+    {
+        $arrParams = [];
+
+        foreach (explode("&", $strParams) as $strOneVal) {
+            $arrTemp = [];
+            parse_str($strOneVal, $arrTemp);
+            $arrParams = array_merge_recursive($arrParams, $arrTemp);
+        }
+        return $arrParams;
+    }
 }

@@ -7,6 +7,7 @@
 namespace Kajona\System\System\Messageproviders;
 
 use Kajona\System\System\Carrier;
+use Kajona\System\System\Objectfactory;
 use Kajona\System\System\SystemSetting;
 use Kajona\System\System\UserGroup;
 
@@ -61,7 +62,7 @@ class MessageproviderExceptions implements MessageproviderExtendedInterface {
      * @since 4.5
      */
     public function isVisibleInConfigView() {
-        $objAdminGroup = new UserGroup(SystemSetting::getConfigValue("_admins_group_id_"));
+        $objAdminGroup = Objectfactory::getInstance()->getObject(SystemSetting::getConfigValue("_admins_group_id_"));
         return in_array(Carrier::getInstance()->getObjSession()->getUserID(), $objAdminGroup->getObjSourceGroup()->getUserIdsForGroup());
     }
 

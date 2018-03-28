@@ -181,7 +181,10 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
             if (count(Database::getInstance()->getTables()) == 0) {
                 return array();
             }
-            self::$arrModules = parent::getObjectListFiltered();
+            /** @var SystemModule $objOneModule */
+            foreach (parent::getObjectListFiltered() as $objOneModule) {
+                self::$arrModules[$objOneModule->getStrName()] = $objOneModule;
+            }
         }
 
         if ($intStart === null || $intEnd === null) {
@@ -237,14 +240,15 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
      */
     public static function getModuleByName($strName, $bitIgnoreStatus = false)
     {
-        foreach (self::getAllModules() as $objOneModule) {
-            if ($objOneModule->getStrName() == $strName) {
-                if (!$bitIgnoreStatus && $objOneModule->getIntRecordStatus() == 0) {
-                    return null;
-                }
-
-                return $objOneModule;
+        $arrModules = self::getAllModules();
+        if (isset($arrModules[$strName])) {
+            /** @var SystemModule $objOneModule */
+            $objOneModule = $arrModules[$strName];
+            if (!$bitIgnoreStatus && $objOneModule->getIntRecordStatus() == 0) {
+                return null;
             }
+
+            return $objOneModule;
         }
 
         return null;

@@ -166,9 +166,13 @@ class DbPostgres extends DbBase
             }
         }
 
-
-        $strQuery = "INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
+        if (empty($arrKeyValuePairs)) {
+            $strQuery = "INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
+                        ON CONFLICT ON CONSTRAINT "._dbprefix_.$strTable."_pkey DO NOTHING";
+        } else {
+            $strQuery = "INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
                         ON CONFLICT ON CONSTRAINT "._dbprefix_.$strTable."_pkey DO UPDATE SET ".implode(", ", $arrKeyValuePairs);
+        }
 
         return $this->_pQuery($strQuery, $arrValues);
     }
