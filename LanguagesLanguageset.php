@@ -85,7 +85,7 @@ class LanguagesLanguageset extends Model implements ModelInterface {
             $arrValues[] = array($this->getSystemid(), $strLanguage, $strSystemid);
         }
 
-        return $this->objDB->multiInsert("languages_languageset", array("languageset_id", "languageset_language", "languageset_systemid"), $arrValues);
+        return $this->objDB->multiInsert("agp_languages_languageset", array("languageset_id", "languageset_language", "languageset_systemid"), $arrValues);
     }
 
     /**
