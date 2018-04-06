@@ -12,7 +12,7 @@ namespace Kajona\System\System;
  * @author christoph.kappestein@artemeon.de
  * @since 7.0
  * @package module_messaging
- * @targetTable messages_queue.queue_id
+ * @targetTable agp_messages_queue.queue_id
  * @module messaging
  * @moduleId _messaging_module_id_
  */
@@ -20,14 +20,14 @@ class MessagingQueue extends Model implements ModelInterface
 {
     /**
      * @var string
-     * @tableColumn messages_queue.queue_recipient
+     * @tableColumn agp_messages_queue.queue_recipient
      * @tableColumnDatatype char20
      */
     private $strRecipient = "";
 
     /**
      * @var string
-     * @tableColumn messages_queue.queue_message
+     * @tableColumn agp_messages_queue.queue_message
      * @tableColumnDatatype text
      * @blockEscaping
      */
@@ -35,7 +35,7 @@ class MessagingQueue extends Model implements ModelInterface
 
     /**
      * @var Date
-     * @tableColumn messages_queue.queue_send_date
+     * @tableColumn agp_messages_queue.queue_send_date
      * @tableColumnDatatype long
      */
     private $objSendDate;
