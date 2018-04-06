@@ -26,7 +26,7 @@ class ChangelogProviderSettings implements ChangelogProviderInterface
      */
     public function getTargetTable()
     {
-        return "changelog_setting";
+        return "agp_changelog_setting";
     }
 
     /**

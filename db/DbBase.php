@@ -203,7 +203,7 @@ abstract class DbBase implements DbDriverInterface
             }
         }
 
-        $arrRow = $this->getPArraySection("SELECT COUNT(*) AS cnt FROM ".$this->encloseTableName(_dbprefix_.$strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares), $arrPrimaryValues, 0, 1);
+        $arrRow = $this->getPArraySection("SELECT COUNT(*) AS cnt FROM ".$this->encloseTableName($strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares), $arrPrimaryValues, 0, 1);
 
         if ($arrRow === false) {
             return false;
@@ -212,10 +212,10 @@ abstract class DbBase implements DbDriverInterface
         $arrSingleRow = isset($arrRow[0]) ? $arrRow[0] : null;
 
         if ($arrSingleRow === null || $arrSingleRow["cnt"] == "0") {
-            $strQuery = "INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")";
+            $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")";
             return $this->_pQuery($strQuery, $arrValues);
         } else {
-            $strQuery = "UPDATE ".$this->encloseTableName(_dbprefix_.$strTable)." SET ".implode(", ", $arrUpdateKeyValue)." WHERE ".implode(" AND ", $arrUpdateKeyValueKey);
+            $strQuery = "UPDATE ".$this->encloseTableName($strTable)." SET ".implode(", ", $arrUpdateKeyValue)." WHERE ".implode(" AND ", $arrUpdateKeyValueKey);
             return $this->_pQuery($strQuery, array_merge($arrUpdateParams, $arrUpdateKeyParams));
         }
     }

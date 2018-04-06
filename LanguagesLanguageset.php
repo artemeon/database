@@ -38,7 +38,7 @@ class LanguagesLanguageset extends Model implements ModelInterface {
      * @return void
      */
     protected function initObjectInternal() {
-        $strQuery = "SELECT * FROM " . _dbprefix_ . "languages_languageset WHERE languageset_id = ?";
+        $strQuery = "SELECT * FROM agp_languages_languageset WHERE languageset_id = ?";
         $arrRow = $this->objDB->getPArray($strQuery, array($this->getSystemid()));
 
         if(count($arrRow) > 0) {
@@ -74,7 +74,7 @@ class LanguagesLanguageset extends Model implements ModelInterface {
         }
         else {
             //remove old records
-            $strQuery = "DELETE FROM " . _dbprefix_ . "languages_languageset WHERE languageset_id = ?";
+            $strQuery = "DELETE FROM agp_languages_languageset WHERE languageset_id = ?";
             $this->objDB->_pQuery($strQuery, array($this->getSystemid()));
         }
 
@@ -177,7 +177,7 @@ class LanguagesLanguageset extends Model implements ModelInterface {
      */
     public static function getLanguagesetForSystemid($strSystemid) {
         $strQuery = "SELECT languageset_id
-                       FROM " . _dbprefix_ . "languages_languageset
+                       FROM agp_languages_languageset
                       WHERE languageset_systemid = ?";
 
         $arrRow = Carrier::getInstance()->getObjDB()->getPRow($strQuery, array($strSystemid));

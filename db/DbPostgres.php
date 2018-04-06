@@ -167,11 +167,11 @@ class DbPostgres extends DbBase
         }
 
         if (empty($arrKeyValuePairs)) {
-            $strQuery = "INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
-                        ON CONFLICT ON CONSTRAINT "._dbprefix_.$strTable."_pkey DO NOTHING";
+            $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
+                        ON CONFLICT ON CONSTRAINT ".$strTable."_pkey DO NOTHING";
         } else {
-            $strQuery = "INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
-                        ON CONFLICT ON CONSTRAINT "._dbprefix_.$strTable."_pkey DO UPDATE SET ".implode(", ", $arrKeyValuePairs);
+            $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
+                        ON CONFLICT ON CONSTRAINT ".$strTable."_pkey DO UPDATE SET ".implode(", ", $arrKeyValuePairs);
         }
 
         return $this->_pQuery($strQuery, $arrValues);
@@ -196,16 +196,7 @@ class DbPostgres extends DbBase
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", array());
-
-        $arrReturn = array();
-        foreach ($arrTemp as $arrOneRow) {
-            if (empty(_dbprefix_) || StringUtil::indexOf($arrOneRow["name"], _dbprefix_) !== false) {
-                $arrReturn[] = $arrOneRow;
-            }
-        }
-
-        return $arrReturn;
+        return $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", array());
     }
 
     /**

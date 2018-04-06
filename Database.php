@@ -175,7 +175,7 @@ class Database
         $intSetsPerInsert = floor(970 / count($arrColumns));
 
         foreach (array_chunk($arrValueSets, $intSetsPerInsert) as $arrSingleValueSet) {
-            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert(_dbprefix_.$strTable, $arrColumns, $arrSingleValueSet, $this);
+            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this);
         }
 
         return $bitReturn;
@@ -628,25 +628,11 @@ class Database
             $this->intNumber++;
             $arrTemp = $this->objDbDriver->getTables();
 
-            //Filtering tables not used by this project, if dbprefix was given
-            if (_dbprefix_ != "") {
-                foreach ($arrTemp as $arrTable) {
-                    $intPos = StringUtil::indexOf($arrTable["name"], _dbprefix_, false);
-                    if ($intPos !== false && $intPos == 0) {
-                        if ($bitAll) {
-                            $arrReturn[] = $arrTable;
-                        } else {
-                            $arrReturn[] = $arrTable["name"];
-                        }
-                    }
-                }
-            } else {
-                foreach ($arrTemp as $arrTable) {
-                    if ($bitAll) {
-                        $arrReturn[] = $arrTable;
-                    } else {
-                        $arrReturn[] = $arrTable["name"];
-                    }
+            foreach ($arrTemp as $arrTable) {
+                if ($bitAll) {
+                    $arrReturn[] = $arrTable;
+                } else {
+                    $arrReturn[] = $arrTable["name"];
                 }
             }
 
@@ -731,13 +717,13 @@ class Database
         // check whether table already exists
         $arrTables = $this->objDbDriver->getTables();
         foreach ($arrTables as $arrTable) {
-            if ($arrTable["name"] == _dbprefix_.$strName) {
+            if ($arrTable["name"] == $strName) {
                 return true;
             }
         }
 
         // create table
-        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $bitTxSafe);
+        $bitReturn = $this->objDbDriver->createTable($strName, $arrFields, $arrKeys, $bitTxSafe);
         if (!$bitReturn) {
             $this->getError("", array());
         }
@@ -774,7 +760,7 @@ class Database
             $this->dbconnect();
         }
 
-        $bitReturn = $this->objDbDriver->createIndex(_dbprefix_.$strTable, $strName, $arrColumns, $bitUnique);
+        $bitReturn = $this->objDbDriver->createIndex($strTable, $strName, $arrColumns, $bitUnique);
         if (!$bitReturn) {
             $this->getError("", array());
         }
@@ -795,7 +781,7 @@ class Database
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->hasIndex(_dbprefix_.$strTable, $strName);
+        return $this->objDbDriver->hasIndex($strTable, $strName);
     }
 
     /**
@@ -813,7 +799,7 @@ class Database
         }
 
         $this->flushTablesCache();
-        return $this->objDbDriver->renameTable(_dbprefix_.$strOldName, _dbprefix_.$strNewName);
+        return $this->objDbDriver->renameTable($strOldName, $strNewName);
     }
 
     /**
@@ -832,7 +818,7 @@ class Database
             $this->dbconnect();
         }
         $this->flushTablesCache();
-        return $this->objDbDriver->changeColumn(_dbprefix_.$strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+        return $this->objDbDriver->changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
     }
 
     /**
@@ -853,7 +839,7 @@ class Database
         }
 
         $this->flushTablesCache();
-        return $this->objDbDriver->addColumn(_dbprefix_.$strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
+        return $this->objDbDriver->addColumn($strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
     }
 
     /**
@@ -871,7 +857,7 @@ class Database
         }
 
         $this->flushTablesCache();
-        return $this->objDbDriver->removeColumn(_dbprefix_.$strTable, $strColumn);
+        return $this->objDbDriver->removeColumn($strTable, $strColumn);
     }
 
     /**
@@ -883,7 +869,7 @@ class Database
      */
     public function hasColumn($strTable, $strColumn)
     {
-        $arrColumns = $this->getColumnsOfTable(_dbprefix_.$strTable);
+        $arrColumns = $this->getColumnsOfTable($strTable);
         foreach ($arrColumns as $arrColumn) {
             if (strtolower($arrColumn["columnName"]) == strtolower($strColumn)) {
                 return true;

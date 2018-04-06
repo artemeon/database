@@ -140,7 +140,7 @@ class Cache
 
         //search in the database to find a matching entry
         $strQuery = "SELECT *
-                       FROM "._dbprefix_."cache
+                       FROM agp_cache
                       WHERE cache_source = ?
                         AND cache_hash1 = ?
                         ".($strHash2 != null ? " AND cache_hash2 = ? " : "")."
@@ -238,7 +238,7 @@ class Cache
         if ($this->strCacheId == null) {
             $this->strCacheId = generateSystemid();
             //insert
-            $strQuery = "INSERT INTO "._dbprefix_."cache
+            $strQuery = "INSERT INTO agp_cache
                        (cache_id, cache_source, cache_hash1, cache_hash2, cache_language, cache_content, cache_leasetime, cache_hits) VALUES
                        (   ?, ?, ?, ?, ?, ?, ?, 1) ";
             $arrParams = array(
@@ -254,7 +254,7 @@ class Cache
         }
         else {
             //update
-            $strQuery = "UPDATE "._dbprefix_."cache
+            $strQuery = "UPDATE agp_cache
                             SET cache_source = ?,
                                 cache_hash1 = ?,
                                 cache_hash2 = ?,
@@ -295,7 +295,7 @@ class Cache
         if(SystemModule::getModuleByName("system") == null) {
             return;
         }
-        $strQuery = "DELETE FROM "._dbprefix_."cache ";
+        $strQuery = "DELETE FROM agp_cache ";
 
         $arrWhere = array();
         $arrParams = array();
@@ -329,7 +329,7 @@ class Cache
      */
     public static function getCacheSources()
     {
-        $strQuery = "SELECT DISTINCT cache_source FROM  "._dbprefix_."cache";
+        $strQuery = "SELECT DISTINCT cache_source FROM  agp_cache";
 
         $arrReturn = array();
         $arrSourceRows = Carrier::getInstance()->getObjDB()->getPArray($strQuery, array());
@@ -351,7 +351,7 @@ class Cache
     public static function cleanCache()
     {
         if (Cache::$bitCleanupDone === false) {
-            $strQuery = "DELETE FROM "._dbprefix_."cache WHERE cache_leasetime < ?";
+            $strQuery = "DELETE FROM agp_cache WHERE cache_leasetime < ?";
             Cache::$bitCleanupDone = true;
             return Carrier::getInstance()->getObjDB()->_pQuery($strQuery, array(time()));
         }
@@ -375,7 +375,7 @@ class Cache
     public static function fillInternalCache($strSourceName, $strHash1, $strHash2 = null, $strLanguage = null)
     {
         $strQuery = "SELECT *
-                       FROM "._dbprefix_."cache
+                       FROM agp_cache
                       WHERE cache_source = ?
                         AND cache_hash1 = ?
                         ".($strHash2 != null ? " AND cache_hash2 = ? " : "")."
@@ -409,7 +409,7 @@ class Cache
     {
         //search in the database to find a matching entry
         $strQuery = "SELECT *
-                       FROM "._dbprefix_."cache
+                       FROM agp_cache
                        ORDER BY cache_leasetime DESC";
 
         $arrCaches = Carrier::getInstance()->getObjDB()->getPArray($strQuery, array(), $intStart, $intEnd);
@@ -444,7 +444,7 @@ class Cache
     public static function getAllCacheEntriesCount()
     {
         //search in the database to find a matching entry
-        $strQuery = "SELECT COUNT(*) AS cnt FROM "._dbprefix_."cache";
+        $strQuery = "SELECT COUNT(*) AS cnt FROM agp_cache";
 
         $arrCaches = Carrier::getInstance()->getObjDB()->getPRow($strQuery, array());
         return $arrCaches["cnt"];
@@ -452,7 +452,7 @@ class Cache
 
     public function increaseCacheEntryHits()
     {
-        $strQuery = "UPDATE "._dbprefix_."cache SET cache_hits = cache_hits+1 WHERE cache_id=? ";
+        $strQuery = "UPDATE agp_cache SET cache_hits = cache_hits+1 WHERE cache_id=? ";
         return Carrier::getInstance()->getObjDB()->_pQuery($strQuery, array($this->strCacheId));
     }
 

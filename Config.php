@@ -81,7 +81,7 @@ class Config
      */
     private function setUpConstants()
     {
-        define("_dbprefix_", $this->getConfig("dbprefix"));
+        define("_dbprefix_", "agp_");
         define("_projectpath_", $this->getConfig("dirproject"));
         define("_filespath_", $this->getConfig("dirfiles"));
         define("_langpath_", $this->getConfig("dirlang"));
@@ -263,7 +263,7 @@ class Config
     public function loadConfigsDatabase(Database $objDB)
     {
 //        if(count($objDB->getTables()) > 0) {
-//            $strQuery = "SELECT * FROM " . _dbprefix_ . "system_config ORDER BY system_config_module ASC";
+//            $strQuery = "SELECT * FROM agp_system_config ORDER BY system_config_module ASC";
 //            $arrConfigs = $objDB->getPArray($strQuery, array());
 //            foreach($arrConfigs as $arrOneConfig) {
 //                if(!defined($arrOneConfig["system_config_name"])) {

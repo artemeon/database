@@ -102,9 +102,9 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
 
         if ((self::$arrModuleData === null || !$bitCache) && count(Carrier::getInstance()->getObjDB()->getTables()) > 0) {
             $strQuery = "SELECT *
-                           FROM "._dbprefix_."system_module,
-                                "._dbprefix_."system
-                      LEFT JOIN "._dbprefix_."system_date
+                           FROM agp_system_module,
+                                agp_system
+                      LEFT JOIN agp_system_date
                              ON system_id = system_date_id
                           WHERE system_id = module_id
                        ORDER BY system_sort ASC";
@@ -307,8 +307,8 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
 
         //Loading all Modules
         $strQuery = "SELECT module_id, module_name
-		               FROM "._dbprefix_."system_module,
-		                    "._dbprefix_."system
+		               FROM agp_system_module,
+		                    agp_system
 		              WHERE module_navigation = 1
 		                AND system_status = 1
 		                AND module_id = system_id
