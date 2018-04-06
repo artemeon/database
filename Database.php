@@ -302,14 +302,14 @@ class Database
             trigger_error(E_USER_DEPRECATED, "The intNr parameter is deprecated");
         }
 
-        $arrTemp = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache, $arrEscapes);
-        if (count($arrTemp) > 0) {
+        $arrTemp = $this->getPArray($strQuery, $arrParams, null, null, $bitCache, $arrEscapes);
+
+        if (isset($arrTemp[$intNr])) {
             return $arrTemp[$intNr];
         } else {
-            return array();
+            return [];
         }
     }
-
 
     /**
      * Method to get an array of rows for a given query from the database
