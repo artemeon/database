@@ -86,7 +86,6 @@ class DbImport
     private function importSingleTableFile(string $strFile): bool
     {
         $strTableName = StringUtil::substring(basename($strFile), 0, -4);
-        $strTableName = StringUtil::replace(_dbprefix_, "", $strTableName);
 
         $objFileystem = new Filesystem();
         $objFileystem->openFilePointer($strFile, 'r');
@@ -99,7 +98,7 @@ class DbImport
         }
 
 
-        $this->objDB->_pQuery("DELETE FROM "._dbprefix_.$strTableName." WHERE 1=1", []);
+        $this->objDB->_pQuery("DELETE FROM ".$strTableName." WHERE 1=1", []);
 
 
         $arrRows = [];
