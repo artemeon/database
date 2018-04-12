@@ -817,7 +817,10 @@ class Database
     }
 
     /**
-     * Changes a single column, e.g. the datatype
+     * Changes a single column, e.g. the datatype. Note in case you only change the column type you should be aware that
+     * not all database engines support changing the type freely. Most engines disallow changing the type in case you
+     * would loose data i.e. on oracle it is not possible to change from longtext to char(10) since then the db engine
+     * would may need to truncate some rows
      *
      * @param $strTable
      * @param $strOldColumnName
