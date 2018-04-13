@@ -302,14 +302,14 @@ class Database
             trigger_error(E_USER_DEPRECATED, "The intNr parameter is deprecated");
         }
 
-        $arrTemp = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache, $arrEscapes);
-        if (count($arrTemp) > 0) {
+        $arrTemp = $this->getPArray($strQuery, $arrParams, null, null, $bitCache, $arrEscapes);
+
+        if (isset($arrTemp[$intNr])) {
             return $arrTemp[$intNr];
         } else {
-            return array();
+            return [];
         }
     }
-
 
     /**
      * Method to get an array of rows for a given query from the database
@@ -817,7 +817,10 @@ class Database
     }
 
     /**
-     * Changes a single column, e.g. the datatype
+     * Changes a single column, e.g. the datatype. Note in case you only change the column type you should be aware that
+     * not all database engines support changing the type freely. Most engines disallow changing the type in case you
+     * would loose data i.e. on oracle it is not possible to change from longtext to char(10) since then the db engine
+     * would may need to truncate some rows
      *
      * @param $strTable
      * @param $strOldColumnName
