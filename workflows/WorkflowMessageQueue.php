@@ -109,7 +109,7 @@ class WorkflowMessageQueue implements WorkflowsHandlerInterface
         $objDate->setIntHour($this->intSendHour);
         $objDate->setIntMin($this->intSendMin);
         $objDate->setIntSec(0);
-        $this->objWorkflow->setObjTriggerdate($objDate);
+        $this->objWorkflow->setTriggerdate($objDate);
     }
 
     public function getUserInterface()
