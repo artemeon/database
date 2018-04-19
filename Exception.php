@@ -40,6 +40,7 @@ class Exception extends \Exception
 
     private $intErrorlevel;
     private $intDebuglevel;
+    private $strAdditionalTrace = "";
 
     /**
      * @param string $strError
@@ -98,6 +99,7 @@ class Exception extends \Exception
             $strMailtext .= "File and line number the error was thrown:\n";
             $strMailtext .= "\t".basename($this->getFile())." in line ".$this->getLine()."\n\n";
             $strMailtext .= "Callstack / Backtrace:\n\n";
+            $strMailtext .= $this->getStrAdditionalTrace();
             $strMailtext .= $this->getTraceAsString();
             $strMailtext .= "\n\n";
             $strMailtext .= "User: ".Carrier::getInstance()->getObjSession()->getUserID()." (".Carrier::getInstance()->getObjSession()->getUsername().")\n";
@@ -173,7 +175,7 @@ class Exception extends \Exception
             $strErrormessage .= "<p>An error occurred:<br><b>".(htmlspecialchars($objException->getMessage(), ENT_QUOTES, "UTF-8", false))."</b></p>";
 
             if ($objException->intErrorlevel == Exception::$level_FATALERROR || Session::getInstance()->isSuperAdmin()) {
-                $strErrormessage .= "<br><p><pre style='font-size:12px;'>Stacktrace:\n".(htmlspecialchars($objException->getTraceAsString(), ENT_QUOTES, "UTF-8", false))."</pre></p>";
+                $strErrormessage .= "<br><p><pre style='font-size:12px;'>Stacktrace:\n".(htmlspecialchars($objException->getStrAdditionalTrace().$objException->getTraceAsString(), ENT_QUOTES, "UTF-8", false))."</pre></p>";
             }
 
             $strErrormessage .= "<br><p>Please contact the system admin</p>";
@@ -182,6 +184,8 @@ class Exception extends \Exception
 
         return $strErrormessage;
     }
+
+
 
 
     /**
@@ -241,6 +245,23 @@ class Exception extends \Exception
     {
         return $this->intDebuglevel;
     }
+
+    /**
+     * @return string
+     */
+    public function getStrAdditionalTrace(): string
+    {
+        return $this->strAdditionalTrace;
+    }
+
+    /**
+     * @param string $strAdditionalTrace
+     */
+    public function setStrAdditionalTrace(string $strAdditionalTrace)
+    {
+        $this->strAdditionalTrace = $strAdditionalTrace;
+    }
+
 
 
 }
