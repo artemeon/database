@@ -10,6 +10,7 @@ namespace Kajona\System\System;
 require_once __DIR__."/PharModule.php";
 require_once __DIR__."/BootstrapCache.php";
 
+use Kajona\Packagemanager\System\PackagemanagerMetadata;
 use ReflectionClass;
 
 /**
@@ -77,7 +78,7 @@ class Classloader
     {
         $this->scanModules();
         $this->indexAvailableCodefiles();
-        $this->bootstrapIncludeModuleIds();
+//        $this->bootstrapIncludeModuleIds();
     }
 
 
@@ -516,41 +517,36 @@ class Classloader
         return null;
     }
 
-
+    /**
+     * Includes the module-ids available and registers them as defined constants
+     */
     public function bootstrapIncludeModuleIds()
     {
-        $arrModuleIds = BootstrapCache::getInstance()->getCacheContent(BootstrapCache::CACHE_MODULEIDS);
 
-        if (!empty($arrModuleIds)) {
-            foreach ($arrModuleIds as $strConstant => $strValue) {
-                define($strConstant, $strValue);
+
+        $ids = BootstrapCache::getInstance()->getCacheContent(BootstrapCache::CACHE_MODULEIDS);
+
+        if (!empty($ids)) {
+            foreach ($ids as $name => $val) {
+                define($name, $val);
             }
+            return;
         } else {
-            $arrExistingConstants = get_defined_constants();
 
-            //fetch all phars and registered modules
-            foreach (BootstrapCache::getInstance()->getCacheContent(BootstrapCache::CACHE_MODULES) as $strPath => $strOneModule) {
+            $ids = [];
+            foreach ($this->getArrModules() as $modulePath => $moduleName) {
+                $metadata = new PackagemanagerMetadata();
+                $metadata->autoInit($modulePath);
 
-                if (!in_array($strOneModule, BootstrapCache::getInstance()->getCacheContent(BootstrapCache::CACHE_PHARMODULES))) {
-                    if (is_dir(_realpath_.$strPath."/system/") && is_dir(_realpath_.$strPath."/system/config/")) {
-                        foreach (scandir(_realpath_.$strPath."/system/config/") as $strModuleEntry) {
-                            if (preg_match("/module\_([a-z0-9\_])+\_id\.php/", $strModuleEntry)) {
-                                @include_once _realpath_.$strPath."/system/config/".$strModuleEntry;
-                            }
-                        }
-                    }
+                foreach ($metadata->getConstants() as $name => $val) {
+                    define($name, (int)$val);
+                    $ids[$name] = (int)$val;
                 }
             }
 
-            foreach (BootstrapCache::getInstance()->getCacheContent(BootstrapCache::CACHE_PHARMODULES) as $strPath => $strOneModule) {
-                $objPhar = new PharModule($strPath);
-                $objPhar->loadModuleIds();
-            }
-
-            $arrModuleIds = array_diff_key(get_defined_constants(), $arrExistingConstants);
-
-            BootstrapCache::getInstance()->updateCache(BootstrapCache::CACHE_MODULEIDS, $arrModuleIds);
+            BootstrapCache::getInstance()->updateCache(BootstrapCache::CACHE_MODULEIDS, $ids);
         }
+
     }
 
 
