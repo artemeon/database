@@ -290,12 +290,8 @@ class Carrier
      */
     public function boot()
     {
-        // we include the system autoloader so that we can load all core dependencies
-        require_once __DIR__."/../vendor/autoload.php";
-
         $this->objContainer = new \Pimple\Container();
     }
-
 }
 
 //startup the system....
