@@ -35,7 +35,7 @@ class SysteminfoDb implements SysteminfoInterface
         $objLang = Carrier::getInstance()->getObjLang();
         $arrReturn = array();
 
-        $arrTables = Carrier::getInstance()->getObjDB()->getTables(true);
+        $arrTables = Carrier::getInstance()->getObjDB()->getTables();
         $arrReturn[] = array($objLang->getLang("datenbanktreiber", "system"), Config::getInstance()->getConfig("dbdriver"));
         $arrReturn[] = array($objLang->getLang("datenbankserver", "system"),  Config::getInstance()->getConfig("dbhost"));
         $arrReturn[] = array($objLang->getLang("db", "system"),  Config::getInstance()->getConfig("dbname"));

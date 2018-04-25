@@ -30,7 +30,7 @@ use Kajona\System\System\Db\DbDriverInterface;
 class Database
 {
     private $arrQueryCache = array(); //Array to cache queries
-    private $arrTablesCache = array();
+    private $arrTablesCache = null;
     private $intNumber = 0; //Number of queries send to database
     private $intNumberCache = 0; //Number of queries returned from cache
 
@@ -605,23 +605,17 @@ class Database
 
     /**
      * Returns all tables used by the project
-     *
-     * @param bool $bitAll just the name or with additional information
-     *
      * @return array
      */
-    public function getTables($bitAll = false)
+    public function getTables()
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
 
-        $arrReturn = array();
         if ($this->objDbDriver != null) {
-            if ($bitAll && isset($this->arrTablesCache["all"])) {
-                return $this->arrTablesCache["all"];
-            } elseif (isset($this->arrTablesCache["filtered"])) {
-                return $this->arrTablesCache["filtered"];
+            if ($this->arrTablesCache != null) {
+                return $this->arrTablesCache;
             }
 
             //increase global counter
@@ -629,22 +623,13 @@ class Database
             $arrTemp = $this->objDbDriver->getTables();
 
             foreach ($arrTemp as $arrTable) {
-                if ($bitAll) {
-                    $arrReturn[] = $arrTable;
-                } else {
-                    $arrReturn[] = $arrTable["name"];
+                if (StringUtil::startsWith($arrTable["name"], "agp_")) {
+                    $this->arrTablesCache[] = $arrTable["name"];
                 }
-            }
-
-            if ($bitAll) {
-                $this->arrTablesCache["all"] = $arrReturn;
-            } else {
-                $this->arrTablesCache["filtered"] = $arrReturn;
             }
         }
 
-
-        return $arrReturn;
+        return $this->arrTablesCache;
     }
 
     /**
@@ -1194,7 +1179,7 @@ class Database
      */
     public function flushTablesCache()
     {
-        $this->arrTablesCache = array();
+        $this->arrTablesCache = null;
     }
 
     /**
