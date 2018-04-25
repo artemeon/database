@@ -17,7 +17,7 @@ namespace Kajona\System\System;
  *
  * @module system
  * @moduleId _system_modul_id_
- * @targetTable system_config.system_config_id
+ * @targetTable agp_system_config.system_config_id
  *
  * @blockFromAutosave
  *
@@ -72,7 +72,7 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
 
     /**
      * @var int
-     * @tableColumn system_config.system_config_module
+     * @tableColumn agp_system_config.system_config_module
      * @tableColumnDatatype int
      * @listOrder
      */
@@ -81,7 +81,7 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
     /**
      * @var string
      * @versionable
-     * @tableColumn system_config.system_config_name
+     * @tableColumn agp_system_config.system_config_name
      * @tableColumnDatatype char254
      * @listOrder
      */
@@ -90,14 +90,14 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
     /**
      * @var string
      * @versionable
-     * @tableColumn system_config.system_config_value
+     * @tableColumn agp_system_config.system_config_value
      * @tableColumnDatatype char254
      */
     private $strValue = "";
 
     /**
      * @var int
-     * @tableColumn system_config.system_config_type
+     * @tableColumn agp_system_config.system_config_type
      * @tableColumnDatatype int
      */
     private $intType = 0;

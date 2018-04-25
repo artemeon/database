@@ -282,7 +282,7 @@ class DbSqlite3 extends DbBase
             $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
         }
 
-        $strQuery = "INSERT OR REPLACE INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")";
+        $strQuery = "INSERT OR REPLACE INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")";
         return $this->_pQuery($strQuery, $arrValues);
     }
 

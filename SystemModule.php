@@ -16,7 +16,7 @@ use Kajona\System\Admin\AdminInterface;
  * Model for a single system-module
  *
  * @package module_system
- * @targetTable system_module.module_id
+ * @targetTable agp_system_module.module_id
  * @sortManager Kajona\System\System\CommonSortmanager
  *
  * @module system
@@ -29,49 +29,49 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
 
     /**
      * @var string
-     * @tableColumn system_module.module_name
+     * @tableColumn agp_system_module.module_name
      * @tableColumnDatatype char254
      */
     private $strName = "";
 
     /**
      * @var string
-     * @tableColumn system_module.module_filenameadmin
+     * @tableColumn agp_system_module.module_filenameadmin
      * @tableColumnDatatype char254
      */
     private $strNameAdmin = "";
 
     /**
      * @var string
-     * @tableColumn system_module.module_version
+     * @tableColumn agp_system_module.module_version
      * @tableColumnDatatype char254
      */
     private $strVersion = "";
 
     /**
      * @var int
-     * @tableColumn system_module.module_date
+     * @tableColumn agp_system_module.module_date
      * @tableColumnDatatype int
      */
     private $intDate = "";
 
     /**
      * @var int
-     * @tableColumn system_module.module_navigation
+     * @tableColumn agp_system_module.module_navigation
      * @tableColumnDatatype int
      */
     private $intNavigation = "";
 
     /**
      * @var int
-     * @tableColumn system_module.module_nr
+     * @tableColumn agp_system_module.module_nr
      * @tableColumnDatatype int
      */
     private $intNr = -1;
 
     /**
      * @var string
-     * @tableColumn system_module.module_aspect
+     * @tableColumn agp_system_module.module_aspect
      * @tableColumnDatatype char254
      */
     private $strAspect = "";
@@ -102,9 +102,9 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
 
         if ((self::$arrModuleData === null || !$bitCache) && count(Carrier::getInstance()->getObjDB()->getTables()) > 0) {
             $strQuery = "SELECT *
-                           FROM "._dbprefix_."system_module,
-                                "._dbprefix_."system
-                      LEFT JOIN "._dbprefix_."system_date
+                           FROM agp_system_module,
+                                agp_system
+                      LEFT JOIN agp_system_date
                              ON system_id = system_date_id
                           WHERE system_id = module_id
                        ORDER BY system_sort ASC";
@@ -307,8 +307,8 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
 
         //Loading all Modules
         $strQuery = "SELECT module_id, module_name
-		               FROM "._dbprefix_."system_module,
-		                    "._dbprefix_."system
+		               FROM agp_system_module,
+		                    agp_system
 		              WHERE module_navigation = 1
 		                AND system_status = 1
 		                AND module_id = system_id

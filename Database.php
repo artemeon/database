@@ -30,7 +30,7 @@ use Kajona\System\System\Db\DbDriverInterface;
 class Database
 {
     private $arrQueryCache = array(); //Array to cache queries
-    private $arrTablesCache = array();
+    private $arrTablesCache = null;
     private $intNumber = 0; //Number of queries send to database
     private $intNumberCache = 0; //Number of queries returned from cache
 
@@ -175,7 +175,7 @@ class Database
         $intSetsPerInsert = floor(970 / count($arrColumns));
 
         foreach (array_chunk($arrValueSets, $intSetsPerInsert) as $arrSingleValueSet) {
-            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert(_dbprefix_.$strTable, $arrColumns, $arrSingleValueSet, $this);
+            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this);
         }
 
         return $bitReturn;
@@ -605,60 +605,31 @@ class Database
 
     /**
      * Returns all tables used by the project
-     *
-     * @param bool $bitAll just the name or with additional information
-     *
      * @return array
      */
-    public function getTables($bitAll = false)
+    public function getTables()
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
 
-        $arrReturn = array();
         if ($this->objDbDriver != null) {
-            if ($bitAll && isset($this->arrTablesCache["all"])) {
-                return $this->arrTablesCache["all"];
-            } elseif (isset($this->arrTablesCache["filtered"])) {
-                return $this->arrTablesCache["filtered"];
+            if ($this->arrTablesCache != null) {
+                return $this->arrTablesCache;
             }
 
             //increase global counter
             $this->intNumber++;
             $arrTemp = $this->objDbDriver->getTables();
 
-            //Filtering tables not used by this project, if dbprefix was given
-            if (_dbprefix_ != "") {
-                foreach ($arrTemp as $arrTable) {
-                    $intPos = StringUtil::indexOf($arrTable["name"], _dbprefix_, false);
-                    if ($intPos !== false && $intPos == 0) {
-                        if ($bitAll) {
-                            $arrReturn[] = $arrTable;
-                        } else {
-                            $arrReturn[] = $arrTable["name"];
-                        }
-                    }
+            foreach ($arrTemp as $arrTable) {
+                if (StringUtil::startsWith($arrTable["name"], "agp_")) {
+                    $this->arrTablesCache[] = $arrTable["name"];
                 }
-            } else {
-                foreach ($arrTemp as $arrTable) {
-                    if ($bitAll) {
-                        $arrReturn[] = $arrTable;
-                    } else {
-                        $arrReturn[] = $arrTable["name"];
-                    }
-                }
-            }
-
-            if ($bitAll) {
-                $this->arrTablesCache["all"] = $arrReturn;
-            } else {
-                $this->arrTablesCache["filtered"] = $arrReturn;
             }
         }
 
-
-        return $arrReturn;
+        return $this->arrTablesCache;
     }
 
     /**
@@ -731,13 +702,13 @@ class Database
         // check whether table already exists
         $arrTables = $this->objDbDriver->getTables();
         foreach ($arrTables as $arrTable) {
-            if ($arrTable["name"] == _dbprefix_.$strName) {
+            if ($arrTable["name"] == $strName) {
                 return true;
             }
         }
 
         // create table
-        $bitReturn = $this->objDbDriver->createTable(_dbprefix_.$strName, $arrFields, $arrKeys, $bitTxSafe);
+        $bitReturn = $this->objDbDriver->createTable($strName, $arrFields, $arrKeys, $bitTxSafe);
         if (!$bitReturn) {
             $this->getError("", array());
         }
@@ -774,7 +745,7 @@ class Database
             $this->dbconnect();
         }
 
-        $bitReturn = $this->objDbDriver->createIndex(_dbprefix_.$strTable, $strName, $arrColumns, $bitUnique);
+        $bitReturn = $this->objDbDriver->createIndex($strTable, $strName, $arrColumns, $bitUnique);
         if (!$bitReturn) {
             $this->getError("", array());
         }
@@ -795,7 +766,7 @@ class Database
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->hasIndex(_dbprefix_.$strTable, $strName);
+        return $this->objDbDriver->hasIndex($strTable, $strName);
     }
 
     /**
@@ -813,7 +784,7 @@ class Database
         }
 
         $this->flushTablesCache();
-        return $this->objDbDriver->renameTable(_dbprefix_.$strOldName, _dbprefix_.$strNewName);
+        return $this->objDbDriver->renameTable($strOldName, $strNewName);
     }
 
     /**
@@ -835,7 +806,7 @@ class Database
             $this->dbconnect();
         }
         $this->flushTablesCache();
-        return $this->objDbDriver->changeColumn(_dbprefix_.$strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+        return $this->objDbDriver->changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
     }
 
     /**
@@ -856,7 +827,7 @@ class Database
         }
 
         $this->flushTablesCache();
-        return $this->objDbDriver->addColumn(_dbprefix_.$strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
+        return $this->objDbDriver->addColumn($strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
     }
 
     /**
@@ -874,7 +845,7 @@ class Database
         }
 
         $this->flushTablesCache();
-        return $this->objDbDriver->removeColumn(_dbprefix_.$strTable, $strColumn);
+        return $this->objDbDriver->removeColumn($strTable, $strColumn);
     }
 
     /**
@@ -886,7 +857,7 @@ class Database
      */
     public function hasColumn($strTable, $strColumn)
     {
-        $arrColumns = $this->getColumnsOfTable(_dbprefix_.$strTable);
+        $arrColumns = $this->getColumnsOfTable($strTable);
         foreach ($arrColumns as $arrColumn) {
             if (strtolower($arrColumn["columnName"]) == strtolower($strColumn)) {
                 return true;
@@ -1208,7 +1179,7 @@ class Database
      */
     public function flushTablesCache()
     {
-        $this->arrTablesCache = array();
+        $this->arrTablesCache = null;
     }
 
     /**

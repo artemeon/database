@@ -191,7 +191,7 @@ class DbMysqli extends DbBase
             $arrKeyValuePairs[] = $this->encloseColumnName($strOneCol)." = ?";
         }
 
-        $strQuery = "INSERT INTO ".$this->encloseTableName(_dbprefix_.$strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
+        $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
                         ON DUPLICATE KEY UPDATE ".implode(", ", $arrKeyValuePairs);
         return $this->_pQuery($strQuery, array_merge($arrValues, $arrValues));
     }

@@ -16,7 +16,6 @@ use Psr\Log\LogLevel;
  * The Logger provides a small and fast logging-engine to generate a debug logfile.
  * The granularity of the logging is defined in the config.php
  *
- * @package module_system
  * @author sidler@mulchprod.de
  * @author christoph.kappestein@gmail.com
  */
@@ -90,8 +89,7 @@ final class Logger implements LoggerInterface
         $arrOverwriteLevel = Carrier::getInstance()->getObjConfig()->getDebug("debuglogging_overwrite");
         if (isset($arrOverwriteLevel[$strLogfile])) {
             $this->intLogLevel = $arrOverwriteLevel[$strLogfile];
-        }
-        else {
+        } else {
             $this->intLogLevel = Carrier::getInstance()->getObjConfig()->getDebug("debuglogging");
         }
     }
@@ -202,6 +200,7 @@ final class Logger implements LoggerInterface
      * @param string $strMessage
      * @param int $intLevel
      * @return void
+     * @throws Exception
      * @deprecated
      */
     public function addLogRow($strMessage, $intLevel)
@@ -229,11 +228,9 @@ final class Logger implements LoggerInterface
         $strLevel = "";
         if ($intLevel == self::$levelError) {
             $strLevel = "ERROR";
-        }
-        elseif ($intLevel == self::$levelInfo) {
+        } elseif ($intLevel == self::$levelInfo) {
             $strLevel = "INFO";
-        }
-        elseif ($intLevel == self::$levelWarning) {
+        } elseif ($intLevel == self::$levelWarning) {
             $strLevel = "WARNING";
         }
 
@@ -243,8 +240,8 @@ final class Logger implements LoggerInterface
         $strFileInfo = "";
         $arrStack = debug_backtrace();
 
-        if (isset($arrStack[1]) && isset($arrStack[1]["file"])) {
-            $strFileInfo = basename($arrStack[1]["file"]).":".$arrStack[1]["function"].":".$arrStack[1]["line"];
+        if (isset($arrStack[2]) && isset($arrStack[2]["file"])) {
+            $strFileInfo = basename($arrStack[2]["file"]).":".$arrStack[2]["function"].":".$arrStack[2]["line"];
         }
 
         $strText = $strDate." ".$strLevel." ".$strSessid." ".$strFileInfo." ".$strMessage."\r\n";
@@ -305,5 +302,3 @@ final class Logger implements LoggerInterface
         return $this->intLogLevel;
     }
 }
-
-
