@@ -324,6 +324,11 @@ class StringUtil
 
     /**
      * Builds an associative array out of an (urlencoded) param string
+     *
+     * We dont use the parse_str on the complete string directly since the method checks the max_input_vars ini and we
+     * easily reach this limit. Because of this we split up the string into specific chunks and then use the parse_str
+     * method
+     *
      * @param $strParams
      * @return array
      */
@@ -331,11 +336,47 @@ class StringUtil
     {
         $arrParams = [];
 
-        foreach (explode("&", $strParams) as $strOneVal) {
-            $arrTemp = [];
-            parse_str($strOneVal, $arrTemp);
-            $arrParams = array_merge_recursive($arrParams, $arrTemp);
+        /*
+        parse_str($strParams, $arrTemp);
+        return $arrTemp;
+        */
+
+        $arrParts = explode("&", $strParams);
+
+        $grouped = [];
+        $scalar = [];
+
+        foreach ($arrParts as $strOneVal) {
+            $arr = [];
+            parse_str($strOneVal, $arr);
+
+            $key = key($arr);
+            $value = current($arr);
+
+            if (is_array($value)) {
+                if (!isset($grouped[$key])) {
+                    $grouped[$key] = [];
+                }
+                $grouped[$key][] = $strOneVal;
+            } else {
+                $scalar[] = $strOneVal;
+            }
         }
+
+        foreach ($grouped as $items) {
+            $arr = [];
+            parse_str(implode("&", $items), $arr);
+
+            $arrParams = array_merge_recursive($arrParams, $arr);
+        }
+
+        foreach ($scalar as $item) {
+            $arr = [];
+            parse_str($item, $arr);
+
+            $arrParams = array_merge($arrParams, $arr);
+        }
+
         return $arrParams;
     }
 }
