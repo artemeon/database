@@ -7,6 +7,7 @@
 namespace Kajona\System\System;
 
 use Doctrine\Common\Cache\CacheProvider;
+use Kajona\System\System\Lifecycle\ServiceLifeCycleFactory;
 
 /**
  * Cache provider which uses the Cache model
@@ -55,7 +56,7 @@ class CacheDatabase extends CacheProvider
         $objCache->setStrContent(serialize($data));
         $objCache->setStrHash1($this->getCacheKey($id));
         $objCache->setIntLeasetime(time() + $lifeTime);
-        $objCache->updateObjectToDb();
+        ServiceLifeCycleFactory::getLifeCycle(get_class($objCache))->update($objCache);
     }
 
     public function doDelete($id)
