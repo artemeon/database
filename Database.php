@@ -30,7 +30,7 @@ use Kajona\System\System\Db\DbDriverInterface;
 class Database
 {
     private $arrQueryCache = array(); //Array to cache queries
-    private $arrTablesCache = null;
+    private $arrTablesCache = [];
     private $intNumber = 0; //Number of queries send to database
     private $intNumberCache = 0; //Number of queries returned from cache
 
@@ -614,7 +614,7 @@ class Database
         }
 
         if ($this->objDbDriver != null) {
-            if ($this->arrTablesCache != null) {
+            if (!empty($this->arrTablesCache)) {
                 return $this->arrTablesCache;
             }
 
@@ -1179,7 +1179,7 @@ class Database
      */
     public function flushTablesCache()
     {
-        $this->arrTablesCache = null;
+        $this->arrTablesCache = [];
     }
 
     /**
