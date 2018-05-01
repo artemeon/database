@@ -104,8 +104,6 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
             $strQuery = "SELECT *
                            FROM agp_system_module,
                                 agp_system
-                      LEFT JOIN agp_system_date
-                             ON system_id = system_date_id
                           WHERE system_id = module_id
                        ORDER BY system_sort ASC";
 
