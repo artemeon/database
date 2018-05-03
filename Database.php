@@ -602,34 +602,41 @@ class Database
         }
     }
 
-
     /**
      * Returns all tables used by the project
+     *
+     * @param string|null $prefix - only used internally to migrate old databases with non agp_ prefix
      * @return array
      */
-    public function getTables()
+    public function getTables($prefix = null)
     {
+        if ($prefix === null) {
+            $prefix = "agp_";
+        }
+
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
 
-        if ($this->objDbDriver != null) {
-            if (!empty($this->arrTablesCache)) {
-                return $this->arrTablesCache;
-            }
+        if (isset($this->arrTablesCache[$prefix])) {
+            return $this->arrTablesCache[$prefix];
+        }
 
-            //increase global counter
+        $this->arrTablesCache[$prefix] = [];
+
+        if ($this->objDbDriver != null) {
+            // increase global counter
             $this->intNumber++;
             $arrTemp = $this->objDbDriver->getTables();
 
             foreach ($arrTemp as $arrTable) {
-                if (StringUtil::startsWith($arrTable["name"], "agp_")) {
-                    $this->arrTablesCache[] = $arrTable["name"];
+                if (StringUtil::startsWith($arrTable["name"], $prefix)) {
+                    $this->arrTablesCache[$prefix][] = $arrTable["name"];
                 }
             }
         }
 
-        return $this->arrTablesCache;
+        return $this->arrTablesCache[$prefix];
     }
 
     /**
