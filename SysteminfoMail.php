@@ -11,7 +11,7 @@ namespace Kajona\System\System;
  * General information regarding the current php environment
  *
  * @package module_system
- * @author sidler@mulchprod.de
+ * @author andrii.konoval@artemeon.de
  * @since 7.1
  */
 class SysteminfoMail implements SysteminfoInterface
