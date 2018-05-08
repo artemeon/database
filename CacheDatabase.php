@@ -7,7 +7,6 @@
 namespace Kajona\System\System;
 
 use Doctrine\Common\Cache\CacheProvider;
-use Kajona\System\System\Lifecycle\ServiceLifeCycleFactory;
 
 /**
  * Cache provider which uses the Cache model
