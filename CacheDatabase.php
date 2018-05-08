@@ -55,7 +55,7 @@ class CacheDatabase extends CacheProvider
         $objCache->setStrContent(serialize($data));
         $objCache->setStrHash1($this->getCacheKey($id));
         $objCache->setIntLeasetime(time() + $lifeTime);
-        $objCache->updateObjectToDb();
+        $objCache->updateObjectToDb();//do not use lifecylce here
     }
 
     public function doDelete($id)

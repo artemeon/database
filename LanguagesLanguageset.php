@@ -9,6 +9,8 @@
 
 namespace Kajona\System\System;
 
+use Kajona\System\System\Lifecycle\ServiceLifeCycleFactory;
+
 
 /**
  * A languageset connects a set of systemrecords and assigns every single one to defined set.
@@ -148,7 +150,13 @@ class LanguagesLanguageset extends Model implements ModelInterface {
 
         $this->arrLanguageSet[$strLanguageid] = $strSystemid;
 
-        return $this->updateObjectToDb();
+        try {
+            ServiceLifeCycleFactory::getLifeCycle(get_class($this))->update($this);
+        } catch (Lifecycle\ServiceLifeCycleUpdateException $e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -156,12 +164,13 @@ class LanguagesLanguageset extends Model implements ModelInterface {
      *
      * @param string $strSystemid
      * @return string
+     * @throws Lifecycle\ServiceLifeCycleUpdateException
      */
     public function removeSystemidFromLanguageeset($strSystemid) {
         foreach($this->arrLanguageSet as $strId => $strSetSystemid) {
             if($strSetSystemid == $strSystemid) {
                 unset($this->arrLanguageSet[$strId]);
-                $this->updateObjectToDb();
+                ServiceLifeCycleFactory::getLifeCycle(get_class($this))->update($this);
                 break;
             }
         }
