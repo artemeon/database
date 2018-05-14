@@ -56,7 +56,7 @@ class DbOci8 extends DbBase
                 //try to set the NLS_LANG env attribute
         putenv("NLS_LANG=American_America.UTF8");
 
-        $this->linkDB = @oci_connect($this->objCfg->getStrUsername(), $this->objCfg->getStrPass(), $this->objCfg->getStrHost().":".$this->objCfg->getIntPort()."/".$this->objCfg->getStrDbName(), "AL32UTF8");
+        $this->linkDB = @oci_pconnect($this->objCfg->getStrUsername(), $this->objCfg->getStrPass(), $this->objCfg->getStrHost().":".$this->objCfg->getIntPort()."/".$this->objCfg->getStrDbName(), "AL32UTF8");
 
 
         if ($this->linkDB !== false) {
