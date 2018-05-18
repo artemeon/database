@@ -162,6 +162,11 @@ class DbExport
         //sort by first an second column by default, avoids problems with combined primary keys
         foreach ($this->objDB->getGenerator("SELECT * FROM ".$strTable." ORDER BY ".$arrColumns[0]["columnName"]. " ASC ".(isset($arrColumns[1]) ? ", ".$arrColumns[1]["columnName"]. " ASC" : "")) as $arrRows) {
             foreach ($arrRows as $arrRow) {
+                //skip special cols, e.g. in oci8
+                if (isset($arrRow["rnum"])) {
+                    unset($arrRow["rnum"]);
+                }
+
                 if (!$objFile->writeToFile(serialize($arrRow).self::LINE_SEPARATOR)) {
                     return false;
                 }
