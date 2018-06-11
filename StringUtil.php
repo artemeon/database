@@ -209,11 +209,23 @@ class StringUtil
      */
     public static function toInt($strString)
     {
-        if (is_string($strString) && $strString !== "") {
-            return intval($strString);
-        }
         if (is_numeric($strString)) {
             return intval($strString);
+        }
+
+        return null;
+    }
+
+    /**
+     * Converts a string to a float
+     *
+     * @param $strString
+     * @return float|null
+     */
+    public static function toFloat($strString)
+    {
+        if (is_numeric($strString)) {
+            return floatval($strString);
         }
 
         return null;
