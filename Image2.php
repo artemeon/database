@@ -63,7 +63,8 @@ class Image2
     public function __construct()
     {
         // Try to overwrite PHP memory-limit so large images can be processed, too
-        if (Carrier::getInstance()->getObjConfig()->getPhpIni("memory_limit") < 128) {
+        $memoryLimit = Carrier::getInstance()->getObjConfig()->getPhpIni("memory_limit");
+        if ($memoryLimit < 128 && $memoryLimit > 0) {
             @ini_set("memory_limit", "128M");
         }
     }
