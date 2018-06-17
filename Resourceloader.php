@@ -75,12 +75,11 @@ class Resourceloader
      * The filename is the relative path, so adding /templates/[packname] is not required and not allowed.
      *
      * @param string $strTemplateName
-     * @internal bool $bitScanAdminSkin
      *
      * @throws Exception
      * @return string The path on the filesystem, relative to the root-folder. Null if the file could not be mapped.
      */
-    public function getTemplate($strTemplateName, $bitScanAdminSkin = false)
+    public function getTemplate($strTemplateName)
     {
         $strTemplateName = removeDirectoryTraversals($strTemplateName);
         if (BootstrapCache::getInstance()->getCacheRow(BootstrapCache::CACHE_TEMPLATES, $strTemplateName)) {
@@ -467,7 +466,6 @@ class Resourceloader
         }
 
         return $this->getCorePathForModule($strModule)."/".$strModule;
-
     }
 
     /**
