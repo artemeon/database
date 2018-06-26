@@ -215,6 +215,9 @@ abstract class DbBase implements DbDriverInterface
             $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")";
             return $this->_pQuery($strQuery, $arrValues);
         } else {
+            if (count($arrUpdateKeyValue) === 0) {
+                return true;
+            }
             $strQuery = "UPDATE ".$this->encloseTableName($strTable)." SET ".implode(", ", $arrUpdateKeyValue)." WHERE ".implode(" AND ", $arrUpdateKeyValueKey);
             return $this->_pQuery($strQuery, array_merge($arrUpdateParams, $arrUpdateKeyParams));
         }
