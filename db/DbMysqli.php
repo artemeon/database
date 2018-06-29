@@ -93,7 +93,14 @@ class DbMysqli extends DbBase
         if ($objStatement !== false) {
             $strTypes = "";
             foreach ($arrParams as $strOneParam) {
-                $strTypes .= "s";
+                if (is_float($strOneParam)) {
+                    $strTypes .= "d";
+                } elseif (is_int($strOneParam)) {
+                    $strTypes .= "i";
+                } else {
+                    $strTypes .= "s";
+                }
+
             }
 
             if (count($arrParams) > 0) {
