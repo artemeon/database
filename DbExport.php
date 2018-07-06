@@ -159,8 +159,22 @@ class DbExport
 
         $intCount = 0;
         $intPrint = 0;
-        //sort by first an second column by default, avoids problems with combined primary keys
-        foreach ($this->objDB->getGenerator("SELECT * FROM ".$strTable." ORDER BY ".$arrColumns[0]["columnName"]. " ASC ".(isset($arrColumns[1]) ? ", ".$arrColumns[1]["columnName"]. " ASC" : "")) as $arrRows) {
+
+        // order by specific columns
+        if (in_array($strTable, ["proz_cache_weightpath"])) {
+            $orderByColumns = ["cache_prozleafid ASC", "cache_prozrootid ASC", "cache_date ASC"];
+        } elseif (in_array($strTable, ["proz_cache_scores", "proz_cache_thr_agg", "proz_cache_thr_dir", "proz_cache_weight"])) {
+            $orderByColumns = ["cache_prozid ASC", "cache_date ASC"];
+        } elseif (count($arrColumns) == 2) {
+            // in case we have exactly two columns we have a relation table which has a combined primary key
+            $orderByColumns = ["1 ASC", "2 ASC"];
+        } else {
+            // by default simply sort by the first primary key column
+            $orderByColumns = ["1 ASC"];
+        }
+
+        $generator = $this->objDB->getGenerator("SELECT * FROM ".$strTable." ORDER BY " . implode(", ", $orderByColumns));
+        foreach ($generator as $arrRows) {
             foreach ($arrRows as $arrRow) {
                 //skip special cols, e.g. in oci8
                 if (isset($arrRow["rnum"])) {
