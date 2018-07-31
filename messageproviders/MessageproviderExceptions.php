@@ -9,8 +9,6 @@ namespace Kajona\System\System\Messageproviders;
 use Kajona\System\System\Carrier;
 use Kajona\System\System\Objectfactory;
 use Kajona\System\System\SystemSetting;
-use Kajona\System\System\UserGroup;
-
 
 /**
  * The exceptions-messageprovider sends messages in case of exceptions.
@@ -20,16 +18,15 @@ use Kajona\System\System\UserGroup;
  * @package module_messaging
  * @since 4.0
  */
-class MessageproviderExceptions implements MessageproviderExtendedInterface {
-
-
-
+class MessageproviderExceptions extends MessageproviderBase
+{
     /**
      * Returns the name of the message-provider
      *
      * @return string
      */
-    public function getStrName() {
+    public function getStrName()
+    {
         return Carrier::getInstance()->getObjLang()->getLang("messageprovider_exceptions_name", "system");
     }
 
@@ -39,7 +36,8 @@ class MessageproviderExceptions implements MessageproviderExtendedInterface {
      *
      * @return bool
      */
-    public function isAlwaysActive() {
+    public function isAlwaysActive()
+    {
         return false;
     }
 
@@ -50,7 +48,8 @@ class MessageproviderExceptions implements MessageproviderExtendedInterface {
      *
      * @return mixed
      */
-    public function isAlwaysByMail() {
+    public function isAlwaysByMail()
+    {
         return false;
     }
 
@@ -61,9 +60,9 @@ class MessageproviderExceptions implements MessageproviderExtendedInterface {
      * @return mixed
      * @since 4.5
      */
-    public function isVisibleInConfigView() {
+    public function isVisibleInConfigView()
+    {
         $objAdminGroup = Objectfactory::getInstance()->getObject(SystemSetting::getConfigValue("_admins_group_id_"));
         return in_array(Carrier::getInstance()->getObjSession()->getUserID(), $objAdminGroup->getObjSourceGroup()->getUserIdsForGroup());
     }
-
 }
