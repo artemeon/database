@@ -18,6 +18,30 @@ abstract class MessageproviderBase implements MessageproviderExtendedInterface
     /**
      * @inheritdoc
      */
+    public function isAlwaysActive()
+    {
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isAlwaysByMail()
+    {
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isVisibleInConfigView()
+    {
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getInitialStatus()
     {
         return self::INITIAL_DEFAULT;
