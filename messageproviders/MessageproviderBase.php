@@ -7,7 +7,7 @@
 namespace Kajona\System\System\Messageproviders;
 
 /**
- * MessageproviderBase
+ * Messageprovider base class which provides some default implementations
  *
  * @author christoph.kappestein@artemeon.de
  * @package module_messaging
