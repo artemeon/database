@@ -52,8 +52,11 @@ interface MessageproviderExtendedInterface extends MessageproviderInterface
 
     /**
      * Returns the default value of the initial status which is an OR connected value of the INITIAL_* constants.
-     * You need to explicit set the active or inactive status to change the default value otherwise we use the default
-     * value from the MessagingConfig object
+     * You need to explicit set the active or inactive flag to change the default behaviour i.e.:
+     *
+     * <code>
+     * return self::INITIAL_STATUS_ACTIVE | self::INITIAL_EMAIL_ACTIVE
+     * </code>
      *
      * @return int
      */
