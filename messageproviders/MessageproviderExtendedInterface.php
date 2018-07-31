@@ -14,7 +14,15 @@ namespace Kajona\System\System\Messageproviders;
  * @since 4.3
  * @package module_messaging
  */
-interface MessageproviderExtendedInterface extends MessageproviderInterface {
+interface MessageproviderExtendedInterface extends MessageproviderInterface
+{
+    const INITIAL_DEFAULT = 0;
+
+    const INITIAL_STATUS_ACTIVE = 1;
+    const INITIAL_STATUS_INACTIVE = 2;
+
+    const INITIAL_EMAIL_ACTIVE = 4;
+    const INITIAL_EMAIL_INACTIVE = 8;
 
     /**
      * If set to true, the messageprovider may not be disabled by the user.
@@ -42,4 +50,12 @@ interface MessageproviderExtendedInterface extends MessageproviderInterface {
      */
     public function isVisibleInConfigView();
 
+    /**
+     * Returns the default value of the initial status which is an OR connected value of the INITIAL_* constants.
+     * You need to explicit set the active or inactive status to change the default value otherwise we use the default
+     * value from the MessagingConfig object
+     *
+     * @return int
+     */
+    public function getInitialStatus();
 }
