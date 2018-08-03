@@ -834,6 +834,9 @@ class Database
         }
 
         $this->flushTablesCache();
+        if ($this->hasColumn($strTable, $strColumn)) {
+            return true;
+        }
         return $this->objDbDriver->addColumn($strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
     }
 
