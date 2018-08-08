@@ -448,7 +448,7 @@ class DbSqlsrv extends DbBase
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $strQuery = "SELECT name FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)";
 

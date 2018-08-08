@@ -424,7 +424,7 @@ class DbMysqli extends DbBase
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $arrIndex = $this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]);
         return count($arrIndex) > 0;

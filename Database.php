@@ -14,6 +14,7 @@ use Kajona\Dbdump\System\DbImport;
 use Kajona\Packagemanager\System\PackagemanagerManager;
 use Kajona\System\System\Db\DbDriverInterface;
 use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableIndex;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
@@ -771,6 +772,7 @@ class Database
      * @param array $arrColumns
      * @param bool $bitUnique
      * @return bool
+     * @throws Exception
      */
     public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
     {
@@ -787,13 +789,25 @@ class Database
     }
 
     /**
+     * Adds an index to a table based on the import / export format
+     * @param string $table
+     * @param TableIndex $index
+     * @return bool
+     * @internal
+     */
+    public function addIndex(string $table, TableIndex $index)
+    {
+        return $this->objDbDriver->addIndex($table, $index);
+    }
+
+    /**
      * Checks whether the table has an index with the provided name
      *
      * @param string $strTable
      * @param string $strName
      * @return bool
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         if (!$this->bitConnected) {
             $this->dbconnect();

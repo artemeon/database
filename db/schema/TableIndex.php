@@ -49,6 +49,7 @@ class TableIndex implements \JsonSerializable
     public function setName(string $name)
     {
         $this->name = $name;
+        return $this;
     }
 
     /**
@@ -65,6 +66,7 @@ class TableIndex implements \JsonSerializable
     public function setDescription(string $description)
     {
         $this->description = $description;
+        return $this;
     }
 
 

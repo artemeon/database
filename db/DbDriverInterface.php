@@ -9,6 +9,7 @@ namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
 use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableIndex;
 use Kajona\System\System\DbConnectionParams;
 
 /**
@@ -175,13 +176,20 @@ interface DbDriverInterface
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false);
 
     /**
+     * Adds a new index to the provided table
+     * @param TableIndex $index
+     * @return bool
+     */
+    public function addIndex(string $table, TableIndex $index): bool;
+
+    /**
      * Checks whether the table has an index with the provided name
      *
      * @param string $strTable
      * @param string $strName
      * @return bool
      */
-    public function hasIndex($strTable, $strName);
+    public function hasIndex($strTable, $strName): bool;
 
     /**
      * Renames a table

@@ -526,7 +526,7 @@ class DbSqlite3 extends DbBase
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $arrIndex = $this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]);
         return count($arrIndex) > 0;
