@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -233,30 +237,45 @@ class DbMysqli extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consisting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("SHOW COLUMNS FROM ".$this->encloseTableName($strTableName), array());
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        //fetch all columns
+        $columnInfo = $this->getPArray("SHOW COLUMNS FROM {$tableName}", []);
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["Field"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["Null"] == "YES");
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[$arrOneColumn["Field"]] = array(
-                "columnName" => $arrOneColumn["Field"],
-                "columnType" => $this->getCoreTypeForDbType($arrOneColumn),
-            );
+        //fetch all indexes
+        $indexes = $this->getPArray("SHOW INDEX FROM {$tableName} WHERE Key_name != 'PRIMARY'", []);
+        $indexAggr = [];
+        foreach ($indexes as $indexInfo) {
+            $indexAggr[$indexInfo["Key_name"]] = $indexAggr[$indexInfo["Key_name"]] ?? [];
+            $indexAggr[$indexInfo["Key_name"]][] = $indexInfo["Column_name"];
         }
-        return $arrReturn;
+        foreach ($indexAggr as $key => $desc) {
+            $index = new TableIndex($key);
+            $index->setDescription(implode(", ", $desc));
+            $table->addIndex($index);
+        }
+
+        //fetch all keys
+        $keys = $this->getPArray("SHOW KEYS FROM {$tableName} WHERE Key_name = 'PRIMARY'", []);
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey($keyInfo['Column_name']);
+            $table->addPrimaryKey($key);
+        }
+
+        return $table;
     }
 
     /**

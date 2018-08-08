@@ -8,6 +8,7 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
 use Kajona\System\System\DbConnectionParams;
 
 /**
@@ -126,15 +127,13 @@ interface DbDriverInterface
     public function getTables();
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName);
+    public function getTableInformation(string $tableName): Table;
+
+
 
     /**
      * Used to send a create table statement to the database

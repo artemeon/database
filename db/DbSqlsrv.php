@@ -7,6 +7,10 @@
 
 namespace Kajona\System\System\Db;
 
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -162,33 +166,71 @@ class DbSqlsrv extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?", array(strtoupper($strTableName)));
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        //fetch all columns
+        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]);
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["column_name"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["is_nullable"] == "YES");
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[strtolower($arrOneColumn["column_name"])] = array(
-                "columnName" => strtolower($arrOneColumn["column_name"]),
-                "columnType" => $this->getCoreTypeForDbType($arrOneColumn),
-            );
-
+        //fetch all indexes
+        $indexes = $this->getPArray("SELECT
+                       t.name as tablename,
+                       ind.name as indexname,
+                       col.name as colname
+                FROM
+                     sys.indexes ind
+                       INNER JOIN
+                         sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id
+                       INNER JOIN
+                         sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id
+                       INNER JOIN
+                         sys.tables t ON ind.object_id = t.object_id
+                WHERE
+                    ind.is_primary_key = 0
+                  AND ind.is_unique = 0
+                  AND ind.is_unique_constraint = 0
+                  AND t.is_ms_shipped = 0
+                  AND t.name = ?
+                ORDER BY
+                         t.name, ind.name, ind.index_id, ic.index_column_id;", [$tableName]);
+        $indexAggr = [];
+        foreach ($indexes as $indexInfo) {
+            $indexAggr[$indexInfo["indexname"]] = $indexAggr[$indexInfo["indexname"]] ?? [];
+            $indexAggr[$indexInfo["indexname"]][] = $indexInfo["colname"];
+        }
+        foreach ($indexAggr as $key => $desc) {
+            $index = new TableIndex($key);
+            $index->setDescription(implode(", ", $desc));
+            $table->addIndex($index);
         }
 
-        return $arrReturn;
+        //fetch all keys
+        $keys = $this->getPArray("SELECT Col.Column_Name 
+            from INFORMATION_SCHEMA.TABLE_CONSTRAINTS Tab, INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE Col 
+            WHERE Col.Constraint_Name = Tab.Constraint_Name 
+              AND Col.Table_Name = Tab.Table_Name 
+              AND Constraint_Type = 'PRIMARY KEY' 
+              AND Col.Table_Name = ?", [$tableName]);
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey($keyInfo['column_name']);
+            $table->addPrimaryKey($key);
+        }
+
+        return $table;
     }
+
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant

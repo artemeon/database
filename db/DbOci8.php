@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -295,33 +299,61 @@ class DbOci8 extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("select * from user_tab_columns where table_name=?", array(strtoupper($strTableName)));
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        $tableName = StringUtil::toUpperCase($tableName);
+
+        //fetch all columns
+        $columnInfo = $this->getPArray("SELECT * FROM user_tab_columns WHERE table_name = ?", [$tableName]);
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn(strtolower($arrOneColumn["column_name"]));
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["nullable"] == "Y");
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[strtolower($arrOneColumn["column_name"])] = array(
-                "columnName" => strtolower($arrOneColumn["column_name"]),
-                "columnType" => $this->getCoreTypeForDbType($arrOneColumn),
-            );
-
+        //fetch all indexes
+        $indexes = $this->getPArray("
+            select b.uniqueness, a.index_name, a.table_name, a.column_name
+            from all_ind_columns a, all_indexes b
+            where a.index_name=b.index_name
+              and a.table_name = ?
+            order by a.index_name, a.column_position", [$tableName]);
+        $indexAggr = [];
+        foreach ($indexes as $indexInfo) {
+            $indexAggr[$indexInfo["index_name"]] = $indexAggr[$indexInfo["index_name"]] ?? [];
+            $indexAggr[$indexInfo["index_name"]][] = $indexInfo["column_name"];
+        }
+        foreach ($indexAggr as $key => $desc) {
+            $index = new TableIndex($key);
+            $index->setDescription(implode(", ", $desc));
+            $table->addIndex($index);
         }
 
-        return $arrReturn;
+        //fetch all keys
+        $keys = $this->getPArray("SELECT cols.table_name, cols.column_name, cols.position, cons.status, cons.owner 
+            FROM all_constraints cons, all_cons_columns cols
+            WHERE cols.table_name = ?
+              AND cons.constraint_type = 'P'
+              AND cons.constraint_name = cols.constraint_name
+              AND cons.owner = cols.owner
+          ", [$tableName]);
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey($keyInfo['column_name']);
+            $table->addPrimaryKey($key);
+        }
+
+
+        return $table;
     }
+
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant

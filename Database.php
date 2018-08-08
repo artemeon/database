@@ -13,6 +13,7 @@ use Kajona\Dbdump\System\DbExport;
 use Kajona\Dbdump\System\DbImport;
 use Kajona\Packagemanager\System\PackagemanagerManager;
 use Kajona\System\System\Db\DbDriverInterface;
+use Kajona\System\System\Db\Schema\Table;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
@@ -645,6 +646,7 @@ class Database
      * array ("columnName", "columnType")
      *
      * @param string $strTableName
+     * @deprecated
      *
      * @return array
      */
@@ -654,7 +656,31 @@ class Database
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->getColumnsOfTable($strTableName);
+        $table = $this->objDbDriver->getTableInformation($strTableName);
+
+        $return = [];
+        foreach ($table->getColumns() as $column) {
+            $return[$column->getName()] = [
+                "columnName" => $column->getName(),
+                "columnType" => $column->getInternalType()
+            ];
+        }
+
+        return $return;
+    }
+
+    /**
+     * Fetches extensive information per database table
+     * @param $tableName
+     * @return Table
+     */
+    public function getTableInformation($tableName): Table
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        return $this->objDbDriver->getTableInformation($tableName);
     }
 
     /**

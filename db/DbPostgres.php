@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Carrier;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -198,35 +202,43 @@ class DbPostgres extends DbBase
     {
         return $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", array());
     }
-
+    
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consisting of:
-     * array ("columnName" => array("columnType" => "columnType", "columnName" => "columnName")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = '".Carrier::getInstance()->getObjDB()->dbsafeString($strTableName)."'", array());
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        //fetch all columns
+        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]);
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["column_name"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[$arrOneColumn["column_name"]] = array(
-                "columnName" => $arrOneColumn["column_name"],
-                "columnType" => $this->getCoreTypeForDbType($arrOneColumn),
-            );
-
+        //fetch all indexes
+        $indexes = $this->getPArray("select * from pg_indexes where tablename  = ?", [$tableName]);
+        foreach ($indexes as $indexInfo) {
+            $index = new TableIndex($indexInfo['indexname']);
+            $index->setDescription($indexInfo['indexdef']);
+            $table->addIndex($index);
         }
 
-        return $arrReturn;
+        //fetch all keys
+        $keys = $this->getPArray("SELECT a.attname FROM pg_index i JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) WHERE  i.indrelid = ?::regclass AND i.indisprimary", [$tableName]);
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey($keyInfo['attname']);
+            $table->addPrimaryKey($key);
+        }
+
+        return $table;
     }
+
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant

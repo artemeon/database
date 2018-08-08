@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -408,28 +412,39 @@ class DbSqlite3 extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consisting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrTableInfo = $this->getPArray("PRAGMA table_info('{$strTableName}')", array());
+        $table = new Table($tableName);
 
-        $arrColumns = array();
-        foreach ($arrTableInfo as $arrRow) {
-            $arrColumns[$arrRow['name']] = array(
-                "columnName" => $arrRow['name'],
-                "columnType" => $this->getCoreTypeForDbType($arrRow)
-            );
+        //fetch all columns
+        $columnInfo = $this->getPArray("PRAGMA table_info('{$tableName}')", []);
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["name"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["notnull"] == 0);
+            $table->addColumn($col);
+
+            if ($arrOneColumn['pk'] == 1) {
+                $table->addPrimaryKey(new TableKey($arrOneColumn["name"]));
+            }
         }
 
-        return $arrColumns;
+        //fetch all indexes
+        $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?;", [$tableName]);
+        foreach ($indexes as $indexInfo) {
+            $index = new TableIndex($indexInfo['name']);
+            $index->setDescription($indexInfo['sql'] ?? '');
+            $table->addIndex($index);
+        }
+
+        return $table;
     }
+
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant
