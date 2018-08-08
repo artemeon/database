@@ -87,6 +87,10 @@ class DbExport
             if (in_array($strTable, $this->arrExcludedTables)) {
                 continue;
             }
+            if (!$this->exportTableSchema($strTable, $strTarget)) {
+                $bitReturn = false;
+                break;
+            }
             if (!$this->exportTable($strTable, $strTarget)) {
                 $bitReturn = false;
                 break;
@@ -133,6 +137,18 @@ class DbExport
     }
 
     /**
+     * Exports the tables schema definition to json, based on Kajonas internal conversion
+     * @param string $strTable
+     * @param string $strTargetDir
+     * @return bool
+     */
+    private function exportTableSchema(string $strTable, string $strTargetDir): bool
+    {
+        $strTargetFile = $strTargetDir."/".$strTable.".schema";
+        return file_put_contents(_realpath_.$strTargetFile, json_encode($this->objDB->getColumnsOfTable($strTable))) !== false;
+    }
+
+    /**
      * Exports a single table into a single file
      *
      * @param $strTable
@@ -145,6 +161,7 @@ class DbExport
         $arrColumns = $this->objDB->getColumnsOfTable($strTable);
 
         $strTargetFile = $strTargetDir."/".$strTable.".ser";
+
 
         $objFile = new Filesystem();
         if (!$objFile->openFilePointer($strTargetFile)) {
