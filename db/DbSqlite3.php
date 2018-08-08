@@ -422,13 +422,31 @@ class DbSqlite3 extends DbBase
 
         $arrColumns = array();
         foreach ($arrTableInfo as $arrRow) {
-            $arrColumns[] = array(
+            $arrColumns[$arrRow['name']] = array(
                 "columnName" => $arrRow['name'],
-                "columnType" => $arrRow['type']
+                "columnType" => $this->getCoreTypeForDbType($arrRow)
             );
         }
 
         return $arrColumns;
+    }
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        $val = StringUtil::toLowerCase(StringUtil::trim($infoSchemaRow["type"]));
+        if ($val == "integer") {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($val == "real") {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($val == "text") {
+            return DbDatatypes::STR_TYPE_TEXT;
+        }
+        return null;
     }
 
     /**

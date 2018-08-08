@@ -306,21 +306,54 @@ class DbOci8 extends DbBase
     public function getColumnsOfTable($strTableName)
     {
         $arrReturn = array();
-        $arrTemp = $this->getPArray("select column_name, data_type from user_tab_columns where table_name=?", array(strtoupper($strTableName)));
+        $arrTemp = $this->getPArray("select * from user_tab_columns where table_name=?", array(strtoupper($strTableName)));
 
         if (empty($arrTemp)) {
             return array();
         }
 
         foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[] = array(
+            $arrReturn[strtolower($arrOneColumn["column_name"])] = array(
                 "columnName" => strtolower($arrOneColumn["column_name"]),
-                "columnType" => ($arrOneColumn["data_type"] == "integer" ? "int" : strtolower($arrOneColumn["data_type"])),
+                "columnType" => $this->getCoreTypeForDbType($arrOneColumn),
             );
 
         }
 
         return $arrReturn;
+    }
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        if ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
+            return DbDatatypes::STR_TYPE_LONG;
+        } elseif ($infoSchemaRow["data_type"] == "FLOAT" && $infoSchemaRow["data_precision"] == 24) {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($infoSchemaRow["data_type"] == "VARCHAR2") {
+            if ($infoSchemaRow["data_length"] == "10") {
+                return DbDatatypes::STR_TYPE_CHAR10;
+            } elseif ($infoSchemaRow["data_length"] == "20") {
+                return DbDatatypes::STR_TYPE_CHAR20;
+            } elseif ($infoSchemaRow["data_length"] == "100") {
+                return DbDatatypes::STR_TYPE_CHAR100;
+            } elseif ($infoSchemaRow["data_length"] == "280") {
+                return DbDatatypes::STR_TYPE_CHAR254;
+            } elseif ($infoSchemaRow["data_length"] == "500") {
+                return DbDatatypes::STR_TYPE_CHAR500;
+            } elseif ($infoSchemaRow["data_length"] == "4000") {
+                return DbDatatypes::STR_TYPE_TEXT;
+            }
+        } elseif ($infoSchemaRow["data_type"] == "CLOB") {
+            return DbDatatypes::STR_TYPE_LONGTEXT;
+        }
+        return null;
     }
 
     /**
@@ -346,7 +379,7 @@ class DbOci8 extends DbBase
         $strReturn = "";
 
         if ($strType == DbDatatypes::STR_TYPE_INT) {
-            $strReturn .= " NUMBER(19,0) ";
+            $strReturn .= " NUMBER(19, 0) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_LONG) {
             $strReturn .= " NUMBER(19, 0) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_DOUBLE) {

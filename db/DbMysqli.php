@@ -244,20 +244,52 @@ class DbMysqli extends DbBase
     public function getColumnsOfTable($strTableName)
     {
         $arrReturn = array();
-        $arrTemp = $this->getPArray("SHOW COLUMNS FROM ".$this->encloseTableName(Database::getInstance()->dbsafeString($strTableName)), array());
+        $arrTemp = $this->getPArray("SHOW COLUMNS FROM ".$this->encloseTableName($strTableName), array());
 
         if (empty($arrTemp)) {
             return array();
         }
 
         foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[] = array(
+            $arrReturn[$arrOneColumn["Field"]] = array(
                 "columnName" => $arrOneColumn["Field"],
-                "columnType" => $arrOneColumn["Type"],
+                "columnType" => $this->getCoreTypeForDbType($arrOneColumn),
             );
         }
         return $arrReturn;
     }
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        if ($infoSchemaRow["Type"] == "int(11)") {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($infoSchemaRow["Type"] == "bigint(20)") {
+            return DbDatatypes::STR_TYPE_LONG;
+        } elseif ($infoSchemaRow["Type"] == "double") {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($infoSchemaRow["Type"] == "varchar(10)") {
+            return DbDatatypes::STR_TYPE_CHAR10;
+        } elseif ($infoSchemaRow["Type"] == "varchar(20)") {
+            return DbDatatypes::STR_TYPE_CHAR20;
+        } elseif ($infoSchemaRow["Type"] == "varchar(100)") {
+            return DbDatatypes::STR_TYPE_CHAR100;
+        } elseif ($infoSchemaRow["Type"] == "varchar(254)") {
+            return DbDatatypes::STR_TYPE_CHAR254;
+        } elseif ($infoSchemaRow["Type"] == "varchar(500)") {
+            return DbDatatypes::STR_TYPE_CHAR500;
+        } elseif ($infoSchemaRow["Type"] == "text") {
+            return DbDatatypes::STR_TYPE_TEXT;
+        } elseif ($infoSchemaRow["Type"] == "longtext") {
+            return DbDatatypes::STR_TYPE_LONGTEXT;
+        }
+        return null;
+    }
+
 
     /**
      * Returns the db-specific datatype for the kajona internal datatype.

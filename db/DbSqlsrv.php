@@ -173,22 +173,54 @@ class DbSqlsrv extends DbBase
     public function getColumnsOfTable($strTableName)
     {
         $arrReturn = array();
-        $arrTemp = $this->getPArray("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?", array(strtoupper($strTableName)));
+        $arrTemp = $this->getPArray("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?", array(strtoupper($strTableName)));
 
         if (empty($arrTemp)) {
             return array();
         }
 
         foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[] = array(
+            $arrReturn[strtolower($arrOneColumn["column_name"])] = array(
                 "columnName" => strtolower($arrOneColumn["column_name"]),
-                "columnType" => ($arrOneColumn["data_type"] == "integer" ? "int" : strtolower($arrOneColumn["data_type"])),
+                "columnType" => $this->getCoreTypeForDbType($arrOneColumn),
             );
 
         }
 
         return $arrReturn;
     }
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        if ($infoSchemaRow["data_type"] == "int") {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($infoSchemaRow["data_type"] == "bigint") {
+            return DbDatatypes::STR_TYPE_LONG;
+        } elseif ($infoSchemaRow["data_type"] == "real") {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($infoSchemaRow["data_type"] == "varchar") {
+            if ($infoSchemaRow["character_maximum_length"] == "10") {
+                return DbDatatypes::STR_TYPE_CHAR10;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "20") {
+                return DbDatatypes::STR_TYPE_CHAR20;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "100") {
+                return DbDatatypes::STR_TYPE_CHAR100;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "254") {
+                return DbDatatypes::STR_TYPE_CHAR254;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "500") {
+                return DbDatatypes::STR_TYPE_CHAR500;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "-1") {
+                return DbDatatypes::STR_TYPE_TEXT;
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Returns the db-specific datatype for the kajona internal datatype.
