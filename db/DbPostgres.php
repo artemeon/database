@@ -202,7 +202,7 @@ class DbPostgres extends DbBase
     {
         return $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", array());
     }
-    
+
     /**
      * Fetches the full table information as retrieved from the rdbms
      * @param $tableName
@@ -218,6 +218,7 @@ class DbPostgres extends DbBase
             $col = new TableColumn($arrOneColumn["column_name"]);
             $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
             $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["is_nullable"] == "YES");
             $table->addColumn($col);
         }
 

@@ -396,10 +396,10 @@ function getImageAdmin($strImage, $strAlt = "", $bitNoAlt = false)
 function getRightsImageAdminName($strSystemid)
 {
     if (Carrier::getInstance()->getObjRights()->isInherited($strSystemid)) {
-        return "icon_key_inherited";
+        return "icon_permissions_inherited";
     }
     else {
-        return "icon_key";
+        return "icon_permissions";
     }
 }
 
