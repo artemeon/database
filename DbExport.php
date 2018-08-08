@@ -145,7 +145,7 @@ class DbExport
     private function exportTableSchema(string $strTable, string $strTargetDir): bool
     {
         $strTargetFile = $strTargetDir."/".$strTable.".schema";
-        return file_put_contents(_realpath_.$strTargetFile, json_encode($this->objDB->getColumnsOfTable($strTable))) !== false;
+        return file_put_contents(_realpath_.$strTargetFile, json_encode($this->objDB->getTableInformation($strTable), JSON_PRETTY_PRINT)) !== false;
     }
 
     /**
@@ -157,9 +157,6 @@ class DbExport
      */
     private function exportTable(string $strTable, string $strTargetDir): bool
     {
-        //fetch the columns in order to get a sort-col
-        $arrColumns = $this->objDB->getColumnsOfTable($strTable);
-
         $strTargetFile = $strTargetDir."/".$strTable.".ser";
 
 
@@ -177,18 +174,15 @@ class DbExport
         $intCount = 0;
         $intPrint = 0;
 
-        // order by specific columns
-        if (in_array($strTable, ["proz_cache_weightpath"])) {
-            $orderByColumns = ["cache_prozleafid ASC", "cache_prozrootid ASC", "cache_date ASC"];
-        } elseif (in_array($strTable, ["proz_cache_scores", "proz_cache_thr_agg", "proz_cache_thr_dir", "proz_cache_weight"])) {
-            $orderByColumns = ["cache_prozid ASC", "cache_date ASC"];
-        } elseif (count($arrColumns) == 2) {
-            // in case we have exactly two columns we have a relation table which has a combined primary key
-            $orderByColumns = ["1 ASC", "2 ASC"];
-        } else {
-            // by default simply sort by the first primary key column
-            $orderByColumns = ["1 ASC"];
+
+        //order by all primary keys
+        $details = $this->objDB->getTableInformation($strTable);
+        $orderByColumns = [];
+        foreach ($details->getPrimaryKeys() as $key) {
+            $orderByColumns[] = "{$key->getName()} ASC";
         }
+
+
 
         $generator = $this->objDB->getGenerator("SELECT * FROM ".$strTable." ORDER BY " . implode(", ", $orderByColumns));
         foreach ($generator as $arrRows) {
