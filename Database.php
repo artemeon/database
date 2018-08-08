@@ -789,6 +789,17 @@ class Database
     }
 
     /**
+     * Removes an index from the database / table
+     * @param string $table
+     * @param string $index
+     * @return bool
+     */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->objDbDriver->deleteIndex($table, $index);
+    }
+
+    /**
      * Adds an index to a table based on the import / export format
      * @param string $table
      * @param TableIndex $index

@@ -115,6 +115,15 @@ abstract class DbBase implements DbDriverInterface
     /**
      * @inheritDoc
      */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->_pQuery("DROP INDEX ".$index, []);
+    }
+
+
+    /**
+     * @inheritDoc
+     */
     public function addIndex(string $table, TableIndex $index): bool
     {
         return $this->createIndex($table, $index->getName(), explode(",", $index->getDescription()));

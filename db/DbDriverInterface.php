@@ -176,6 +176,14 @@ interface DbDriverInterface
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false);
 
     /**
+     * Deletes an index from the database
+     * @param string $table
+     * @param string $index
+     * @return bool
+     */
+    public function deleteIndex(string $table, string $index): bool;
+
+    /**
      * Adds a new index to the provided table
      * @param TableIndex $index
      * @return bool
