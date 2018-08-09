@@ -431,6 +431,14 @@ class DbMysqli extends DbBase
     }
 
     /**
+     * @inheritDoc
+     */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->_pQuery("DROP INDEX {$index} ON {$table}", []);
+    }
+
+    /**
      * Starts a transaction
      *
      * @return void

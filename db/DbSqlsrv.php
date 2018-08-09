@@ -446,6 +446,14 @@ class DbSqlsrv extends DbBase
     }
 
     /**
+     * @inheritDoc
+     */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->_pQuery("DROP INDEX {$table}.{$index}", []);
+    }
+
+    /**
      * @inheritdoc
      */
     public function hasIndex($strTable, $strName): bool
