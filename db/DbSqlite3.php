@@ -62,11 +62,9 @@ class DbSqlite3 extends DbBase
             }
 
             return true;
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw new Exception("Error connecting to database: ".$e, Exception::$level_FATALERROR);
         }
-
     }
 
     /**
@@ -177,20 +175,25 @@ class DbSqlite3 extends DbBase
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
 
-        $arrTableInfo = $this->getColumnsOfTable($strTable);
+        $tableDef = $this->getTableInformation($strTable);
+        $arrTableInfo = array();
         $arrTargetTableInfo = array();
-        foreach ($arrTableInfo as $arrOneColumn) {
-            if ($arrOneColumn["columnName"] == $strOldColumnName) {
-                $arrNewRow = array(
+        foreach ($tableDef->getColumns() as $colDef) {
+            $arrNewDef = array(
+                "columnName" => $colDef->getName(),
+                "columnType" => $colDef->getInternalType()
+            );
+
+            $arrTableInfo[] = $arrNewDef;
+
+            if ($colDef->getName() == $strOldColumnName) {
+                $arrNewDef = array(
                     "columnName" => $strNewColumnName,
                     "columnType" => $this->getDatatype($strNewDatatype)
                 );
-
-                $arrTargetTableInfo[] = $arrNewRow;
-            } else {
-                $arrTargetTableInfo[] = $arrOneColumn;
             }
 
+            $arrTargetTableInfo[] = $arrNewDef;
         }
 
         return $this->buildAndCopyTempTables($strTable, $arrTableInfo, $arrTargetTableInfo);
@@ -208,14 +211,16 @@ class DbSqlite3 extends DbBase
      */
     public function removeColumn($strTable, $strColumn)
     {
-
-        $arrTableInfo = $this->getColumnsOfTable($strTable);
         $arrTargetTableInfo = array();
-        foreach ($arrTableInfo as $arrOneColumn) {
-            if ($arrOneColumn["columnName"] != $strColumn) {
-                $arrTargetTableInfo[] = $arrOneColumn;
-            }
 
+        $tableDef = $this->getTableInformation($strTable);
+        foreach ($tableDef->getColumns() as $colDef) {
+            if ($colDef->getName() != $strColumn) {
+                $arrTargetTableInfo[] = array(
+                    "columnName" => $colDef->getName(),
+                    "columnType" => $colDef->getInternalType()
+                );
+            }
         }
 
         return $this->buildAndCopyTempTables($strTable, $arrTargetTableInfo, $arrTargetTableInfo);
@@ -238,7 +243,6 @@ class DbSqlite3 extends DbBase
      */
     public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb)
     {
-
         $arrVersion = SQLite3::version();
         if (version_compare("3.7.11", $arrVersion["versionString"], "<=")) {
             return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb);
@@ -601,11 +605,9 @@ class DbSqlite3 extends DbBase
      */
     public function dbExport(&$strFilename, $arrTables)
     {
-        // FIXME: Only export relevant tables.
         $objFilesystem = new Filesystem();
         return $objFilesystem->fileCopy($this->strDbFile, $strFilename);
     }
-
 
 
     /**
@@ -731,4 +733,3 @@ class DbSqlite3 extends DbBase
     }
 
 }
-
