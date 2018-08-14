@@ -110,6 +110,30 @@ class ResponseObject
         return false;
     }
 
+    /**
+     * Checks if the client requested a progress notification cookie.
+     * If given, the reponse cookie is being set in order to indicate the frontend a (long running) task was finished.
+     *
+     * Frontend:
+     * <code>
+     * require(['downloadIndicator'], function(dl) {
+     *   dl.triggerDownload(KAJONA_WEBPATH+"/xml.php?module=system&action=downloadTest");
+     * });
+     * </code>
+     *
+     * Backend:
+     * <code>
+     *     ResponseObject::getInstance()->handleProgressCookie();
+     * </code>
+     */
+    public function handleProgressCookie()
+    {
+        if (getGet("indicatorToken") != "") {
+            $cookie = new Cookie();
+            $cookie->setCookie("kj_".getGet("indicatorToken"), getGet("indicatorToken"), 0, false);
+        }
+    }
+
 
     public function sendContent()
     {
