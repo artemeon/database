@@ -532,6 +532,14 @@ class DbSqlsrv extends DbBase
     }
 
     /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return "(" . implode(' + ', $parts) . ")";
+    }
+
+    /**
      * @param string $strQuery
      * @return bool
      */

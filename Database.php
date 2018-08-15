@@ -1348,4 +1348,12 @@ class Database
     {
         return $this->objDbDriver->appendLimitExpression($strQuery, $intStart, $intEnd);
     }
+
+    /**
+     * @return string
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return $this->objDbDriver->getConcatExpression($parts);
+    }
 }
