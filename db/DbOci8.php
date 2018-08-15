@@ -332,7 +332,7 @@ class DbOci8 extends DbBase
             $indexAggr[$indexInfo["index_name"]][] = $indexInfo["column_name"];
         }
         foreach ($indexAggr as $key => $desc) {
-            $index = new TableIndex($key);
+            $index = new TableIndex(strtolower($key));
             $index->setDescription(implode(", ", $desc));
             $table->addIndex($index);
         }
@@ -346,7 +346,7 @@ class DbOci8 extends DbBase
               AND cons.owner = cols.owner
           ", [$tableName]);
         foreach ($keys as $keyInfo) {
-            $key = new TableKey($keyInfo['column_name']);
+            $key = new TableKey(strtolower($keyInfo['column_name']));
             $table->addPrimaryKey($key);
         }
 
