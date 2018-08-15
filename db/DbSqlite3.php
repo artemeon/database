@@ -732,4 +732,11 @@ class DbSqlite3 extends DbBase
         return "'".$strTable."'";
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return implode(' || ', $parts);
+    }
 }

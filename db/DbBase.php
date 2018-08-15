@@ -328,5 +328,12 @@ abstract class DbBase implements DbDriverInterface
 
         return $strQuery." LIMIT ".$intStart.", ".$intEnd;
     }
-}
 
+    /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return 'CONCAT(' . implode(', ', $parts) . ')';
+    }
+}
