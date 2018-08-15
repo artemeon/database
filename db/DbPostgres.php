@@ -212,7 +212,7 @@ class DbPostgres extends DbBase
     {
         $table = new Table($tableName);
 
-        //fetch all columns
+        // fetch all columns
         $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]);
         foreach ($columnInfo as $arrOneColumn) {
             $col = new TableColumn($arrOneColumn["column_name"]);
@@ -231,9 +231,23 @@ class DbPostgres extends DbBase
         }
 
         //fetch all keys
-        $keys = $this->getPArray("SELECT a.attname FROM pg_index i JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) WHERE  i.indrelid = ?::regclass AND i.indisprimary", [$tableName]);
+        $query = "SELECT a.attname as column_name
+                    FROM pg_class t,
+                         pg_class i,
+                         pg_index ix,
+                         pg_attribute a
+                   WHERE t.oid = ix.indrelid
+                     AND i.oid = ix.indexrelid
+                     AND a.attrelid = t.oid
+                     AND a.attnum = ANY(ix.indkey)
+                     AND t.relkind = 'r'
+                     AND ix.indisprimary = 't'
+                     AND t.relname LIKE ?
+                ORDER BY t.relname, i.relname";
+
+        $keys = $this->getPArray($query, [$tableName]);
         foreach ($keys as $keyInfo) {
-            $key = new TableKey($keyInfo['attname']);
+            $key = new TableKey($keyInfo['column_name']);
             $table->addPrimaryKey($key);
         }
 
