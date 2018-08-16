@@ -1189,9 +1189,16 @@ class Database
      * @param bool $bitAddSlashes
      *
      * @return string
+     * @deprecated we need to get rid of this
      */
     public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)
     {
+        //skip for numeric values to avoid php type juggling/autoboxing
+        if (is_float($strString)) {
+            return $strString;
+        } elseif (is_int($strString)) {
+            return $strString;
+        }
 
         if ($strString === null) {
             return null;
@@ -1376,5 +1383,13 @@ class Database
     public function appendLimitExpression($strQuery, $intStart, $intEnd)
     {
         return $this->objDbDriver->appendLimitExpression($strQuery, $intStart, $intEnd);
+    }
+
+    /**
+     * @return string
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return $this->objDbDriver->getConcatExpression($parts);
     }
 }
