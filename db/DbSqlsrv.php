@@ -175,7 +175,7 @@ class DbSqlsrv extends DbBase
         $table = new Table($tableName);
 
         //fetch all columns
-        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]);
+        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]) ?: [];
         foreach ($columnInfo as $arrOneColumn) {
             $col = new TableColumn($arrOneColumn["column_name"]);
             $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
@@ -204,7 +204,7 @@ class DbSqlsrv extends DbBase
                   AND t.is_ms_shipped = 0
                   AND t.name = ?
                 ORDER BY
-                         t.name, ind.name, ind.index_id, ic.index_column_id;", [$tableName]);
+                         t.name, ind.name, ind.index_id, ic.index_column_id;", [$tableName]) ?: [];
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
             $indexAggr[$indexInfo["indexname"]] = $indexAggr[$indexInfo["indexname"]] ?? [];
@@ -222,7 +222,7 @@ class DbSqlsrv extends DbBase
             WHERE Col.Constraint_Name = Tab.Constraint_Name 
               AND Col.Table_Name = Tab.Table_Name 
               AND Constraint_Type = 'PRIMARY KEY' 
-              AND Col.Table_Name = ?", [$tableName]);
+              AND Col.Table_Name = ?", [$tableName]) ?: [];
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['column_name']);
             $table->addPrimaryKey($key);
