@@ -310,7 +310,7 @@ class DbOci8 extends DbBase
         $tableName = StringUtil::toUpperCase($tableName);
 
         //fetch all columns
-        $columnInfo = $this->getPArray("SELECT * FROM user_tab_columns WHERE table_name = ?", [$tableName]) ?? [];
+        $columnInfo = $this->getPArray("SELECT * FROM user_tab_columns WHERE table_name = ?", [$tableName]);
         foreach ($columnInfo as $arrOneColumn) {
             $col = new TableColumn(strtolower($arrOneColumn["column_name"]));
             $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
@@ -325,7 +325,7 @@ class DbOci8 extends DbBase
             from all_ind_columns a, all_indexes b
             where a.index_name=b.index_name
               and a.table_name = ?
-            order by a.index_name, a.column_position", [$tableName]) ?? [];
+            order by a.index_name, a.column_position", [$tableName]);
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
             $indexAggr[$indexInfo["index_name"]] = $indexAggr[$indexInfo["index_name"]] ?? [];
@@ -344,7 +344,7 @@ class DbOci8 extends DbBase
               AND cons.constraint_type = 'P'
               AND cons.constraint_name = cols.constraint_name
               AND cons.owner = cols.owner
-          ", [$tableName]) ?? [];
+          ", [$tableName]);
         foreach ($keys as $keyInfo) {
             $key = new TableKey(strtolower($keyInfo['column_name']));
             $table->addPrimaryKey($key);
