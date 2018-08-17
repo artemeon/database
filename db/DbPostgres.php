@@ -213,7 +213,7 @@ class DbPostgres extends DbBase
         $table = new Table($tableName);
 
         // fetch all columns
-        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]);
+        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]) ?? [];
         foreach ($columnInfo as $arrOneColumn) {
             $col = new TableColumn($arrOneColumn["column_name"]);
             $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
@@ -223,7 +223,7 @@ class DbPostgres extends DbBase
         }
 
         //fetch all indexes
-        $indexes = $this->getPArray("select * from pg_indexes where tablename  = ? AND indexname NOT LIKE '%_pkey'", [$tableName]);
+        $indexes = $this->getPArray("select * from pg_indexes where tablename  = ? AND indexname NOT LIKE '%_pkey'", [$tableName]) ?? [];
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['indexname']);
             $index->setDescription($indexInfo['indexdef']);
@@ -245,7 +245,7 @@ class DbPostgres extends DbBase
                      AND t.relname LIKE ?
                 ORDER BY t.relname, i.relname";
 
-        $keys = $this->getPArray($query, [$tableName]);
+        $keys = $this->getPArray($query, [$tableName]) ?? [];
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['column_name']);
             $table->addPrimaryKey($key);

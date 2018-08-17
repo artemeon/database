@@ -246,7 +246,7 @@ class DbMysqli extends DbBase
         $table = new Table($tableName);
 
         //fetch all columns
-        $columnInfo = $this->getPArray("SHOW COLUMNS FROM {$tableName}", []);
+        $columnInfo = $this->getPArray("SHOW COLUMNS FROM {$tableName}", []) ?? [];
         foreach ($columnInfo as $arrOneColumn) {
             $col = new TableColumn($arrOneColumn["Field"]);
             $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
@@ -256,7 +256,7 @@ class DbMysqli extends DbBase
         }
 
         //fetch all indexes
-        $indexes = $this->getPArray("SHOW INDEX FROM {$tableName} WHERE Key_name != 'PRIMARY'", []);
+        $indexes = $this->getPArray("SHOW INDEX FROM {$tableName} WHERE Key_name != 'PRIMARY'", []) ?? [];
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
             $indexAggr[$indexInfo["Key_name"]] = $indexAggr[$indexInfo["Key_name"]] ?? [];
@@ -269,7 +269,7 @@ class DbMysqli extends DbBase
         }
 
         //fetch all keys
-        $keys = $this->getPArray("SHOW KEYS FROM {$tableName} WHERE Key_name = 'PRIMARY'", []);
+        $keys = $this->getPArray("SHOW KEYS FROM {$tableName} WHERE Key_name = 'PRIMARY'", []) ?? [];
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['Column_name']);
             $table->addPrimaryKey($key);

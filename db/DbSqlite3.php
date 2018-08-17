@@ -425,7 +425,7 @@ class DbSqlite3 extends DbBase
         $table = new Table($tableName);
 
         //fetch all columns
-        $columnInfo = $this->getPArray("PRAGMA table_info('{$tableName}')", []);
+        $columnInfo = $this->getPArray("PRAGMA table_info('{$tableName}')", []) ?? [];
         foreach ($columnInfo as $arrOneColumn) {
             $col = new TableColumn($arrOneColumn["name"]);
             $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
@@ -439,7 +439,7 @@ class DbSqlite3 extends DbBase
         }
 
         //fetch all indexes
-        $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?;", [$tableName]);
+        $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?;", [$tableName]) ?? [];
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['name']);
             $index->setDescription($indexInfo['sql'] ?? '');
