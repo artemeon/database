@@ -741,6 +741,14 @@ class DbOci8 extends DbBase
     }
 
     /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return implode(" || ", $parts);
+    }
+
+    /**
      * Sets the sorting and comparison of strings to case insensitive
      */
     private function setCaseInsensitiveSort()
