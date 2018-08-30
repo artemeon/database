@@ -77,12 +77,19 @@ class DbSqlsrv extends DbBase
         sqlsrv_close($this->linkDB);
     }
 
+    /**
+     * Internal helper to convert php values to database values
+     * currently casting them to strings, otherwise the sqlsrv driver fails to
+     * set them back due to type conversions
+     * @param $arrParams
+     * @return array
+     */
     private function convertParamsArray($arrParams)
     {
         $converted = [];
         foreach ($arrParams as $val) {
             //$converted[] = [$val, null, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)]; //TODO: would be better but not working, casting internally to return type string
-            $converted[] = $val."";
+            $converted[] = $val === null ? null : $val."";
         }
         return $converted;
     }
