@@ -79,7 +79,7 @@ class DbOci8 extends DbBase
      */
     public function dbclose()
     {
-        @oci_close($this->linkDB);
+        //@oci_close($this->linkDB);
     }
 
     /**
