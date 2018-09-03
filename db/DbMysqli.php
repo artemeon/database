@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -161,6 +165,9 @@ class DbMysqli extends DbBase
             $objMetadata = $objStatement->result_metadata();
             $arrParams = array();
             $arrRow = array();
+            if (is_bool($objMetadata )) {
+                $i = 1;
+            }
             while ($objField = $objMetadata->fetch_field()) {
                 $arrParams[] = &$arrRow[$objField->name];
             }
@@ -233,31 +240,78 @@ class DbMysqli extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consisting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("SHOW COLUMNS FROM ".$this->encloseTableName(Database::getInstance()->dbsafeString($strTableName)), array());
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        //fetch all columns
+        $columnInfo = $this->getPArray("SHOW COLUMNS FROM {$tableName}", []) ?: [];
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["Field"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["Null"] == "YES");
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[] = array(
-                "columnName" => $arrOneColumn["Field"],
-                "columnType" => $arrOneColumn["Type"],
-            );
+        //fetch all indexes
+        $indexes = $this->getPArray("SHOW INDEX FROM {$tableName} WHERE Key_name != 'PRIMARY'", []) ?: [];
+        $indexAggr = [];
+        foreach ($indexes as $indexInfo) {
+            $indexAggr[$indexInfo["Key_name"]] = $indexAggr[$indexInfo["Key_name"]] ?? [];
+            $indexAggr[$indexInfo["Key_name"]][] = $indexInfo["Column_name"];
         }
-        return $arrReturn;
+        foreach ($indexAggr as $key => $desc) {
+            $index = new TableIndex($key);
+            $index->setDescription(implode(", ", $desc));
+            $table->addIndex($index);
+        }
+
+        //fetch all keys
+        $keys = $this->getPArray("SHOW KEYS FROM {$tableName} WHERE Key_name = 'PRIMARY'", []) ?: [];
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey($keyInfo['Column_name']);
+            $table->addPrimaryKey($key);
+        }
+
+        return $table;
     }
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        if ($infoSchemaRow["Type"] == "int(11)") {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($infoSchemaRow["Type"] == "bigint(20)") {
+            return DbDatatypes::STR_TYPE_LONG;
+        } elseif ($infoSchemaRow["Type"] == "double") {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($infoSchemaRow["Type"] == "varchar(10)") {
+            return DbDatatypes::STR_TYPE_CHAR10;
+        } elseif ($infoSchemaRow["Type"] == "varchar(20)") {
+            return DbDatatypes::STR_TYPE_CHAR20;
+        } elseif ($infoSchemaRow["Type"] == "varchar(100)") {
+            return DbDatatypes::STR_TYPE_CHAR100;
+        } elseif ($infoSchemaRow["Type"] == "varchar(254)") {
+            return DbDatatypes::STR_TYPE_CHAR254;
+        } elseif ($infoSchemaRow["Type"] == "varchar(500)") {
+            return DbDatatypes::STR_TYPE_CHAR500;
+        } elseif ($infoSchemaRow["Type"] == "text") {
+            return DbDatatypes::STR_TYPE_TEXT;
+        } elseif ($infoSchemaRow["Type"] == "longtext") {
+            return DbDatatypes::STR_TYPE_LONGTEXT;
+        }
+        return null;
+    }
+
 
     /**
      * Returns the db-specific datatype for the kajona internal datatype.
@@ -373,10 +427,18 @@ class DbMysqli extends DbBase
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $arrIndex = $this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]);
         return count($arrIndex) > 0;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->_pQuery("DROP INDEX {$index} ON {$table}", []);
     }
 
     /**

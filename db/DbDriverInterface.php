@@ -8,6 +8,8 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableIndex;
 use Kajona\System\System\DbConnectionParams;
 
 /**
@@ -126,15 +128,13 @@ interface DbDriverInterface
     public function getTables();
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName);
+    public function getTableInformation(string $tableName): Table;
+
+
 
     /**
      * Used to send a create table statement to the database
@@ -176,13 +176,28 @@ interface DbDriverInterface
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false);
 
     /**
+     * Deletes an index from the database
+     * @param string $table
+     * @param string $index
+     * @return bool
+     */
+    public function deleteIndex(string $table, string $index): bool;
+
+    /**
+     * Adds a new index to the provided table
+     * @param TableIndex $index
+     * @return bool
+     */
+    public function addIndex(string $table, TableIndex $index): bool;
+
+    /**
      * Checks whether the table has an index with the provided name
      *
      * @param string $strTable
      * @param string $strName
      * @return bool
      */
-    public function hasIndex($strTable, $strName);
+    public function hasIndex($strTable, $strName): bool;
 
     /**
      * Renames a table
@@ -342,6 +357,14 @@ interface DbDriverInterface
      * @return string
      */
     public function appendLimitExpression($strQuery, $intStart, $intEnd);
+
+    /**
+     * Returns a query expression which concatenates different values. This can bei either column names or strings.
+     *
+     * @param array $parts
+     * @return string
+     */
+    public function getConcatExpression(array $parts);
 
     /**
      * Returns the number of affected rows from the last _pQuery call

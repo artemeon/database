@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -58,11 +62,9 @@ class DbSqlite3 extends DbBase
             }
 
             return true;
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw new Exception("Error connecting to database: ".$e, Exception::$level_FATALERROR);
         }
-
     }
 
     /**
@@ -173,20 +175,25 @@ class DbSqlite3 extends DbBase
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
 
-        $arrTableInfo = $this->getColumnsOfTable($strTable);
+        $tableDef = $this->getTableInformation($strTable);
+        $arrTableInfo = array();
         $arrTargetTableInfo = array();
-        foreach ($arrTableInfo as $arrOneColumn) {
-            if ($arrOneColumn["columnName"] == $strOldColumnName) {
-                $arrNewRow = array(
+        foreach ($tableDef->getColumns() as $colDef) {
+            $arrNewDef = array(
+                "columnName" => $colDef->getName(),
+                "columnType" => $colDef->getInternalType()
+            );
+
+            $arrTableInfo[] = $arrNewDef;
+
+            if ($colDef->getName() == $strOldColumnName) {
+                $arrNewDef = array(
                     "columnName" => $strNewColumnName,
                     "columnType" => $this->getDatatype($strNewDatatype)
                 );
-
-                $arrTargetTableInfo[] = $arrNewRow;
-            } else {
-                $arrTargetTableInfo[] = $arrOneColumn;
             }
 
+            $arrTargetTableInfo[] = $arrNewDef;
         }
 
         return $this->buildAndCopyTempTables($strTable, $arrTableInfo, $arrTargetTableInfo);
@@ -204,14 +211,16 @@ class DbSqlite3 extends DbBase
      */
     public function removeColumn($strTable, $strColumn)
     {
-
-        $arrTableInfo = $this->getColumnsOfTable($strTable);
         $arrTargetTableInfo = array();
-        foreach ($arrTableInfo as $arrOneColumn) {
-            if ($arrOneColumn["columnName"] != $strColumn) {
-                $arrTargetTableInfo[] = $arrOneColumn;
-            }
 
+        $tableDef = $this->getTableInformation($strTable);
+        foreach ($tableDef->getColumns() as $colDef) {
+            if ($colDef->getName() != $strColumn) {
+                $arrTargetTableInfo[] = array(
+                    "columnName" => $colDef->getName(),
+                    "columnType" => $colDef->getInternalType()
+                );
+            }
         }
 
         return $this->buildAndCopyTempTables($strTable, $arrTargetTableInfo, $arrTargetTableInfo);
@@ -234,7 +243,6 @@ class DbSqlite3 extends DbBase
      */
     public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb)
     {
-
         $arrVersion = SQLite3::version();
         if (version_compare("3.7.11", $arrVersion["versionString"], "<=")) {
             return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb);
@@ -408,27 +416,56 @@ class DbSqlite3 extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consisting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrTableInfo = $this->getPArray("PRAGMA table_info('{$strTableName}')", array());
+        $table = new Table($tableName);
 
-        $arrColumns = array();
-        foreach ($arrTableInfo as $arrRow) {
-            $arrColumns[] = array(
-                "columnName" => $arrRow['name'],
-                "columnType" => $arrRow['type']
-            );
+        //fetch all columns
+        $columnInfo = $this->getPArray("PRAGMA table_info('{$tableName}')", []) ?: [];
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["name"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["notnull"] == 0);
+            $table->addColumn($col);
+
+            if ($arrOneColumn['pk'] == 1) {
+                $table->addPrimaryKey(new TableKey($arrOneColumn["name"]));
+            }
         }
 
-        return $arrColumns;
+        //fetch all indexes
+        $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?", [$tableName]) ?: [];
+        foreach ($indexes as $indexInfo) {
+            $index = new TableIndex($indexInfo['name']);
+            $index->setDescription($indexInfo['sql'] ?? '');
+            $table->addIndex($index);
+        }
+
+        return $table;
+    }
+
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        $val = StringUtil::toLowerCase(StringUtil::trim($infoSchemaRow["type"]));
+        if ($val == "integer") {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($val == "real") {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($val == "text") {
+            return DbDatatypes::STR_TYPE_TEXT;
+        }
+        return null;
     }
 
     /**
@@ -493,7 +530,7 @@ class DbSqlite3 extends DbBase
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $arrIndex = $this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]);
         return count($arrIndex) > 0;
@@ -568,11 +605,9 @@ class DbSqlite3 extends DbBase
      */
     public function dbExport(&$strFilename, $arrTables)
     {
-        // FIXME: Only export relevant tables.
         $objFilesystem = new Filesystem();
         return $objFilesystem->fileCopy($this->strDbFile, $strFilename);
     }
-
 
 
     /**
@@ -697,5 +732,11 @@ class DbSqlite3 extends DbBase
         return "'".$strTable."'";
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return implode(' || ', $parts);
+    }
 }
-

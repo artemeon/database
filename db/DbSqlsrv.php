@@ -7,6 +7,10 @@
 
 namespace Kajona\System\System\Db;
 
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -74,6 +78,23 @@ class DbSqlsrv extends DbBase
     }
 
     /**
+     * Internal helper to convert php values to database values
+     * currently casting them to strings, otherwise the sqlsrv driver fails to
+     * set them back due to type conversions
+     * @param $arrParams
+     * @return array
+     */
+    private function convertParamsArray($arrParams)
+    {
+        $converted = [];
+        foreach ($arrParams as $val) {
+            //$converted[] = [$val, null, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)]; //TODO: would be better but not working, casting internally to return type string
+            $converted[] = $val === null ? null : $val."";
+        }
+        return $converted;
+    }
+
+    /**
      * Sends a prepared statement to the database. All params must be represented by the ? char.
      * The params themself are stored using the second params using the matching order.
      *
@@ -85,7 +106,8 @@ class DbSqlsrv extends DbBase
      */
     public function _pQuery($strQuery, $arrParams)
     {
-        $objStatement = sqlsrv_prepare($this->linkDB, $strQuery, array_values($arrParams));
+        $convertParamsArray = $this->convertParamsArray($arrParams);
+        $objStatement = sqlsrv_prepare($this->linkDB, $strQuery, $convertParamsArray);
         if ($objStatement === false) {
             return false;
         }
@@ -118,7 +140,7 @@ class DbSqlsrv extends DbBase
         $arrReturn = array();
         $intCounter = 0;
 
-        $objStatement = sqlsrv_query($this->linkDB, $strQuery, $arrParams);
+        $objStatement = sqlsrv_query($this->linkDB, $strQuery, $this->convertParamsArray($arrParams));
 
         if ($objStatement === false) {
             return false;
@@ -162,33 +184,103 @@ class DbSqlsrv extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?", array(strtoupper($strTableName)));
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        //fetch all columns
+        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]) ?: [];
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["column_name"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["is_nullable"] == "YES");
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[] = array(
-                "columnName" => strtolower($arrOneColumn["column_name"]),
-                "columnType" => ($arrOneColumn["data_type"] == "integer" ? "int" : strtolower($arrOneColumn["data_type"])),
-            );
-
+        //fetch all indexes
+        $indexes = $this->getPArray("SELECT
+                       t.name as tablename,
+                       ind.name as indexname,
+                       col.name as colname
+                FROM
+                     sys.indexes ind
+                       INNER JOIN
+                         sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id
+                       INNER JOIN
+                         sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id
+                       INNER JOIN
+                         sys.tables t ON ind.object_id = t.object_id
+                WHERE
+                    ind.is_primary_key = 0
+                  AND ind.is_unique = 0
+                  AND ind.is_unique_constraint = 0
+                  AND t.is_ms_shipped = 0
+                  AND t.name = ?
+                ORDER BY
+                         t.name, ind.name, ind.index_id, ic.index_column_id;", [$tableName]) ?: [];
+        $indexAggr = [];
+        foreach ($indexes as $indexInfo) {
+            $indexAggr[$indexInfo["indexname"]] = $indexAggr[$indexInfo["indexname"]] ?? [];
+            $indexAggr[$indexInfo["indexname"]][] = $indexInfo["colname"];
+        }
+        foreach ($indexAggr as $key => $desc) {
+            $index = new TableIndex($key);
+            $index->setDescription(implode(", ", $desc));
+            $table->addIndex($index);
         }
 
-        return $arrReturn;
+        //fetch all keys
+        $keys = $this->getPArray("SELECT Col.Column_Name 
+            from INFORMATION_SCHEMA.TABLE_CONSTRAINTS Tab, INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE Col 
+            WHERE Col.Constraint_Name = Tab.Constraint_Name 
+              AND Col.Table_Name = Tab.Table_Name 
+              AND Constraint_Type = 'PRIMARY KEY' 
+              AND Col.Table_Name = ?", [$tableName]) ?: [];
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey($keyInfo['column_name']);
+            $table->addPrimaryKey($key);
+        }
+
+        return $table;
     }
+
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        if ($infoSchemaRow["data_type"] == "int") {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($infoSchemaRow["data_type"] == "bigint") {
+            return DbDatatypes::STR_TYPE_LONG;
+        } elseif ($infoSchemaRow["data_type"] == "real") {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($infoSchemaRow["data_type"] == "varchar") {
+            if ($infoSchemaRow["character_maximum_length"] == "10") {
+                return DbDatatypes::STR_TYPE_CHAR10;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "20") {
+                return DbDatatypes::STR_TYPE_CHAR20;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "100") {
+                return DbDatatypes::STR_TYPE_CHAR100;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "254") {
+                return DbDatatypes::STR_TYPE_CHAR254;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "500") {
+                return DbDatatypes::STR_TYPE_CHAR500;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "-1") {
+                return DbDatatypes::STR_TYPE_TEXT;
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Returns the db-specific datatype for the kajona internal datatype.
@@ -372,9 +464,17 @@ class DbSqlsrv extends DbBase
     }
 
     /**
+     * @inheritDoc
+     */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->_pQuery("DROP INDEX {$table}.{$index}", []);
+    }
+
+    /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $strQuery = "SELECT name FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)";
 
@@ -529,6 +629,14 @@ class DbSqlsrv extends DbBase
         }
 
         return $strQuery . " OFFSET {$intStart} ROWS FETCH NEXT {$intLength} ROWS ONLY";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return "(" . implode(' + ', $parts) . ")";
     }
 
     /**

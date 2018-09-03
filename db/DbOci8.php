@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -75,7 +79,7 @@ class DbOci8 extends DbBase
      */
     public function dbclose()
     {
-        @oci_close($this->linkDB);
+        //@oci_close($this->linkDB);
     }
 
     /**
@@ -295,32 +299,93 @@ class DbOci8 extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("select column_name, data_type from user_tab_columns where table_name=?", array(strtoupper($strTableName)));
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        $tableName = StringUtil::toUpperCase($tableName);
+
+        //fetch all columns
+        $columnInfo = $this->getPArray("SELECT * FROM user_tab_columns WHERE table_name = ?", [$tableName]) ?: [];
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn(strtolower($arrOneColumn["column_name"]));
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["nullable"] == "Y");
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[] = array(
-                "columnName" => strtolower($arrOneColumn["column_name"]),
-                "columnType" => ($arrOneColumn["data_type"] == "integer" ? "int" : strtolower($arrOneColumn["data_type"])),
-            );
-
+        //fetch all indexes
+        $indexes = $this->getPArray("
+            select b.uniqueness, a.index_name, a.table_name, a.column_name
+            from all_ind_columns a, all_indexes b
+            where a.index_name=b.index_name
+              and a.table_name = ?
+            order by a.index_name, a.column_position", [$tableName]) ?: [];
+        $indexAggr = [];
+        foreach ($indexes as $indexInfo) {
+            $indexAggr[$indexInfo["index_name"]] = $indexAggr[$indexInfo["index_name"]] ?? [];
+            $indexAggr[$indexInfo["index_name"]][] = $indexInfo["column_name"];
+        }
+        foreach ($indexAggr as $key => $desc) {
+            $index = new TableIndex(strtolower($key));
+            $index->setDescription(implode(", ", $desc));
+            $table->addIndex($index);
         }
 
-        return $arrReturn;
+        //fetch all keys
+        $keys = $this->getPArray("SELECT cols.table_name, cols.column_name, cols.position, cons.status, cons.owner 
+            FROM all_constraints cons, all_cons_columns cols
+            WHERE cols.table_name = ?
+              AND cons.constraint_type = 'P'
+              AND cons.constraint_name = cols.constraint_name
+              AND cons.owner = cols.owner
+          ", [$tableName]) ?: [];
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey(strtolower($keyInfo['column_name']));
+            $table->addPrimaryKey($key);
+        }
+
+
+        return $table;
+    }
+
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        if ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
+            return DbDatatypes::STR_TYPE_LONG;
+        } elseif ($infoSchemaRow["data_type"] == "FLOAT" && $infoSchemaRow["data_precision"] == 24) {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($infoSchemaRow["data_type"] == "VARCHAR2") {
+            if ($infoSchemaRow["data_length"] == "10") {
+                return DbDatatypes::STR_TYPE_CHAR10;
+            } elseif ($infoSchemaRow["data_length"] == "20") {
+                return DbDatatypes::STR_TYPE_CHAR20;
+            } elseif ($infoSchemaRow["data_length"] == "100") {
+                return DbDatatypes::STR_TYPE_CHAR100;
+            } elseif ($infoSchemaRow["data_length"] == "280") {
+                return DbDatatypes::STR_TYPE_CHAR254;
+            } elseif ($infoSchemaRow["data_length"] == "500") {
+                return DbDatatypes::STR_TYPE_CHAR500;
+            } elseif ($infoSchemaRow["data_length"] == "4000") {
+                return DbDatatypes::STR_TYPE_TEXT;
+            }
+        } elseif ($infoSchemaRow["data_type"] == "CLOB") {
+            return DbDatatypes::STR_TYPE_LONGTEXT;
+        }
+        return null;
     }
 
     /**
@@ -346,7 +411,7 @@ class DbOci8 extends DbBase
         $strReturn = "";
 
         if ($strType == DbDatatypes::STR_TYPE_INT) {
-            $strReturn .= " NUMBER(19,0) ";
+            $strReturn .= " NUMBER(19, 0) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_LONG) {
             $strReturn .= " NUMBER(19, 0) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_DOUBLE) {
@@ -483,7 +548,7 @@ class DbOci8 extends DbBase
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $arrIndex = $this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [strtoupper($strTable), strtoupper($strName)]);
         return count($arrIndex) > 0;
@@ -673,6 +738,14 @@ class DbOci8 extends DbBase
                      WHERE ROWNUM <= ".$intEnd."
                 )
                 WHERE rnum >= ".$intStart;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return implode(" || ", $parts);
     }
 
     /**

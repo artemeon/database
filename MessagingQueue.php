@@ -83,7 +83,7 @@ class MessagingQueue extends Model implements ModelInterface
     /**
      * @param Date $objSendDate
      */
-    public function setObjSendDate(Date $objSendDate)
+    public function setObjSendDate($objSendDate)
     {
         $this->objSendDate = $objSendDate;
     }

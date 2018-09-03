@@ -8,6 +8,10 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Carrier;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableColumn;
+use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\Db\Schema\TableKey;
 use Kajona\System\System\DbConnectionParams;
 use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
@@ -200,32 +204,86 @@ class DbPostgres extends DbBase
     }
 
     /**
-     * Looks up the columns of the given table.
-     * Should return an array for each row consting of:
-     * array ("columnName", "columnType")
-     *
-     * @param string $strTableName
-     *
-     * @return array
+     * Fetches the full table information as retrieved from the rdbms
+     * @param $tableName
+     * @return Table
      */
-    public function getColumnsOfTable($strTableName)
+    public function getTableInformation(string $tableName): Table
     {
-        $arrReturn = array();
-        $arrTemp = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = '".Carrier::getInstance()->getObjDB()->dbsafeString($strTableName)."'", array());
+        $table = new Table($tableName);
 
-        if (empty($arrTemp)) {
-            return array();
+        // fetch all columns
+        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]) ?: [];
+        foreach ($columnInfo as $arrOneColumn) {
+            $col = new TableColumn($arrOneColumn["column_name"]);
+            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
+            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
+            $col->setNullable($arrOneColumn["is_nullable"] == "YES");
+            $table->addColumn($col);
         }
 
-        foreach ($arrTemp as $arrOneColumn) {
-            $arrReturn[] = array(
-                "columnName" => $arrOneColumn["column_name"],
-                "columnType" => ($arrOneColumn["data_type"] == "integer" ? "int" : $arrOneColumn["data_type"]),
-            );
-
+        //fetch all indexes
+        $indexes = $this->getPArray("select * from pg_indexes where tablename  = ? AND indexname NOT LIKE '%_pkey'", [$tableName]) ?: [];
+        foreach ($indexes as $indexInfo) {
+            $index = new TableIndex($indexInfo['indexname']);
+            $index->setDescription($indexInfo['indexdef']);
+            $table->addIndex($index);
         }
 
-        return $arrReturn;
+        //fetch all keys
+        $query = "SELECT a.attname as column_name
+                    FROM pg_class t,
+                         pg_class i,
+                         pg_index ix,
+                         pg_attribute a
+                   WHERE t.oid = ix.indrelid
+                     AND i.oid = ix.indexrelid
+                     AND a.attrelid = t.oid
+                     AND a.attnum = ANY(ix.indkey)
+                     AND t.relkind = 'r'
+                     AND ix.indisprimary = 't'
+                     AND t.relname LIKE ?
+                ORDER BY t.relname, i.relname";
+
+        $keys = $this->getPArray($query, [$tableName]) ?: [];
+        foreach ($keys as $keyInfo) {
+            $key = new TableKey($keyInfo['column_name']);
+            $table->addPrimaryKey($key);
+        }
+
+        return $table;
+    }
+
+
+    /**
+     * Tries to convert a column provided by the database back to the Kajona internal type constant
+     * @param $infoSchemaRow
+     * @return null|string
+     */
+    private function getCoreTypeForDbType($infoSchemaRow)
+    {
+        if ($infoSchemaRow["data_type"] == "integer") {
+            return DbDatatypes::STR_TYPE_INT;
+        } elseif ($infoSchemaRow["data_type"] == "bigint") {
+            return DbDatatypes::STR_TYPE_LONG;
+        } elseif ($infoSchemaRow["data_type"] == "numeric") {
+            return DbDatatypes::STR_TYPE_DOUBLE;
+        } elseif ($infoSchemaRow["data_type"] == "character varying") {
+            if ($infoSchemaRow["character_maximum_length"] == "10") {
+                return DbDatatypes::STR_TYPE_CHAR10;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "20") {
+                return DbDatatypes::STR_TYPE_CHAR20;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "100") {
+                return DbDatatypes::STR_TYPE_CHAR100;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "254") {
+                return DbDatatypes::STR_TYPE_CHAR254;
+            } elseif ($infoSchemaRow["character_maximum_length"] == "500") {
+                return DbDatatypes::STR_TYPE_CHAR500;
+            }
+        } elseif ($infoSchemaRow["data_type"] == "text") {
+            return DbDatatypes::STR_TYPE_TEXT;
+        }
+        return null;
     }
 
     /**
@@ -353,11 +411,20 @@ class DbPostgres extends DbBase
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         $arrIndex = $this->getPArray("SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?", [$strTable, $strName]);
         return count($arrIndex) > 0;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function addIndex(string $table, TableIndex $index): bool
+    {
+        return $this->_pQuery($index->getDescription(), []);
+    }
+
 
     /**
      * Starts a transaction
