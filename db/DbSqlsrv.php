@@ -35,10 +35,6 @@ class DbSqlsrv extends DbBase
      */
     private $objCfg;
 
-    /**
-     * @var bool
-     */
-    private $bitTxOpen = false;
 
     /**
      * @inheritdoc
@@ -60,6 +56,10 @@ class DbSqlsrv extends DbBase
             "PWD" => $this->objCfg->getStrPass(),
             "Database" => $this->objCfg->getStrDbName(),
             "CharacterSet" => "UTF-8",
+            "ConnectionPooling" => "1",
+            "MultipleActiveResultSets"=> "0",
+            "APP" => "Artemeon Core"
+
         ]);
 
         if ($this->linkDB === false) {
@@ -74,7 +74,8 @@ class DbSqlsrv extends DbBase
      */
     public function dbclose()
     {
-        sqlsrv_close($this->linkDB);
+        //do n.th. to keep the persistent connection
+        //sqlsrv_close($this->linkDB);
     }
 
     /**
@@ -525,7 +526,6 @@ class DbSqlsrv extends DbBase
     public function transactionBegin()
     {
         sqlsrv_begin_transaction($this->linkDB);
-        $this->bitTxOpen = true;
     }
 
     /**
@@ -536,7 +536,6 @@ class DbSqlsrv extends DbBase
     public function transactionCommit()
     {
         sqlsrv_commit($this->linkDB);
-        $this->bitTxOpen = false;
     }
 
     /**
@@ -547,7 +546,6 @@ class DbSqlsrv extends DbBase
     public function transactionRollback()
     {
         sqlsrv_rollback($this->linkDB);
-        $this->bitTxOpen = false;
     }
 
     /**
