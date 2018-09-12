@@ -171,7 +171,7 @@ class DbSqlsrv extends DbBase
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array());
+        $arrTemp = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
 
         foreach ($arrTemp as $intKey => $strValue) {
             $arrTemp[$intKey]["name"] = strtolower($strValue["table_name"]);
@@ -191,11 +191,7 @@ class DbSqlsrv extends DbBase
     public function getColumnsOfTable($strTableName)
     {
         $arrReturn = array();
-        $arrTemp = $this->getPArray("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?", array(strtoupper($strTableName)));
-
-        if (empty($arrTemp)) {
-            return array();
-        }
+        $arrTemp = $this->getPArray("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?", array(strtoupper($strTableName))) ?? [];
 
         foreach ($arrTemp as $arrOneColumn) {
             $arrReturn[] = array(
