@@ -45,8 +45,9 @@ class Exception extends \Exception
     /**
      * @param string $strError
      * @param int $intErrorlevel
+     * @param Exception|null $objPrevious
      */
-    public function __construct($strError, $intErrorlevel = 1, Exception $objPrevious = null)
+    public function __construct($strError, $intErrorlevel = 1, \Throwable $objPrevious = null)
     {
         parent::__construct($strError, 0, $objPrevious);
         $this->intErrorlevel = $intErrorlevel;
@@ -101,6 +102,11 @@ class Exception extends \Exception
             $strMailtext .= "Callstack / Backtrace:\n\n";
             $strMailtext .= $this->getStrAdditionalTrace();
             $strMailtext .= $this->getTraceAsString();
+            if ($this->getPrevious() !== null) {
+                $strMailtext .= "\n\nPrevious Exception:\n\n";
+                $strMailtext .= "\t".basename($this->getPrevious()->getFile())." in line ".$this->getPrevious()->getLine()."\n\n";
+                $strMailtext .= $this->getPrevious()->getTraceAsString();
+            }
             $strMailtext .= "\n\n";
             $strMailtext .= "User: ".Carrier::getInstance()->getObjSession()->getUserID()." (".Carrier::getInstance()->getObjSession()->getUsername().")\n";
             $strMailtext .= "Source host: ".getServer("REMOTE_ADDR")." (".@gethostbyaddr(getServer("REMOTE_ADDR")).")\n";
