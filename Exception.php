@@ -40,7 +40,6 @@ class Exception extends \Exception
 
     private $intErrorlevel;
     private $intDebuglevel;
-    private $strAdditionalTrace = "";
 
     /**
      * @param string $strError
@@ -100,12 +99,13 @@ class Exception extends \Exception
             $strMailtext .= "File and line number the error was thrown:\n";
             $strMailtext .= "\t".basename($this->getFile())." in line ".$this->getLine()."\n\n";
             $strMailtext .= "Callstack / Backtrace:\n\n";
-            $strMailtext .= $this->getStrAdditionalTrace();
             $strMailtext .= $this->getTraceAsString();
-            if ($this->getPrevious() !== null) {
+            $previous = $this->getPrevious();
+            while ($previous !== null) {
                 $strMailtext .= "\n\nPrevious Exception:\n\n";
-                $strMailtext .= "\t".basename($this->getPrevious()->getFile())." in line ".$this->getPrevious()->getLine()."\n\n";
-                $strMailtext .= $this->getPrevious()->getTraceAsString();
+                $strMailtext .= "\t".basename($previous->getFile())." in line ".$previous->getLine()."\n\n";
+                $strMailtext .= $previous->getTraceAsString();
+                $previous = $previous->getPrevious();
             }
             $strMailtext .= "\n\n";
             $strMailtext .= "User: ".Carrier::getInstance()->getObjSession()->getUserID()." (".Carrier::getInstance()->getObjSession()->getUsername().")\n";
@@ -252,23 +252,4 @@ class Exception extends \Exception
         return $this->intDebuglevel;
     }
 
-    /**
-     * @return string
-     */
-    public function getStrAdditionalTrace(): string
-    {
-        return $this->strAdditionalTrace;
-    }
-
-    /**
-     * @param string $strAdditionalTrace
-     */
-    public function setStrAdditionalTrace(string $strAdditionalTrace)
-    {
-        $this->strAdditionalTrace = $strAdditionalTrace;
-    }
-
-
-
 }
-
