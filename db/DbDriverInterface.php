@@ -360,6 +360,9 @@ interface DbDriverInterface
 
     /**
      * Returns a query expression which concatenates different values. This can bei either column names or strings.
+     * <code>
+     *  $connection->getConcatExpression(['user_kajona.user_forename', '\' \'', 'user_kajona.user_name'])
+     * </code>
      *
      * @param array $parts
      * @return string
