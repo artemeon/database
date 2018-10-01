@@ -79,6 +79,7 @@ class DbOci8 extends DbBase
      */
     public function dbclose()
     {
+        //do n.th. to keep the persistent connection
         //@oci_close($this->linkDB);
     }
 
@@ -249,6 +250,8 @@ class DbOci8 extends DbBase
         if ($this->bitTxOpen) {
             $bitAddon = OCI_NO_AUTO_COMMIT;
         }
+
+        oci_set_prefetch($objStatement, 300);
         $resultSet = @oci_execute($objStatement, $bitAddon);
 
         if (!$resultSet) {
