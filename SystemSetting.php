@@ -177,7 +177,7 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
     public static function getAllConfigValues()
     {
         if (self::$arrInstanceCache == null) {
-            if (count(Database::getInstance()->getTables()) == 0) {
+            if (!in_array("agp_system_config", Database::getInstance()->getTables())) {
                 return array();
             }
 
