@@ -181,7 +181,16 @@ class Exception extends \Exception
             $strErrormessage .= "<p>An error occurred:<br><b>".(htmlspecialchars($objException->getMessage(), ENT_QUOTES, "UTF-8", false))."</b></p>";
 
             if ($objException->intErrorlevel == Exception::$level_FATALERROR || Session::getInstance()->isSuperAdmin()) {
-                $strErrormessage .= "<br><p><pre style='font-size:12px;'>Stacktrace:\n".(htmlspecialchars($objException->getStrAdditionalTrace().$objException->getTraceAsString(), ENT_QUOTES, "UTF-8", false))."</pre></p>";
+                $trace = basename($objException->getFile())." in line ".$objException->getLine()."\n";
+                $trace .= $objException->getTraceAsString();
+                $previous = $objException->getPrevious();
+                while ($previous !== null) {
+                    $trace .= "\nPrevious Exception:\n";
+                    $trace .= basename($previous->getFile())." in line ".$previous->getLine()."\n\n";
+                    $trace .= $previous->getTraceAsString();
+                    $previous = $previous->getPrevious();
+                }
+                $strErrormessage .= "<br><p><pre style='font-size:12px;'>Stacktrace:\n".(htmlspecialchars($trace, ENT_QUOTES, "UTF-8", false))."</pre></p>";
             }
 
             $strErrormessage .= "<br><p>Please contact the system admin</p>";
