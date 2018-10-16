@@ -721,13 +721,13 @@ class Database
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
      * @param array $arrIndices array of additional indices
-     * @param bool $bitTxSafe Should the table support transactions?
-     *
-     * @see DbDatatypes
      *
      * @return bool
+     * @throws Exception
+     * @see DbDatatypes
+     *
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array())
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -742,7 +742,7 @@ class Database
         }
 
         // create table
-        $bitReturn = $this->objDbDriver->createTable($strName, $arrFields, $arrKeys, $bitTxSafe);
+        $bitReturn = $this->objDbDriver->createTable($strName, $arrFields, $arrKeys);
         if (!$bitReturn) {
             $this->getError("", array());
         }

@@ -157,11 +157,10 @@ interface DbDriverInterface
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true);
+    public function createTable($strName, $arrFields, $arrKeys);
 
     /**
      * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
