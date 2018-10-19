@@ -13,6 +13,8 @@ use Kajona\Dbdump\System\DbExport;
 use Kajona\Dbdump\System\DbImport;
 use Kajona\Packagemanager\System\PackagemanagerManager;
 use Kajona\System\System\Db\DbDriverInterface;
+use Kajona\System\System\Db\Schema\Table;
+use Kajona\System\System\Db\Schema\TableIndex;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
@@ -645,6 +647,7 @@ class Database
      * array ("columnName", "columnType")
      *
      * @param string $strTableName
+     * @deprecated
      *
      * @return array
      */
@@ -654,7 +657,31 @@ class Database
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->getColumnsOfTable($strTableName);
+        $table = $this->objDbDriver->getTableInformation($strTableName);
+
+        $return = [];
+        foreach ($table->getColumns() as $column) {
+            $return[$column->getName()] = [
+                "columnName" => $column->getName(),
+                "columnType" => $column->getInternalType()
+            ];
+        }
+
+        return $return;
+    }
+
+    /**
+     * Fetches extensive information per database table
+     * @param $tableName
+     * @return Table
+     */
+    public function getTableInformation($tableName): Table
+    {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
+        return $this->objDbDriver->getTableInformation($tableName);
     }
 
     /**
@@ -694,13 +721,13 @@ class Database
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
      * @param array $arrIndices array of additional indices
-     * @param bool $bitTxSafe Should the table support transactions?
-     *
-     * @see DbDatatypes
      *
      * @return bool
+     * @throws Exception
+     * @see DbDatatypes
+     *
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array(), $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array())
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -715,7 +742,7 @@ class Database
         }
 
         // create table
-        $bitReturn = $this->objDbDriver->createTable($strName, $arrFields, $arrKeys, $bitTxSafe);
+        $bitReturn = $this->objDbDriver->createTable($strName, $arrFields, $arrKeys);
         if (!$bitReturn) {
             $this->getError("", array());
         }
@@ -745,6 +772,7 @@ class Database
      * @param array $arrColumns
      * @param bool $bitUnique
      * @return bool
+     * @throws Exception
      */
     public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
     {
@@ -761,13 +789,36 @@ class Database
     }
 
     /**
+     * Removes an index from the database / table
+     * @param string $table
+     * @param string $index
+     * @return bool
+     */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->objDbDriver->deleteIndex($table, $index);
+    }
+
+    /**
+     * Adds an index to a table based on the import / export format
+     * @param string $table
+     * @param TableIndex $index
+     * @return bool
+     * @internal
+     */
+    public function addIndex(string $table, TableIndex $index)
+    {
+        return $this->objDbDriver->addIndex($table, $index);
+    }
+
+    /**
      * Checks whether the table has an index with the provided name
      *
      * @param string $strTable
      * @param string $strName
      * @return bool
      */
-    public function hasIndex($strTable, $strName)
+    public function hasIndex($strTable, $strName): bool
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -1138,9 +1189,16 @@ class Database
      * @param bool $bitAddSlashes
      *
      * @return string
+     * @deprecated we need to get rid of this
      */
     public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)
     {
+        //skip for numeric values to avoid php type juggling/autoboxing
+        if (is_float($strString)) {
+            return $strString;
+        } elseif (is_int($strString)) {
+            return $strString;
+        }
 
         if ($strString === null) {
             return null;
@@ -1325,5 +1383,13 @@ class Database
     public function appendLimitExpression($strQuery, $intStart, $intEnd)
     {
         return $this->objDbDriver->appendLimitExpression($strQuery, $intStart, $intEnd);
+    }
+
+    /**
+     * @return string
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return $this->objDbDriver->getConcatExpression($parts);
     }
 }

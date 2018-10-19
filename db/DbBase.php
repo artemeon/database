@@ -7,6 +7,7 @@
 namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
+use Kajona\System\System\Db\Schema\TableIndex;
 
 
 /**
@@ -110,6 +111,24 @@ abstract class DbBase implements DbDriverInterface
     {
         return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$strTable." (" . implode(",", $arrColumns) . ")", []);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function deleteIndex(string $table, string $index): bool
+    {
+        return $this->_pQuery("DROP INDEX ".$index, []);
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    public function addIndex(string $table, TableIndex $index): bool
+    {
+        return $this->createIndex($table, $index->getName(), explode(",", $index->getDescription()));
+    }
+
 
     /**
      * Removes a column from a table
@@ -309,5 +328,12 @@ abstract class DbBase implements DbDriverInterface
 
         return $strQuery." LIMIT ".$intStart.", ".$intEnd;
     }
-}
 
+    /**
+     * @inheritdoc
+     */
+    public function getConcatExpression(array $parts)
+    {
+        return 'CONCAT(' . implode(', ', $parts) . ')';
+    }
+}
