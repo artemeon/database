@@ -372,11 +372,10 @@ class DbMysqli extends DbBase
      * @param string $strName
      * @param array $arrFields array of fields / columns
      * @param array $arrKeys array of primary keys
-     * @param bool $bitTxSafe Should the table support transactions?
      *
      * @return bool
      */
-    public function createTable($strName, $arrFields, $arrKeys, $bitTxSafe = true)
+    public function createTable($strName, $arrFields, $arrKeys)
     {
         $strQuery = "";
 
@@ -406,12 +405,7 @@ class DbMysqli extends DbBase
         //primary keys
         $strQuery .= " PRIMARY KEY ( `".implode("` , `", $arrKeys)."` ) \n";
         $strQuery .= ") ";
-
-        if (!$bitTxSafe) {
-            $strQuery .= " ENGINE = myisam CHARACTER SET utf8 COLLATE utf8_unicode_ci;";
-        } else {
-            $strQuery .= " ENGINE = innodb CHARACTER SET utf8 COLLATE utf8_unicode_ci;";
-        }
+        $strQuery .= " ENGINE = innodb CHARACTER SET utf8 COLLATE utf8_unicode_ci;";
 
         return $this->_pQuery($strQuery, array());
     }
