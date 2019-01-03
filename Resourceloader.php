@@ -461,8 +461,9 @@ class Resourceloader
     public function getWebPathForModule($strModule)
     {
         $arrPhars = Classloader::getInstance()->getArrPharModules();
-        if (in_array($strModule, $arrPhars)) {
-            return "/files/extract/".$strModule;
+        $key = array_search($strModule, $arrPhars);
+        if ($key !== false) {
+            return "/files/extract/".substr($key, 0, -5);
         }
 
         return $this->getCorePathForModule($strModule)."/".$strModule;
