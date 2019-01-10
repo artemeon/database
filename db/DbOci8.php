@@ -259,7 +259,7 @@ class DbOci8 extends DbBase
             return false;
         }
 
-        while ($arrRow = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
+        while ($arrRow = oci_fetch_assoc($objStatement)) {
             $arrRow = $this->parseResultRow($arrRow);
             $arrReturn[$intCounter++] = $arrRow;
         }
@@ -709,6 +709,25 @@ class DbOci8 extends DbBase
         $arrRow = array_change_key_case($arrRow, CASE_LOWER);
         if (isset($arrRow["count(*)"])) {
             $arrRow["COUNT(*)"] = $arrRow["count(*)"];
+        }
+
+        foreach ($arrRow as $key => $val) {
+            if (is_object($val) && get_class($val) == "OCI-Lob") {
+                //inject an anonymous lazy loader
+                $arrRow[$key] = new class($val)   {
+                    private $val;
+
+                    public function __construct($val)
+                    {
+                        $this->val = $val;
+                    }
+
+                    public function __toString()
+                    {
+                        return (string)$this->val->load();
+                    }
+                };
+            }
         }
 
         return $arrRow;
