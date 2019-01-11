@@ -17,6 +17,7 @@ use Kajona\System\System\DbDatatypes;
 use Kajona\System\System\Exception;
 use Kajona\System\System\Logger;
 use Kajona\System\System\StringUtil;
+use UnexpectedValueException;
 
 
 /**
@@ -259,6 +260,8 @@ class DbOci8 extends DbBase
             return false;
         }
 
+        //this was the old way, we're now no longer loading LOBS by default
+        //while ($arrRow = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
         while ($arrRow = oci_fetch_assoc($objStatement)) {
             $arrRow = $this->parseResultRow($arrRow);
             $arrReturn[$intCounter++] = $arrRow;
@@ -594,6 +597,7 @@ class DbOci8 extends DbBase
     public function getDbInfo()
     {
         $arrReturn = array();
+        $arrReturn["version"] = $this->getServerVersion($this->linkDB);
         $arrReturn["dbserver"] = oci_server_version($this->linkDB);
         $arrReturn["dbclient"] = function_exists("oci_client_version") ? oci_client_version() : "";
         $arrReturn["nls_sort"] = $this->getPArray("select sys_context ('userenv', 'nls_sort') val1 from sys.dual", array())[0]["val1"];
@@ -602,8 +606,18 @@ class DbOci8 extends DbBase
     }
 
 
-    //--- DUMP & RESTORE ------------------------------------------------------------------------------------
-
+    /**
+     * parses the version out of the server info string.
+     * @see https://github.com/doctrine/dbal/blob/master/lib/Doctrine/DBAL/Driver/OCI8/OCI8Connection.php
+     * @return string
+     */
+    private function getServerVersion()
+    {
+        if (! preg_match('/\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+/', oci_server_version($this->linkDB), $version)) {
+            throw new UnexpectedValueException(oci_server_version($this->linkDB));
+        }
+        return $version[1];
+    }
 
     /**
      * @inheritdoc
@@ -745,13 +759,28 @@ class DbOci8 extends DbBase
     {
     }
 
+
+    /** @var bool caching the version parse & compare  */
+    private static $is12c = null;
+
     /**
      * @inheritdoc
      */
     public function appendLimitExpression($strQuery, $intStart, $intEnd)
     {
+
         $intStart++;
         $intEnd++;
+
+        if (self::$is12c === null) {
+            self::$is12c = version_compare($this->getServerVersion(), "12.1", "ge");
+        }
+
+        if (self::$is12c) {
+            //TODO: 12c has a new offset syntax - lets see if it's really faster
+            $intDelta = $intEnd - $intStart;
+            return $strQuery . " OFFSET {$intStart} ROWS FETCH NEXT {$intDelta} ROWS ONLY";
+        }
 
         return "SELECT * FROM (
                      SELECT a.*, ROWNUM rnum FROM
