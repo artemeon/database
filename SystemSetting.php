@@ -174,12 +174,12 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
      * @return SystemSetting[]
      * @static
      */
-    public static function getAllConfigValues()
+    private static function getAllConfigValues()
     {
         if (self::$arrInstanceCache == null) {
-//            if (!in_array("agp_system_config", Database::getInstance()->getTables())) {
-//                return array();
-//            }
+            if (!in_array("agp_system_config", Database::getInstance()->getTables())) {
+                return array();
+            }
 
             /** @var SystemSetting $objOneSetting */
             foreach (static::getObjectListFiltered() as $objOneSetting) {
