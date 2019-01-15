@@ -163,10 +163,10 @@ class Database
      * @param string $strTable
      * @param string[] $arrColumns
      * @param array $arrValueSets
-     * @param null $arrEscapes
+     * @param array|null $arrEscapes
      * @return bool
      */
-    public function multiInsert($strTable, $arrColumns, $arrValueSets, $arrEscapes = null)
+    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null)
     {
         if (count($arrValueSets) == 0) {
             return true;
