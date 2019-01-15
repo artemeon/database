@@ -163,10 +163,10 @@ class Database
      * @param string $strTable
      * @param string[] $arrColumns
      * @param array $arrValueSets
-     *
+     * @param null $arrEscapes
      * @return bool
      */
-    public function multiInsert($strTable, $arrColumns, $arrValueSets)
+    public function multiInsert($strTable, $arrColumns, $arrValueSets, $arrEscapes = null)
     {
         if (count($arrValueSets) == 0) {
             return true;
@@ -177,7 +177,7 @@ class Database
         $intSetsPerInsert = floor(970 / count($arrColumns));
 
         foreach (array_chunk($arrValueSets, $intSetsPerInsert) as $arrSingleValueSet) {
-            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this);
+            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this, $arrEscapes);
         }
 
         return $bitReturn;

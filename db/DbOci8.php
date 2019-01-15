@@ -96,13 +96,11 @@ class DbOci8 extends DbBase
      * @param array $arrValueSets
      * @param Database $objDb
      *
+     * @param array|null $arrEscapes
      * @return bool
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb)
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb, ?array $arrEscapes)
     {
-
-        $bitReturn = true;
-
         $arrPlaceholder = array();
         $arrSafeColumns = array();
 
@@ -123,9 +121,7 @@ class DbOci8 extends DbBase
         }
         $strQuery .= " SELECT * FROM dual";
 
-        $bitReturn = $objDb->_pQuery($strQuery, $arrParams) && $bitReturn;
-
-        return $bitReturn;
+        return $objDb->_pQuery($strQuery, $arrParams, $arrEscapes ?? []);
     }
 
 

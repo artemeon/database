@@ -49,9 +49,10 @@ interface DbDriverInterface
      * @param array $arrValueSets
      * @param Database $objDb
      *
+     * @param array|null $arrEscapes
      * @return bool
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb);
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb, ?array $arrEscapes);
 
     /**
      * Fires an insert or update of a single record. it's up to the database (driver)
