@@ -21,8 +21,6 @@ use Kajona\System\Admin\AdminInterface;
  *
  * @module system
  * @moduleId _system_modul_id_
- *
- * @blockFromAutosave
  */
 class SystemModule extends Model implements ModelInterface, AdminListableInterface
 {
@@ -176,15 +174,15 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
     {
 
         if (self::$arrModules === null) {
-//            if (count(Database::getInstance()->getTables()) == 0) {
-//                return array();
-//            }
+            if (ResponseObject::getInstance()->getObjEntrypoint()->equals(RequestEntrypointEnum::INSTALLER()) && count(Database::getInstance()->getTables()) == 0) {
+                return array();
+            }
             /** @var SystemModule $objOneModule */
             try {
                 foreach (parent::getObjectListFiltered() as $objOneModule) {
                     self::$arrModules[$objOneModule->getStrName()] = $objOneModule;
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 return [];
             }
         }
