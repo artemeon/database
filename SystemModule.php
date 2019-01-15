@@ -176,12 +176,16 @@ class SystemModule extends Model implements ModelInterface, AdminListableInterfa
     {
 
         if (self::$arrModules === null) {
-            if (count(Database::getInstance()->getTables()) == 0) {
-                return array();
-            }
+//            if (count(Database::getInstance()->getTables()) == 0) {
+//                return array();
+//            }
             /** @var SystemModule $objOneModule */
-            foreach (parent::getObjectListFiltered() as $objOneModule) {
-                self::$arrModules[$objOneModule->getStrName()] = $objOneModule;
+            try {
+                foreach (parent::getObjectListFiltered() as $objOneModule) {
+                    self::$arrModules[$objOneModule->getStrName()] = $objOneModule;
+                }
+            } catch (\Exception $e) {
+                return [];
             }
         }
 
