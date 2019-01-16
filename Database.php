@@ -143,7 +143,7 @@ class Database
     {
         if ($this->objDbDriver !== null) {
             try {
-                Logger::getInstance(Logger::DBLOG)->info("creating database-connection using driver ".get_class($this->objDbDriver));
+                //Logger::getInstance(Logger::DBLOG)->info("creating database-connection using driver ".get_class($this->objDbDriver));
                 $objCfg = Config::getInstance("module_system", "config.php");
                 $this->objDbDriver->dbconnect(new DbConnectionParams($objCfg->getConfig("dbhost"), $objCfg->getConfig("dbusername"), $objCfg->getConfig("dbpassword"), $objCfg->getConfig("dbname"), $objCfg->getConfig("dbport")));
             } catch (Exception $objException) {
