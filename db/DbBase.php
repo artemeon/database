@@ -157,9 +157,10 @@ abstract class DbBase implements DbDriverInterface
      * @param array $arrValueSets
      * @param Database $objDb
      *
+     * @param array|null $arrEscapes
      * @return bool
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb)
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb, ?array $arrEscapes)
     {
 
         $arrPlaceholder = array();
@@ -181,7 +182,7 @@ abstract class DbBase implements DbDriverInterface
 
         $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(",", $arrSafeColumns).") VALUES ".implode(",", $arrPlaceholderSets);
 
-        return $objDb->_pQuery($strQuery, $arrParams);
+        return $objDb->_pQuery($strQuery, $arrParams, $arrEscapes ?? []);
     }
 
 

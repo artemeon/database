@@ -97,13 +97,11 @@ class DbOci8 extends DbBase
      * @param array $arrValueSets
      * @param Database $objDb
      *
+     * @param array|null $arrEscapes
      * @return bool
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb)
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb, ?array $arrEscapes)
     {
-
-        $bitReturn = true;
-
         $arrPlaceholder = array();
         $arrSafeColumns = array();
 
@@ -124,9 +122,7 @@ class DbOci8 extends DbBase
         }
         $strQuery .= " SELECT * FROM dual";
 
-        $bitReturn = $objDb->_pQuery($strQuery, $arrParams) && $bitReturn;
-
-        return $bitReturn;
+        return $objDb->_pQuery($strQuery, $arrParams, $arrEscapes ?? []);
     }
 
 
@@ -769,18 +765,18 @@ class DbOci8 extends DbBase
     public function appendLimitExpression($strQuery, $intStart, $intEnd)
     {
 
-        $intStart++;
-        $intEnd++;
-
         if (self::$is12c === null) {
             self::$is12c = version_compare($this->getServerVersion(), "12.1", "ge");
         }
 
         if (self::$is12c) {
             //TODO: 12c has a new offset syntax - lets see if it's really faster
-            $intDelta = $intEnd - $intStart;
+            $intDelta = $intEnd - $intStart + 1;
             return $strQuery . " OFFSET {$intStart} ROWS FETCH NEXT {$intDelta} ROWS ONLY";
         }
+
+        $intStart++;
+        $intEnd++;
 
         return "SELECT * FROM (
                      SELECT a.*, ROWNUM rnum FROM

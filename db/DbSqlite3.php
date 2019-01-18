@@ -239,13 +239,14 @@ class DbSqlite3 extends DbBase
      * @param array $arrValueSets
      * @param Database $objDb
      *
+     * @param array|null $arrEscapes
      * @return bool
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb)
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb, ?array $arrEscapes)
     {
         $arrVersion = SQLite3::version();
         if (version_compare("3.7.11", $arrVersion["versionString"], "<=")) {
-            return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb);
+            return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb, $arrEscapes);
         } else {
             //legacy code
             $arrSafeColumns = array();
@@ -273,7 +274,7 @@ class DbSqlite3 extends DbBase
                 $arrParams = array_merge($arrParams, array_values($arrValueSets[$intI]));
             }
 
-            return $objDb->_pQuery($strQuery, $arrParams);
+            return $objDb->_pQuery($strQuery, $arrParams, $arrEscapes ?? []);
         }
     }
 
