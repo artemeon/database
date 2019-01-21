@@ -44,6 +44,21 @@ class Table implements \JsonSerializable
         ];
     }
 
+    /**
+     * Fetches a single table col info
+     * @param $name
+     * @return TableColumn|null
+     */
+    public function getColumnByName($name): ?TableColumn
+    {
+        foreach ($this->columns as $col) {
+            if ($col->getName() == $name) {
+                return $col;
+            }
+        }
+        return null;
+    }
+
 
     /**
      * @param TableColumn $col
