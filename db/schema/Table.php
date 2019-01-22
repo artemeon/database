@@ -151,7 +151,7 @@ class Table implements \JsonSerializable
     /**
      * @return array
      */
-    public function getColumnNames()
+    public function getColumnNames(): array
     {
         return array_map(function(TableColumn $column){
             return $column->getName();
