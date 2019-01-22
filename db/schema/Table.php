@@ -133,6 +133,13 @@ class Table implements \JsonSerializable
         $this->primaryKeys = $primaryKeys;
     }
 
-
-
+    /**
+     * @return array
+     */
+    public function getColumnNames()
+    {
+        return array_map(function(TableColumn $column){
+            return $column->getName();
+        }, $this->columns);
+    }
 }
