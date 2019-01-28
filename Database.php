@@ -143,7 +143,7 @@ class Database
     {
         if ($this->objDbDriver !== null) {
             try {
-                Logger::getInstance(Logger::DBLOG)->info("creating database-connection using driver ".get_class($this->objDbDriver));
+                //Logger::getInstance(Logger::DBLOG)->info("creating database-connection using driver ".get_class($this->objDbDriver));
                 $objCfg = Config::getInstance("module_system", "config.php");
                 $this->objDbDriver->dbconnect(new DbConnectionParams($objCfg->getConfig("dbhost"), $objCfg->getConfig("dbusername"), $objCfg->getConfig("dbpassword"), $objCfg->getConfig("dbname"), $objCfg->getConfig("dbport")));
             } catch (Exception $objException) {
@@ -163,10 +163,10 @@ class Database
      * @param string $strTable
      * @param string[] $arrColumns
      * @param array $arrValueSets
-     *
+     * @param array|null $arrEscapes
      * @return bool
      */
-    public function multiInsert($strTable, $arrColumns, $arrValueSets)
+    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null)
     {
         if (count($arrValueSets) == 0) {
             return true;
@@ -177,7 +177,7 @@ class Database
         $intSetsPerInsert = floor(970 / count($arrColumns));
 
         foreach (array_chunk($arrValueSets, $intSetsPerInsert) as $arrSingleValueSet) {
-            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this);
+            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this, $arrEscapes);
         }
 
         return $bitReturn;
@@ -926,6 +926,17 @@ class Database
         }
 
         return false;
+    }
+
+    /**
+     * Checks whether the provided table exists
+     *
+     * @param string $strTable
+     * @return bool
+     */
+    public function hasTable($strTable)
+    {
+        return in_array($strTable, $this->getTables());
     }
 
     /**

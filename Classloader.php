@@ -316,17 +316,9 @@ class Classloader
         foreach ($arrTempFiles as $strFile) {
             if ($strFile != "." && $strFile != ".." && !in_array($strFile . "/", self::$arrCodeFoldersBlacklist)) {
                 if (strpos($strFile, ".php") !== false) {
-                    // if there is an underscore we have a legacy class name else a camel case
-                    if (strpos($strFile, "_") !== false) {
-                        if (preg_match("/(class|interface|trait)(.*)\.php$/i", $strFile)) {
-                            $arrFiles[substr($strFile, 0, -4)] = $strPath . "/" . $strFile;
-                        }
-                    }
-                    else {
-                        $strClassName = $this->getClassnameFromFilename($strPath . "/" . $strFile);
-                        if (!empty($strClassName)) {
-                            $arrFiles[$strClassName] = $strPath . "/" . $strFile;
-                        }
+                    $strClassName = $this->getClassnameFromFilename($strPath . "/" . $strFile);
+                    if (!empty($strClassName)) {
+                        $arrFiles[$strClassName] = $strPath . "/" . $strFile;
                     }
                 } elseif (is_dir($strPath . "/" . $strFile)) {
                     $arrFiles = array_merge($arrFiles, $this->getRecursiveFiles($strPath . "/" . $strFile));
@@ -345,9 +337,10 @@ class Classloader
      */
     public function loadClass($strClassName)
     {
-        if (BootstrapCache::getInstance()->getCacheRow(BootstrapCache::CACHE_CLASSES, $strClassName)) {
+        $cacheRow = BootstrapCache::getInstance()->getCacheRow(BootstrapCache::CACHE_CLASSES, $strClassName);
+        if ($cacheRow) {
             $this->intNumberOfClassesLoaded++;
-            include_once BootstrapCache::getInstance()->getCacheRow(BootstrapCache::CACHE_CLASSES, $strClassName);
+            include_once $cacheRow;
             return true;
         }
 
@@ -399,7 +392,7 @@ class Classloader
             else {
                 //ugly fallback for ioncube encoded files, could be upgrade to an improved regex
                 //TODO: move this name-based detection to the general approach, replacing the content parsing
-                if(strpos($strSource, "ioncube") !== false|| strpos($strSource, "sg_load") !== false) {
+                if(strpos($strSource, "sg_load") !== false) {
                     if($strFile === "functions") {
                         return null;
                     }
@@ -481,14 +474,9 @@ class Classloader
                 $strFilename = $strPathFromCache;
             }
 
-
             // if the class does not exist we simply include the filename and hope that the class is defined there. This
             // is the case where the filename is not equal to the class name i.e. installer_sc_zzlanguages.php
             if (!class_exists($strResolvedClassname, false)) {
-                if ($strResolvedClassname[0] != strtoupper($strResolvedClassname[0]) && !preg_match("/(class|interface|trait)(.*)$/i", $strResolvedClassname)) {
-                    $strResolvedClassname = "class_".$strResolvedClassname;
-                }
-
                 include_once $strFilename;
             }
 
