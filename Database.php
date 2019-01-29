@@ -929,6 +929,17 @@ class Database
     }
 
     /**
+     * Checks whether the provided table exists
+     *
+     * @param string $strTable
+     * @return bool
+     */
+    public function hasTable($strTable)
+    {
+        return in_array($strTable, $this->getTables());
+    }
+
+    /**
      * Dumps the current db
      * Takes care of holding just the defined number of dumps in the filesystem, defined by _system_dbdump_amount_
      *
