@@ -402,28 +402,37 @@ class Database
      * into the memory. This can be used to query big result sets i.e. on installation update.
      * Make sure to have an ORDER BY in the statement, otherwise the chunks may use duplicate entries depending on the RDBMS.
      *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int $intChunkSize
+     * NOTE if the loop which consumes the generator reduces the result set i.e. you delete for each result set all
+     * entries then you need to set paging to false. In this mode we always query the first 0 to chunk size rows, since
+     * the loop reduces the result set we dont need to move the start and end values forward. NOTE if you set $paging to
+     * false and dont modify the result set you will get an endless loop, so you must get sure that in the end the
+     * result set will be empty.
+     *
+     * @param string $query
+     * @param array $params
+     * @param int $chunkSize
+     * @param bool $paging
      * @return \Generator
      */
-    public function getGenerator($strQuery, array $arrParams = [], $intChunkSize = 2048)
+    public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
     {
-        $intStart = 0;
-        $intEnd = $intChunkSize;
+        $start = 0;
+        $end = $chunkSize;
 
         do {
-            $arrResult = $this->getPArray($strQuery, $arrParams, $intStart, $intEnd - 1);
+            $result = $this->getPArray($query, $params, $start, $end - 1, false);
 
-            if (!empty($arrResult)) {
-                yield $arrResult;
+            if (!empty($result)) {
+                yield $result;
             }
 
-            $intStart += $intChunkSize;
-            $intEnd += $intChunkSize;
+            if ($paging) {
+                $start += $chunkSize;
+                $end += $chunkSize;
+            }
 
             $this->flushQueryCache();
-        } while (!empty($arrResult));
+        } while (!empty($result));
     }
 
     /**
