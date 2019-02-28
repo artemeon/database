@@ -536,7 +536,7 @@ class Filesystem
     public function readLineByCustomDelimiterFromFile($strDelimiter)
     {
         if ($this->objFilePointer != null) {
-            return stream_get_line($this->objFilePointer, 4096*20, $strDelimiter);
+            return stream_get_line($this->objFilePointer, 4096*200, $strDelimiter);
         }
         return false;
     }
