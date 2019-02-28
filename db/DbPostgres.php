@@ -226,7 +226,9 @@ class DbPostgres extends DbBase
         $indexes = $this->getPArray("select * from pg_indexes where tablename  = ? AND indexname NOT LIKE '%_pkey'", [$tableName]) ?: [];
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['indexname']);
-            $index->setDescription($indexInfo['indexdef']);
+            //scrape the columns from the indexdef
+            $cols = StringUtil::substring($indexInfo['indexdef'], StringUtil::indexOf($indexInfo['indexdef'], "(")+1, StringUtil::indexOf($indexInfo['indexdef'], ")")-StringUtil::indexOf($indexInfo['indexdef'], "(")-1);
+            $index->setDescription($cols);
             $table->addIndex($index);
         }
 
@@ -414,14 +416,6 @@ class DbPostgres extends DbBase
     {
         $arrIndex = $this->getPArray("SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?", [$strTable, $strName]);
         return count($arrIndex) > 0;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function addIndex(string $table, TableIndex $index): bool
-    {
-        return $this->_pQuery($index->getDescription(), []);
     }
 
 
