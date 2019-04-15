@@ -789,6 +789,9 @@ class Database
             $this->dbconnect();
         }
 
+        if ($this->objDbDriver->hasIndex($strTable, $strName)) {
+            return true;
+        }
         $bitReturn = $this->objDbDriver->createIndex($strTable, $strName, $arrColumns, $bitUnique);
         if (!$bitReturn) {
             $this->getError("", array());

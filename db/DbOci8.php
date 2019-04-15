@@ -365,7 +365,7 @@ class DbOci8 extends DbBase
     private function getCoreTypeForDbType($infoSchemaRow)
     {
         if ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
-            return DbDatatypes::STR_TYPE_INT;
+            return DbDatatypes::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
             return DbDatatypes::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["data_type"] == "FLOAT" && $infoSchemaRow["data_precision"] == 24) {
@@ -377,6 +377,8 @@ class DbOci8 extends DbBase
                 return DbDatatypes::STR_TYPE_CHAR20;
             } elseif ($infoSchemaRow["data_length"] == "100") {
                 return DbDatatypes::STR_TYPE_CHAR100;
+            } elseif ($infoSchemaRow["data_length"] == "254") {
+                return DbDatatypes::STR_TYPE_CHAR254;
             } elseif ($infoSchemaRow["data_length"] == "280") {
                 return DbDatatypes::STR_TYPE_CHAR254;
             } elseif ($infoSchemaRow["data_length"] == "500") {
@@ -433,7 +435,7 @@ class DbOci8 extends DbBase
         } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
             $strReturn .= " CLOB ";
         } else {
-            $strReturn .= " VARCHAR2( 254 ) ";
+            $strReturn .= " VARCHAR2( 280 ) ";
         }
 
         return $strReturn;
