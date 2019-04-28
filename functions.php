@@ -439,9 +439,10 @@ function phpSizeToBytes($strBytes)
  * @param int $intBytes
  * @param bool $bitPhpIni (Value ends with M/K/B)
  *
+ * @param bool $renderUnit
  * @return string
  */
-function bytesToString($intBytes, $bitPhpIni = false)
+function bytesToString($intBytes, $bitPhpIni = false, $renderUnit = true)
 {
     $strReturn = "";
     if ($intBytes >= 0) {
@@ -459,7 +460,7 @@ function bytesToString($intBytes, $bitPhpIni = false)
             $intCounter++;
         }
 
-        $strReturn = number_format($intTemp, 2)." ".$arrFormats[$intCounter];
+        $strReturn = number_format($intTemp, 2).($renderUnit ? " ".$arrFormats[$intCounter] : "");
         return $strReturn;
     }
     return $strReturn;
