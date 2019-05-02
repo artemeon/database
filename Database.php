@@ -808,6 +808,10 @@ class Database
      */
     public function deleteIndex(string $table, string $index): bool
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         return $this->objDbDriver->deleteIndex($table, $index);
     }
 
@@ -820,6 +824,10 @@ class Database
      */
     public function addIndex(string $table, TableIndex $index)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         return $this->objDbDriver->addIndex($table, $index);
     }
 
