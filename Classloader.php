@@ -154,12 +154,15 @@ class Classloader
 
                 if ($boolIsPhar) {
                     $strModuleName = PharModule::getPharBasename($strOneModule);
-                } elseif (preg_match("/^(module|element|_)+.*/i", $strOneModule)) {
+                } elseif (preg_match("/^(module|_)+.*/i", $strOneModule)) {
                     $strModuleName = $strOneModule;
                 }
 
                 if ($strModuleName != null) {
                     //skip module if not marked as to be included
+                    if (!isset($arrIncludedModules[$strRootFolder])) {
+                        continue;
+                    }
                     if (isset($arrIncludedModules[$strRootFolder]) && !in_array($strModuleName, $arrIncludedModules[$strRootFolder])) {
                         continue;
                     }
