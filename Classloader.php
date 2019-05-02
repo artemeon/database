@@ -133,7 +133,7 @@ class Classloader
         }
 
 
-        $arrIncludedModules = array();
+        $arrIncludedModules = null;
         if (is_file(_realpath_."project/packageconfig.json")) {
             $arrIncludedModules = json_decode(file_get_contents(_realpath_."project/packageconfig.json"), true);
         }
@@ -160,10 +160,10 @@ class Classloader
 
                 if ($strModuleName != null) {
                     //skip module if not marked as to be included
-                    if (!isset($arrIncludedModules[$strRootFolder])) {
+                    if ($arrIncludedModules !== null && !isset($arrIncludedModules[$strRootFolder])) {
                         continue;
                     }
-                    if (isset($arrIncludedModules[$strRootFolder]) && !in_array($strModuleName, $arrIncludedModules[$strRootFolder])) {
+                    if ($arrIncludedModules !== null && isset($arrIncludedModules[$strRootFolder]) && !in_array($strModuleName, $arrIncludedModules[$strRootFolder])) {
                         continue;
                     }
 
