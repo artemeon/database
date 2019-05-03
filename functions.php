@@ -748,7 +748,7 @@ function removeDirectoryTraversals($strFilename)
  */
 function createFilename($strName, $bitFolder = false)
 {
-    $strName = StringUtil::toLowerCase($strName);
+    //$strName = StringUtil::toLowerCase($strName);
 
     if (!$bitFolder) {
         $strEnding = StringUtil::substring($strName, (StringUtil::lastIndexOf($strName, ".") + 1));
@@ -765,8 +765,8 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //Filter non allowed chars
-    $arrSearch = array(" ", ".", ":", "ä", "ö", "ü", "/", "ß", "!");
-    $arrReplace = array("_", "_", "_", "ae", "oe", "ue", "_", "ss", "_");
+    $arrSearch = array(".", ":", "ä", "ö", "ü", "/", "ß", "!");
+    $arrReplace = array("_", "_", "ae", "oe", "ue", "_", "ss", "_");
 
     $strReturn = StringUtil::replace($arrSearch, $arrReplace, $strReturn);
 
@@ -776,7 +776,7 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //remove all other special characters
-    $strTemp = preg_replace("/[^A-Za-z0-9_-]/", "", $strReturn);
+    $strTemp = preg_replace("/[^A-Za-z0-9_\+\-\s]/", "", $strReturn);
 
     //do a replacing in the ending, too
     if ($strEnding != "") {
