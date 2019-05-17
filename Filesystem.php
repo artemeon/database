@@ -180,7 +180,7 @@ class Filesystem
      * @param string $file
      * @return bool
      */
-    public function fileExists($file): bool
+    public function fileExists(string $file): bool
     {
         $file = $this->prependRealpath($file);
 
