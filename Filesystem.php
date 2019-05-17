@@ -175,6 +175,19 @@ class Filesystem
     }
 
     /**
+     * check if file exists
+     *
+     * @param string $file
+     * @return bool
+     */
+    public function fileExists($file): bool
+    {
+        $file = $this->prependRealpath($file);
+
+        return is_file($file);
+    }
+
+    /**
      * Returns detailed info about a file
      *
      * @param string $strFile
