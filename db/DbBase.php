@@ -160,8 +160,8 @@ abstract class DbBase implements DbDriverInterface
      */
     public function triggerMultiInsert($tableName, $columns, $valueSets, Database $Db, ?array $escapes): bool
     {
-        $saveColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
-        $paramsPlaceholder = '(' . implode(',', array_fill(0, count($saveColumns), '?')) . ')';
+        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
+        $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $placeholderSets = [];
         $params = [];
         $escapeValues = [];
@@ -172,9 +172,9 @@ abstract class DbBase implements DbDriverInterface
                 $escapeValues[] = $escapes;
             }
         }
-        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($tableName) . ' (' . implode(',', $saveColumns) . ') VALUES ' . implode(',', $placeholderSets);
+        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($tableName) . ' (' . implode(',', $safeColumns) . ') VALUES ' . implode(',', $placeholderSets);
 
-        return $Db->_pQuery($insertStatement, call_user_func_array('array_merge', $params), $escapeValues !== [] ? call_user_func_array('array_merge', $escapeValues) : []);
+        return $Db->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
     }
 
     /**
