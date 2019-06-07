@@ -183,6 +183,19 @@ class Database
         return $bitReturn;
     }
 
+    /**
+     * Creates a simple insert for a single row where the values parameter is an associative array with column names to
+     * value mapping
+     *
+     * @param string $tableName
+     * @param array $values
+     * @param array $escapes
+     * @return bool
+     */
+    public function insert(string $tableName, array $values, ?array $escapes = null)
+    {
+        return $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
+    }
 
     /**
      * Fires an insert or update of a single record. it's up to the database (driver)
@@ -808,6 +821,10 @@ class Database
      */
     public function deleteIndex(string $table, string $index): bool
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         return $this->objDbDriver->deleteIndex($table, $index);
     }
 
@@ -820,6 +837,10 @@ class Database
      */
     public function addIndex(string $table, TableIndex $index)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         return $this->objDbDriver->addIndex($table, $index);
     }
 
