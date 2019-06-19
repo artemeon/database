@@ -665,7 +665,7 @@ class Filesystem
             } else {
                 ResponseObject::getInstance()->addHeader("Content-type: " . $strContentType);
             }
-            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=".preg_replace('/\./', '%2e', saveUrlEncode(trim(basename($strSourceFile))), substr_count(basename($strSourceFile), '.') - 1));
+            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=\"".preg_replace('/\./', '%2e', (createFilename(basename($strSourceFile))), substr_count(basename($strSourceFile), '.') - 1)."\"");
         } else {
             //Good: another browser vendor
             if ($strContentType === null) {
@@ -674,7 +674,7 @@ class Filesystem
                 ResponseObject::getInstance()->addHeader("Content-type: " . $strContentType);
             }
 
-            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=".saveUrlEncode(trim(basename($strSourceFile))));
+            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=\"".(createFilename(basename($strSourceFile)))."\"");
         }
         //Common headers
         ResponseObject::getInstance()->addHeader("Expires: Mon, 01 Jan 1995 00:00:00 GMT");

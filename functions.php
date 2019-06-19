@@ -776,7 +776,7 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //remove all other special characters
-    $strTemp = preg_replace("/[^A-Za-z0-9_\+\-\s]/", "", $strReturn);
+    $strTemp = preg_replace("/[^A-Za-z0-9_\+\-\h]/", "", $strReturn);
 
     //do a replacing in the ending, too
     if ($strEnding != "") {
