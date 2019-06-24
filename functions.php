@@ -765,8 +765,8 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //Filter non allowed chars
-    $arrSearch = array(".", ":", "ä", "ö", "ü", "/", "ß", "!");
-    $arrReplace = array("_", "_", "ae", "oe", "ue", "_", "ss", "_");
+    $arrSearch = array(".", ":", "ä", "ö", "ü", "/", "ß", "!", "\t");
+    $arrReplace = array("_", "_", "ae", "oe", "ue", "_", "ss", "_", " ");
 
     $strReturn = StringUtil::replace($arrSearch, $arrReplace, $strReturn);
 
