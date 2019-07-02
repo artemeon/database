@@ -206,7 +206,7 @@ class Database
      * @param array|null $escapes
      * @return bool
      */
-    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null)
+    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool
     {
         if (empty($identifier)) {
             throw new \InvalidArgumentException('Empty identifier for update statement');
@@ -238,7 +238,7 @@ class Database
      * @param array|null $escapes
      * @return bool
      */
-    public function delete(string $tableName, array $identifier, ?array $escapes = null)
+    public function delete(string $tableName, array $identifier, ?array $escapes = null): bool
     {
         if (empty($identifier)) {
             throw new \InvalidArgumentException('Empty identifier for delete statement');
