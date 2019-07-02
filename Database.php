@@ -198,6 +198,39 @@ class Database
     }
 
     /**
+     * Updates a single database row identified by the identifier columns
+     *
+     * @param string $tableName
+     * @param array $values
+     * @param array $identifier
+     * @param array|null $escapes
+     * @return bool
+     */
+    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null)
+    {
+        if (empty($identifier)) {
+            throw new \InvalidArgumentException('Empty identifier for update statement');
+        }
+
+        $columns = [];
+        $params = [];
+        foreach ($values as $column => $value) {
+            $columns[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $condition = [];
+        foreach ($identifier as $column => $value) {
+            $condition[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
+
+        return $this->_pQuery($query, $params, $escapes);
+    }
+
+    /**
      * Fires an insert or update of a single record. it's up to the database (driver)
      * to detect whether a row is already present or not.
      * Please note: since some dbrms fire a delete && insert, make sure to pass ALL columns and values,
