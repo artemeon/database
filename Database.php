@@ -198,7 +198,7 @@ class Database
     }
 
     /**
-     * Updates a single database row identified by the identifier columns
+     * Updates a row on the provided table by the identifier columns
      *
      * @param string $tableName
      * @param array $values
@@ -226,6 +226,32 @@ class Database
         }
 
         $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
+
+        return $this->_pQuery($query, $params, $escapes);
+    }
+
+    /**
+     * Deletes a row on the provided table by the identifier columns
+     *
+     * @param string $tableName
+     * @param array $identifier
+     * @param array|null $escapes
+     * @return bool
+     */
+    public function delete(string $tableName, array $identifier, ?array $escapes = null)
+    {
+        if (empty($identifier)) {
+            throw new \InvalidArgumentException('Empty identifier for delete statement');
+        }
+
+        $condition = [];
+        $params = [];
+        foreach ($identifier as $column => $value) {
+            $condition[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $query = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $condition);
 
         return $this->_pQuery($query, $params, $escapes);
     }
