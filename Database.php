@@ -235,10 +235,9 @@ class Database
      *
      * @param string $tableName
      * @param array $identifier
-     * @param array|null $escapes
      * @return bool
      */
-    public function delete(string $tableName, array $identifier, ?array $escapes = null): bool
+    public function delete(string $tableName, array $identifier): bool
     {
         if (empty($identifier)) {
             throw new \InvalidArgumentException('Empty identifier for delete statement');
@@ -253,7 +252,7 @@ class Database
 
         $query = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $condition);
 
-        return $this->_pQuery($query, $params, $escapes);
+        return $this->_pQuery($query, $params);
     }
 
     /**
