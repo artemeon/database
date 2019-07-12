@@ -206,6 +206,16 @@ interface SystemEventidentifier {
     const EVENT_SYSTEM_RECORDRESTORED_LOGICALLY = "core.system.recordrestored.logically";
 
     /**
+     * Callback method, in case a user has changed the rights of a specific record
+     *
+     * @param string $strUserid
+     *
+     * @return bool
+     * @since 7.2
+     */
+    const EVENT_SYSTEM_RIGHTSCHANGED = "core.system.rightschanged";
+
+    /**
      * Callback method, triggered each time a user logs into the system for the very first time.
      * May be used to trigger actions or initial setups for the user.
      *
