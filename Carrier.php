@@ -146,11 +146,9 @@ class Carrier
      * Managing access to the toolkit object. Use ONLY this method to
      * get an instance!
      *
-     * @internal string $strArea
-     *
      * @return ToolkitAdmin
      */
-    public function getObjToolkit($strArea)
+    public function getObjToolkit()
     {
         return $this->objContainer[ServiceProvider::STR_ADMINTOOLKIT];
     }

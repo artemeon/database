@@ -175,6 +175,19 @@ class Filesystem
     }
 
     /**
+     * check if file exists
+     *
+     * @param string $file
+     * @return bool
+     */
+    public function fileExists(string $file): bool
+    {
+        $file = $this->prependRealpath($file);
+
+        return is_file($file);
+    }
+
+    /**
      * Returns detailed info about a file
      *
      * @param string $strFile
@@ -536,7 +549,7 @@ class Filesystem
     public function readLineByCustomDelimiterFromFile($strDelimiter)
     {
         if ($this->objFilePointer != null) {
-            return stream_get_line($this->objFilePointer, 4096*20, $strDelimiter);
+            return stream_get_line($this->objFilePointer, 4096*200, $strDelimiter);
         }
         return false;
     }
@@ -652,7 +665,7 @@ class Filesystem
             } else {
                 ResponseObject::getInstance()->addHeader("Content-type: " . $strContentType);
             }
-            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=".preg_replace('/\./', '%2e', saveUrlEncode(trim(basename($strSourceFile))), substr_count(basename($strSourceFile), '.') - 1));
+            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=\"".preg_replace('/\./', '%2e', (createFilename(basename($strSourceFile))), substr_count(basename($strSourceFile), '.') - 1)."\"");
         } else {
             //Good: another browser vendor
             if ($strContentType === null) {
@@ -661,7 +674,7 @@ class Filesystem
                 ResponseObject::getInstance()->addHeader("Content-type: " . $strContentType);
             }
 
-            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=".saveUrlEncode(trim(basename($strSourceFile))));
+            ResponseObject::getInstance()->addHeader("Content-Disposition: attachment; filename=\"".(createFilename(basename($strSourceFile)))."\"");
         }
         //Common headers
         ResponseObject::getInstance()->addHeader("Expires: Mon, 01 Jan 1995 00:00:00 GMT");

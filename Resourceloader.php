@@ -375,6 +375,10 @@ class Resourceloader
     {
         //fallback on the resourceloader
         $arrContent = $this->getFolderContent(dirname($strFile));
+
+        // reverse sort so that project files are at the top otherwise we dont consider project overwrites
+        arsort($arrContent);
+
         $strSearchedFilename = basename($strFile);
         foreach ($arrContent as $strPath => $strContentFile) {
             if ($strContentFile == $strSearchedFilename) {

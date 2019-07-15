@@ -183,6 +183,77 @@ class Database
         return $bitReturn;
     }
 
+    /**
+     * Creates a simple insert for a single row where the values parameter is an associative array with column names to
+     * value mapping
+     *
+     * @param string $tableName
+     * @param array $values
+     * @param array $escapes
+     * @return bool
+     */
+    public function insert(string $tableName, array $values, ?array $escapes = null)
+    {
+        return $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
+    }
+
+    /**
+     * Updates a row on the provided table by the identifier columns
+     *
+     * @param string $tableName
+     * @param array $values
+     * @param array $identifier
+     * @param array|null $escapes
+     * @return bool
+     */
+    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool
+    {
+        if (empty($identifier)) {
+            throw new \InvalidArgumentException('Empty identifier for update statement');
+        }
+
+        $columns = [];
+        $params = [];
+        foreach ($values as $column => $value) {
+            $columns[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $condition = [];
+        foreach ($identifier as $column => $value) {
+            $condition[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
+
+        return $this->_pQuery($query, $params, $escapes);
+    }
+
+    /**
+     * Deletes a row on the provided table by the identifier columns
+     *
+     * @param string $tableName
+     * @param array $identifier
+     * @return bool
+     */
+    public function delete(string $tableName, array $identifier): bool
+    {
+        if (empty($identifier)) {
+            throw new \InvalidArgumentException('Empty identifier for delete statement');
+        }
+
+        $condition = [];
+        $params = [];
+        foreach ($identifier as $column => $value) {
+            $condition[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $query = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $condition);
+
+        return $this->_pQuery($query, $params);
+    }
 
     /**
      * Fires an insert or update of a single record. it's up to the database (driver)
@@ -402,28 +473,37 @@ class Database
      * into the memory. This can be used to query big result sets i.e. on installation update.
      * Make sure to have an ORDER BY in the statement, otherwise the chunks may use duplicate entries depending on the RDBMS.
      *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int $intChunkSize
+     * NOTE if the loop which consumes the generator reduces the result set i.e. you delete for each result set all
+     * entries then you need to set paging to false. In this mode we always query the first 0 to chunk size rows, since
+     * the loop reduces the result set we dont need to move the start and end values forward. NOTE if you set $paging to
+     * false and dont modify the result set you will get an endless loop, so you must get sure that in the end the
+     * result set will be empty.
+     *
+     * @param string $query
+     * @param array $params
+     * @param int $chunkSize
+     * @param bool $paging
      * @return \Generator
      */
-    public function getGenerator($strQuery, array $arrParams = [], $intChunkSize = 2048)
+    public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
     {
-        $intStart = 0;
-        $intEnd = $intChunkSize;
+        $start = 0;
+        $end = $chunkSize;
 
         do {
-            $arrResult = $this->getPArray($strQuery, $arrParams, $intStart, $intEnd - 1);
+            $result = $this->getPArray($query, $params, $start, $end - 1, false);
 
-            if (!empty($arrResult)) {
-                yield $arrResult;
+            if (!empty($result)) {
+                yield $result;
             }
 
-            $intStart += $intChunkSize;
-            $intEnd += $intChunkSize;
+            if ($paging) {
+                $start += $chunkSize;
+                $end += $chunkSize;
+            }
 
             $this->flushQueryCache();
-        } while (!empty($arrResult));
+        } while (!empty($result));
     }
 
     /**
@@ -494,7 +574,7 @@ class Database
             $strQuery
         );
 
-        //$strQuery = $this->prettifyQuery($strQuery, $arrParams);
+        $strQuery = $this->prettifyQuery($strQuery, $arrParams);
 
         $strErrorCode = "";
         $strErrorCode .= "Error in query\n\n";
@@ -780,6 +860,9 @@ class Database
             $this->dbconnect();
         }
 
+        if ($this->objDbDriver->hasIndex($strTable, $strName)) {
+            return true;
+        }
         $bitReturn = $this->objDbDriver->createIndex($strTable, $strName, $arrColumns, $bitUnique);
         if (!$bitReturn) {
             $this->getError("", array());
@@ -796,6 +879,10 @@ class Database
      */
     public function deleteIndex(string $table, string $index): bool
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         return $this->objDbDriver->deleteIndex($table, $index);
     }
 
@@ -808,6 +895,10 @@ class Database
      */
     public function addIndex(string $table, TableIndex $index)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         return $this->objDbDriver->addIndex($table, $index);
     }
 
@@ -926,6 +1017,17 @@ class Database
         }
 
         return false;
+    }
+
+    /**
+     * Checks whether the provided table exists
+     *
+     * @param string $strTable
+     * @return bool
+     */
+    public function hasTable($strTable)
+    {
+        return in_array($strTable, $this->getTables());
     }
 
     /**
@@ -1171,14 +1273,16 @@ class Database
      */
     private function dbsafeParams($arrParams, $arrEscapes = array())
     {
-        foreach ($arrParams as $intKey => &$strParam) {
+        $replace = [];
+        foreach ($arrParams as $intKey => $strParam) {
             if (isset($arrEscapes[$intKey])) {
                 $strParam = $this->dbsafeString($strParam, $arrEscapes[$intKey], false);
             } else {
                 $strParam = $this->dbsafeString($strParam, true, false);
             }
+            $replace[$intKey] = $strParam;
         }
-        return $arrParams;
+        return $replace;
     }
 
     /**
@@ -1358,8 +1462,11 @@ class Database
     public function prettifyQuery($strQuery, $arrParams)
     {
         foreach ($arrParams as $strOneParam) {
-            if (!is_numeric($strOneParam)) {
+            if (!is_numeric($strOneParam) && $strOneParam !== null) {
                 $strOneParam = "'{$strOneParam}'";
+            }
+            if ($strOneParam === null) {
+                $strOneParam = 'null';
             }
 
             $intPos = StringUtil::indexOf($strQuery, '?');

@@ -439,9 +439,10 @@ function phpSizeToBytes($strBytes)
  * @param int $intBytes
  * @param bool $bitPhpIni (Value ends with M/K/B)
  *
+ * @param bool $renderUnit
  * @return string
  */
-function bytesToString($intBytes, $bitPhpIni = false)
+function bytesToString($intBytes, $bitPhpIni = false, $renderUnit = true)
 {
     $strReturn = "";
     if ($intBytes >= 0) {
@@ -459,7 +460,7 @@ function bytesToString($intBytes, $bitPhpIni = false)
             $intCounter++;
         }
 
-        $strReturn = number_format($intTemp, 2)." ".$arrFormats[$intCounter];
+        $strReturn = number_format($intTemp, 2).($renderUnit ? " ".$arrFormats[$intCounter] : "");
         return $strReturn;
     }
     return $strReturn;
@@ -689,46 +690,6 @@ function htmlStripTags($strHtml, $strAllowTags = "")
 }
 
 /**
- * This function does a few cleanups and optimizations on HTML content generated via the WYSIWYG editor.
- * Should be used everytime before HTML content generated via the WYSIWYG editor is going to be saved.
- * E.g. it replaces absolute URLs with dynamic _webpath_ and synchronizes the width/height style-values set
- * by WYSIWYG editor for on-the-fly images (starting with image.php?image=...)
- *
- * For example:
- *      <img src="http://www.mydomain.com/image.php?image=/portal/pics/myimage.jpg&maxHeight=200" style="width: 100px; height: 100px" />
- * becomes
- *      <img src="_webpath_/image.php?image=/portal/pics/myimage.jpg&maxHeight=100" style="width: 100px; height: 100px" />
- *
- * @param string $strHtmlContent
- *
- * @return string
- */
-function processWysiwygHtmlContent($strHtmlContent)
-{
-    //replace the webpath to remain flexible
-    $strHtmlContent = StringUtil::replace(_webpath_, "_webpath_", $strHtmlContent);
-
-    $strHtmlContent = StringUtil::replace("%%", "\%\%", $strHtmlContent);
-
-    //synchronize the width/height style-values set via WYSIWYG editor for on-the-fly images
-    $arrImages = "";
-    preg_match_all('!image\.php\?image=([/\-\._a-zA-Z0-9]*)([&;=a-zA-Z0-9]*)\" ([\"\'&;:\ =a-zA-Z0-9]*)width: ([0-9]*)px; height: ([0-9]*)px;!', $strHtmlContent, $arrImages);
-    for ($i = 0; $i < sizeof($arrImages[0]); ++$i) {
-        $strSearch = $arrImages[0][$i];
-        $strNewWidth = $arrImages[4][$i];
-        $strNewHeight = $arrImages[5][$i];
-
-        //only add one parameter to optimize unproportional scaling
-        $strScalingParams = $strNewWidth >= $strNewHeight ? "&amp;maxWidth=".$strNewWidth : "&amp;maxHeight=".$strNewHeight;
-
-        $strReplace = "image.php?image=".$arrImages[1][$i].$strScalingParams."\" ".$arrImages[3][$i]."width: ".$strNewWidth."px; height: ".$strNewHeight."px;";
-        $strHtmlContent = StringUtil::replace($strSearch, $strReplace, $strHtmlContent);
-    }
-
-    return $strHtmlContent;
-}
-
-/**
  * Encodes an url to be more safe but being less strict than urlencode()
  *
  * @param string $strText
@@ -787,7 +748,7 @@ function removeDirectoryTraversals($strFilename)
  */
 function createFilename($strName, $bitFolder = false)
 {
-    $strName = StringUtil::toLowerCase($strName);
+    //$strName = StringUtil::toLowerCase($strName);
 
     if (!$bitFolder) {
         $strEnding = StringUtil::substring($strName, (StringUtil::lastIndexOf($strName, ".") + 1));
@@ -804,8 +765,8 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //Filter non allowed chars
-    $arrSearch = array(" ", ".", ":", "ä", "ö", "ü", "/", "ß", "!");
-    $arrReplace = array("_", "_", "_", "ae", "oe", "ue", "_", "ss", "_");
+    $arrSearch = array(".", ":", "ä", "ö", "ü", "/", "ß", "!", "\t");
+    $arrReplace = array("_", "_", "ae", "oe", "ue", "_", "ss", "_", " ");
 
     $strReturn = StringUtil::replace($arrSearch, $arrReplace, $strReturn);
 
@@ -815,7 +776,7 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //remove all other special characters
-    $strTemp = preg_replace("/[^A-Za-z0-9_-]/", "", $strReturn);
+    $strTemp = preg_replace("/[^A-Za-z0-9_\+\-\h]/", "", $strReturn);
 
     //do a replacing in the ending, too
     if ($strEnding != "") {

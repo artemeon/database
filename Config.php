@@ -58,8 +58,6 @@ class Config
         $strAbsPath = Resourceloader::getInstance()->getAbsolutePathForModule($strModule)."/system/config/".$strConfigFile;
         if (is_file($strAbsPath)) {
             include $strAbsPath;
-        } elseif (strpos(__DIR__, '.phar') !== false) {
-            die("Error reading {$strAbsPath} config-file");
         }
 
         // project config
