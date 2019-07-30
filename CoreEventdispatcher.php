@@ -10,6 +10,10 @@
 namespace Kajona\System\System;
 
 
+use Kajona\System\System\Events\ArgumentsInterface;
+use Kajona\System\System\Messagequeue\Event;
+use Kajona\System\System\Messagequeue\Producer;
+
 /**
  * The core eventmanager is used to trigger and fire internal events such as status-changed or record-deleted-events.
  * Therefore the corresponding interface-implementers are called and notified.
@@ -178,6 +182,15 @@ class CoreEventdispatcher
         return $bitReturn;
     }
 
-
+    /**
+     * @param string $eventName
+     * @param array $arguments
+     */
+    public function notifyAsyncListeners(string $eventName, array $arguments)
+    {
+        /** @var Producer $producer */
+        $producer = Carrier::getInstance()->getContainer()->offsetGet(ServiceProvider::MESSAGE_QUEUE_PRODUCER);
+        $producer->dispatch(new Event($eventName, $arguments));
+    }
 }
 
