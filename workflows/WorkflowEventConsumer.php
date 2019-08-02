@@ -19,7 +19,7 @@ use Kajona\Workflows\System\WorkflowsWorkflow;
  * @author christoph.kappestein@artemeon.de
  * @since 7.2
  */
-class WorkflowConsumer implements WorkflowsHandlerInterface
+class WorkflowEventConsumer implements WorkflowsHandlerInterface
 {
     /**
      * @var WorkflowsWorkflow
