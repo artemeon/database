@@ -27,6 +27,8 @@ class CallCoreEvent extends Event
     private $arguments;
 
     /**
+     * Note arguments can only contain values which can be json_encoded
+     *
      * @param string $name
      * @param array $arguments
      */
