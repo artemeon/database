@@ -12,41 +12,20 @@ namespace Kajona\System\System\Messagequeue;
  * @author christoph.kappestein@artemeon.de
  * @since 7.2
  */
-class Event
+abstract class Event
 {
     /**
-     * @var string
-     */
-    private $name;
-
-    /**
-     * @var array
-     */
-    private $arguments;
-
-    /**
-     * @param string $name
-     * @param array $arguments
-     */
-    public function __construct(string $name, array $arguments)
-    {
-        $this->name = $name;
-        $this->arguments = $arguments;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    /**
+     * Returns the event data to a simple associative array which can be encoded by json_encode
+     *
      * @return array
      */
-    public function getArguments(): array
-    {
-        return $this->arguments;
-    }
+    abstract public function toArray() : array;
+
+    /**
+     * Returns the event object based on the array structure which was previously returns by the toArray method
+     *
+     * @param array $data
+     * @return static
+     */
+    abstract public static function fromArray(array $data): Event;
 }
