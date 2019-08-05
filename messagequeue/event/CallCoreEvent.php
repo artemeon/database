@@ -9,7 +9,7 @@ namespace Kajona\System\System\Messagequeue\Event;
 use Kajona\System\System\Messagequeue\Event;
 
 /**
- * CallCoreEvent
+ * Event which dispatches a core event
  *
  * @author christoph.kappestein@artemeon.de
  * @since 7.2
