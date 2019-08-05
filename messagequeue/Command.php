@@ -7,12 +7,12 @@
 namespace Kajona\System\System\Messagequeue;
 
 /**
- * Event
+ * Command
  *
  * @author christoph.kappestein@artemeon.de
  * @since 7.2
  */
-abstract class Event
+abstract class Command
 {
     /**
      * Returns the event data to a simple associative array which can be encoded by json_encode
@@ -27,5 +27,5 @@ abstract class Event
      * @param array $data
      * @return static
      */
-    abstract public static function fromArray(array $data): Event;
+    abstract public static function fromArray(array $data): Command;
 }
