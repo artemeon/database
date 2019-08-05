@@ -9,8 +9,6 @@
 
 namespace Kajona\System\System;
 
-
-use Kajona\System\System\Events\ArgumentsInterface;
 use Kajona\System\System\Messagequeue\Event;
 use Kajona\System\System\Messagequeue\Producer;
 
@@ -180,17 +178,6 @@ class CoreEventdispatcher
         }
 
         return $bitReturn;
-    }
-
-    /**
-     * @param string $eventName
-     * @param array $arguments
-     */
-    public function notifyAsyncListeners(string $eventName, array $arguments)
-    {
-        /** @var Producer $producer */
-        $producer = Carrier::getInstance()->getContainer()->offsetGet(ServiceProvider::MESSAGE_QUEUE_PRODUCER);
-        $producer->dispatch(new Event($eventName, $arguments));
     }
 }
 
