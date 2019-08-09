@@ -237,4 +237,14 @@ interface SystemEventidentifier {
      * @since 4.5
      */
     const EVENT_SYSTEM_USERLOGOUT = "core.system.userlogout";
+
+    /**
+     * Callback method, triggered each time a new user is created.
+     *
+     * @param string $strUserid
+     *
+     * @return bool
+     * @since 7.2
+     */
+    const EVENT_SYSTEM_USERCREATED = "core.system.usercreated";
 }
