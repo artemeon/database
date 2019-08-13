@@ -765,8 +765,8 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //Filter non allowed chars
-    $arrSearch = array(".", ":", "ä", "ö", "ü", "/", "ß", "!");
-    $arrReplace = array("_", "_", "ae", "oe", "ue", "_", "ss", "_");
+    $arrSearch = array(".", ":", "ä", "ö", "ü", "/", "ß", "!", "\t");
+    $arrReplace = array("_", "_", "ae", "oe", "ue", "_", "ss", "_", " ");
 
     $strReturn = StringUtil::replace($arrSearch, $arrReplace, $strReturn);
 
@@ -776,7 +776,7 @@ function createFilename($strName, $bitFolder = false)
     }
 
     //remove all other special characters
-    $strTemp = preg_replace("/[^A-Za-z0-9_\+\-\s]/", "", $strReturn);
+    $strTemp = preg_replace("/[^A-Za-z0-9_\+\-\h]/", "", $strReturn);
 
     //do a replacing in the ending, too
     if ($strEnding != "") {

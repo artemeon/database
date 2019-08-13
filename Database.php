@@ -183,6 +183,77 @@ class Database
         return $bitReturn;
     }
 
+    /**
+     * Creates a simple insert for a single row where the values parameter is an associative array with column names to
+     * value mapping
+     *
+     * @param string $tableName
+     * @param array $values
+     * @param array $escapes
+     * @return bool
+     */
+    public function insert(string $tableName, array $values, ?array $escapes = null)
+    {
+        return $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
+    }
+
+    /**
+     * Updates a row on the provided table by the identifier columns
+     *
+     * @param string $tableName
+     * @param array $values
+     * @param array $identifier
+     * @param array|null $escapes
+     * @return bool
+     */
+    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool
+    {
+        if (empty($identifier)) {
+            throw new \InvalidArgumentException('Empty identifier for update statement');
+        }
+
+        $columns = [];
+        $params = [];
+        foreach ($values as $column => $value) {
+            $columns[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $condition = [];
+        foreach ($identifier as $column => $value) {
+            $condition[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
+
+        return $this->_pQuery($query, $params, $escapes);
+    }
+
+    /**
+     * Deletes a row on the provided table by the identifier columns
+     *
+     * @param string $tableName
+     * @param array $identifier
+     * @return bool
+     */
+    public function delete(string $tableName, array $identifier): bool
+    {
+        if (empty($identifier)) {
+            throw new \InvalidArgumentException('Empty identifier for delete statement');
+        }
+
+        $condition = [];
+        $params = [];
+        foreach ($identifier as $column => $value) {
+            $condition[] = $column . ' = ?';
+            $params[] = $value;
+        }
+
+        $query = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $condition);
+
+        return $this->_pQuery($query, $params);
+    }
 
     /**
      * Fires an insert or update of a single record. it's up to the database (driver)
@@ -503,7 +574,7 @@ class Database
             $strQuery
         );
 
-        //$strQuery = $this->prettifyQuery($strQuery, $arrParams);
+        $strQuery = $this->prettifyQuery($strQuery, $arrParams);
 
         $strErrorCode = "";
         $strErrorCode .= "Error in query\n\n";
@@ -1202,14 +1273,16 @@ class Database
      */
     private function dbsafeParams($arrParams, $arrEscapes = array())
     {
-        foreach ($arrParams as $intKey => &$strParam) {
+        $replace = [];
+        foreach ($arrParams as $intKey => $strParam) {
             if (isset($arrEscapes[$intKey])) {
                 $strParam = $this->dbsafeString($strParam, $arrEscapes[$intKey], false);
             } else {
                 $strParam = $this->dbsafeString($strParam, true, false);
             }
+            $replace[$intKey] = $strParam;
         }
-        return $arrParams;
+        return $replace;
     }
 
     /**
@@ -1389,8 +1462,11 @@ class Database
     public function prettifyQuery($strQuery, $arrParams)
     {
         foreach ($arrParams as $strOneParam) {
-            if (!is_numeric($strOneParam)) {
+            if (!is_numeric($strOneParam) && $strOneParam !== null) {
                 $strOneParam = "'{$strOneParam}'";
+            }
+            if ($strOneParam === null) {
+                $strOneParam = 'null';
             }
 
             $intPos = StringUtil::indexOf($strQuery, '?');
