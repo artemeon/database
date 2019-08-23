@@ -123,10 +123,11 @@ interface SystemEventidentifier {
 
 
     /**
-     * Invoked if the permissions of a record have been changed.
-     * Triggers an event for every child node object.
+     * Invoked if the permissions of a record have been changed. Gets called only on the root id. The array of affected
+     * systemids contains all affected child ids
      *
      * @param string $strSystemid
+     * @param array $arrAffectedSystemids
      * @param array $arrPermissions
      *
      * @since 5.1
