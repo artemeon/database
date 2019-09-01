@@ -120,13 +120,13 @@ class DbPostgres extends DbBase
             return false;
         }
 
-        $resultSet = @pg_execute($this->linkDB, $strName, $arrParams);
+        $resultSet = pg_execute($this->linkDB, $strName, $arrParams);
 
         if ($resultSet === false) {
             return false;
         }
 
-        while ($arrRow = @pg_fetch_array($resultSet, null, PGSQL_ASSOC)) {
+        while ($arrRow = pg_fetch_array($resultSet, null, PGSQL_ASSOC)) {
             //conversions to remain compatible:
             //   count --> COUNT(*)
             if (isset($arrRow["count"])) {
