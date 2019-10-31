@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Kajona\System\System\Modelaction\Legacy;
+namespace Kajona\System\System\Modelaction\Actionlist\Legacy;
 
-use Kajona\System\System\Modelaction\ModelActionInterface;
-use Kajona\System\System\Modelaction\ModelActionListInterface;
-use Kajona\System\System\Modelaction\StaticModelActionList;
+use Kajona\System\System\Modelaction\Action\Legacy\LegacyEditModelAction;
+use Kajona\System\System\Modelaction\Action\ModelActionInterface;
+use Kajona\System\System\Modelaction\Actionlist\ModelActionListInterface;
+use Kajona\System\System\Modelaction\Actionlist\StaticModelActionList;
 
 final class LegacyModelActionList extends StaticModelActionList
 {

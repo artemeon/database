@@ -6,9 +6,12 @@
 
 declare(strict_types=1);
 
-namespace Kajona\System\System\Modelaction;
+namespace Kajona\System\System\Modelaction\Actionlist;
 
 use Kajona\System\System\Model;
+use Kajona\System\System\Modelaction\Context\ModelActionContext;
+use Kajona\System\System\Modelaction\Action\EditModelAction;
+use Kajona\System\System\Modelaction\Action\ModelActionInterface;
 
 class StaticModelActionList implements ModelActionListInterface
 {

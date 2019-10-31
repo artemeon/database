@@ -6,11 +6,13 @@
 
 declare(strict_types=1);
 
-namespace Kajona\System\System\Modelaction;
+namespace Kajona\System\System\Modelaction\Provider;
 
 use Kajona\System\System\Exceptions\InvalidInheritanceClassNameGivenException;
 use Kajona\System\System\Exceptions\UnableToRetrieveActionsForModelException;
 use Kajona\System\System\Model;
+use Kajona\System\System\Modelaction\Actionlist\ModelActionListInterface;
+use Kajona\System\System\Modelaction\Context\ModelActionContext;
 
 class ClassInheritanceModelActionsProvider implements ModelActionsProviderInterface
 {

@@ -6,9 +6,11 @@
 
 declare(strict_types=1);
 
-namespace Kajona\System\System\Modelaction;
+namespace Kajona\System\System\Modelaction\Provider;
 
 use Kajona\System\System\Model;
+use Kajona\System\System\Modelaction\Context\ModelActionContext;
+use Kajona\System\System\Modelaction\Actionlist\ModelActionListInterface;
 
 class StaticModelActionsProvider implements ModelActionsProviderInterface
 {

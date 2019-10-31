@@ -6,10 +6,11 @@
 
 declare(strict_types=1);
 
-namespace Kajona\System\System\Modelaction;
+namespace Kajona\System\System\Modelaction\Provider;
 
 use Kajona\System\System\Exceptions\UnableToFindModelActionsProviderException;
 use Kajona\System\System\Model;
+use Kajona\System\System\Modelaction\Context\ModelActionContext;
 
 final class ExtendableModelActionsProviderLocator implements ModelActionsProviderLocatorInterface
 {
