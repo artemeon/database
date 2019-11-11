@@ -260,6 +260,8 @@ class Classloader
             }
         }
 
+        $value = $arrServiceProvider[\Kajona\System\System\ServiceProvider::class];
+        $arrServiceProvider = [\Kajona\System\System\ServiceProvider::class => $value] + $arrServiceProvider;
         BootstrapCache::getInstance()->updateCache(BootstrapCache::CACHE_CLASSES, $arrMergedFiles);
         BootstrapCache::getInstance()->updateCache(BootstrapCache::CACHE_SERVICES, $arrServiceProvider);
     }
