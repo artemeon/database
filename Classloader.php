@@ -25,6 +25,7 @@ class Classloader
 
     const PREFER_PHAR = false;
 
+    const SYSTEM_MODULES = ["module_api", "module_basicauthentication", "module_benchmark", "module_chartjs", "module_dashboard", "module_dbbrowser", "module_dbdump", "module_devops", "module_ezcchart", "module_fileindexer", "module_flow", "module_installer", "module_jqplot", "module_ldap", "module_mediamanager", "module_oauth2", "module_packagemanager", "module_qrcode", "module_search", "module_system", "module_tags", "module_tinyurl", "module_v4skin", "module_wizard", "module_workflows"];
 
     private $intNumberOfClassesLoaded = 0;
 
@@ -390,9 +391,13 @@ class Classloader
 
 
                     $strClassname = "Kajona\\";
-                    if (strpos($strParsedFilename, "core_") !== false) {
-                        $strClassname = "AGP\\";
+                    foreach (self::SYSTEM_MODULES as $moduleName) {
+                        if (strpos($strParsedFilename, $moduleName) !== false) {
+                            $strClassname = "AGP\\";
+                            break;
+                        }
                     }
+
 
                     $arrPath = array();
                     $arrSections = array_reverse(explode("/", $strParsedFilename));
