@@ -701,6 +701,11 @@ class Database
         }
     }
 
+    public function hasOpenTransactions(): bool
+    {
+        return $this->intNumberOfOpenTransactions > 0;
+    }
+
     /**
      * Returns all tables used by the project
      *
