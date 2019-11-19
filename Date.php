@@ -682,7 +682,7 @@ class Date implements \JsonSerializable
     public function setLongTimestamp($longTimestamp)
     {
         if (self::isDateValue($longTimestamp)) {
-            $this->longTimestamp = $longTimestamp;
+            $this->longTimestamp = (string) $longTimestamp;
         }
         return $this;
     }
