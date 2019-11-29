@@ -424,16 +424,6 @@ class Classloader
                         }
                     }
 
-                    //file is in project path?
-                    if (strpos($strParsedFilename, "/project/") !== false) {
-                        $strTargetPath = _realpath_."core/module_".strtolower(array_reverse($arrPath)[0]);
-                        if (is_dir($strTargetPath) || is_file($strTargetPath.".phar")) {
-                            $strClassname = "Kajona\\";
-                        } else {
-                            $strClassname = "AGP\\";
-                        }
-                    }
-
                     $strClassname .= implode("\\", array_reverse($arrPath));
                 }
             }
