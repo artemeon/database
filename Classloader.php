@@ -392,10 +392,10 @@ class Classloader
                     $strParsedFilename = str_replace(array("\\", ".phar"), array("/", ""), StringUtil::substring($strFilename, 0, -4));
 
 
-                    $strClassname = "Kajona\\";
+                    $strClassname = "AGP\\";
                     foreach (self::SYSTEM_MODULES as $moduleName) {
                         if (strpos($strParsedFilename, $moduleName) !== false) {
-                            $strClassname = "AGP\\";
+                            $strClassname = "Kajona\\";
                             break;
                         }
                     }
