@@ -672,11 +672,11 @@ class DbOci8 extends DbBase
      */
     private function processQuery($strQuery)
     {
-        $intCount = 1;
-        while (StringUtil::indexOf($strQuery, "?") !== false) {
-            $intPos = StringUtil::indexOf($strQuery, "?");
-            $strQuery = substr($strQuery, 0, $intPos).":".$intCount++.substr($strQuery, $intPos + 1);
-        }
+        $strQuery = preg_replace_callback('/\?/', static function($value): string {
+            static $i = 0;
+            $i++;
+            return ':' . $i;
+        }, $strQuery);
 
         if (StringUtil::indexOf($strQuery, " like ", false) !== false) {
             $this->setCaseInsensitiveSort();
