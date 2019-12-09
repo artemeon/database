@@ -806,7 +806,6 @@ class DbOci8 extends DbBase
      */
     private function setCaseInsensitiveSort()
     {
-//        return;
         $this->_pQuery("alter session set nls_sort=binary_ci", array());
         $this->_pQuery("alter session set nls_comp=LINGUISTIC", array());
     }
