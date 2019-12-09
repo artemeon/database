@@ -392,10 +392,10 @@ class Classloader
                     $strParsedFilename = str_replace(array("\\", ".phar"), array("/", ""), StringUtil::substring($strFilename, 0, -4));
 
 
-                    $strClassname = "Kajona\\";
+                    $strClassname = "AGP\\";
                     foreach (self::SYSTEM_MODULES as $moduleName) {
                         if (strpos($strParsedFilename, $moduleName) !== false) {
-                            $strClassname = "AGP\\";
+                            $strClassname = "Kajona\\";
                             break;
                         }
                     }
@@ -421,16 +421,6 @@ class Classloader
                             $arrPath[] = implode("_", $arrNew);
                         } else {
                             break;
-                        }
-                    }
-
-                    //file is in project path?
-                    if (strpos($strParsedFilename, "/project/") !== false) {
-                        $strTargetPath = _realpath_."core/module_".strtolower(array_reverse($arrPath)[0]);
-                        if (is_dir($strTargetPath) || is_file($strTargetPath.".phar")) {
-                            $strClassname = "Kajona\\";
-                        } else {
-                            $strClassname = "AGP\\";
                         }
                     }
 
