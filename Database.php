@@ -1096,6 +1096,9 @@ class Database
             $arrTablesFinal = $arrTables;
         }
 
+        //call relevant event handlers
+        CoreEventdispatcher::getInstance()->notifyGenericListeners(SystemEventidentifier::EVENT_SYSTEM_DBEXPORT_INIT, []);
+
         $objPackages = new PackagemanagerManager();
         if (Config::getInstance()->getConfig("dbexport") == "internal" && $objPackages->getPackage("dbdump") !== null) {
             $objDump = new DbExport($this, $arrTablesToExclude, $bitPrintDebug);
@@ -1338,11 +1341,6 @@ class Database
         if ($bitHtmlSpecialChars) {
             $strString = html_entity_decode($strString, ENT_COMPAT, "UTF-8");
             $strString = htmlspecialchars($strString, ENT_COMPAT, "UTF-8");
-        }
-
-        //already escaped by php?
-        if (get_magic_quotes_gpc() == 1) {
-            $strString = stripslashes($strString);
         }
 
         if ($bitAddSlashes) {
