@@ -385,6 +385,16 @@ interface DbDriverInterface
      * @return bool
      */
     public function handlesDumpCompression();
+
+    /**
+     * Method which converts a PHP value to a value which can be inserted into a table. I.e. it truncates the value to
+     * the fitting length for the provided datatype
+     *
+     * @param mixed $value
+     * @param string $type
+     * @return mixed
+     */
+    public function convertToDatabaseValue($value, string $type);
 }
 
 
