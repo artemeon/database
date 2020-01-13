@@ -240,7 +240,7 @@ interface SystemEventidentifier {
     const EVENT_SYSTEM_USERLOGOUT = "core.system.userlogout";
 
     /**
-     * Callback method, triggered each time a new user is created.
+     * Triggered each time a new user is created.
      *
      * @param string $strUserid
      *
@@ -248,4 +248,13 @@ interface SystemEventidentifier {
      * @since 7.2
      */
     const EVENT_SYSTEM_USERCREATED = "core.system.usercreated";
+
+    /**
+     * Event is triggered ahead of the creation of a new dbexport.
+     * May be used to clean up / sync parts back to the database for a consistent snapshot
+     *
+     * @return bool
+     * @since 7.2
+     */
+    const EVENT_SYSTEM_DBEXPORT_INIT = "core.system.dbexport.init";
 }

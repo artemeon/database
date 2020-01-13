@@ -35,7 +35,7 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
     private static $arrValueMap = array();
 
 
-    //0 = bool, 1 = int, 2 = string, 3 = page
+    //0 = bool, 1 = int, 2 = string
     //use ONLY the following static vars to assign a type to your constant.
     //integer values may change without warnings!
     /**
@@ -58,13 +58,6 @@ class SystemSetting extends Model implements ModelInterface, VersionableInterfac
      * @var int
      */
     public static $int_TYPE_STRING = 2;
-
-    /**
-     * Used for pages = 3
-     *
-     * @var int
-     */
-    public static $int_TYPE_PAGE = 3;
 
     const STR_CACHE_NAME = "SystemSetting_CACHE";
 
