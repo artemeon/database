@@ -802,6 +802,18 @@ class DbOci8 extends DbBase
     }
 
     /**
+     * @inheritDoc
+     */
+    public function convertToDatabaseValue($value, string $type)
+    {
+        if ($type === DbDatatypes::STR_TYPE_TEXT) {
+            return StringUtil::truncate($value, 4000, '');
+        } else {
+            return parent::convertToDatabaseValue($value, $type);
+        }
+    }
+
+    /**
      * Sets the sorting and comparison of strings to case insensitive
      */
     private function setCaseInsensitiveSort()

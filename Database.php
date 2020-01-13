@@ -1519,4 +1519,17 @@ class Database
     {
         return $this->objDbDriver->getConcatExpression($parts);
     }
+
+    /**
+     * Method which converts a PHP value to a value which can be inserted into a table. I.e. it truncates the value to
+     * the fitting length for the provided datatype
+     *
+     * @param mixed $value
+     * @param string $type
+     * @return mixed
+     */
+    public function convertToDatabaseValue($value, string $type)
+    {
+        return $this->objDbDriver->convertToDatabaseValue($value, $type);
+    }
 }

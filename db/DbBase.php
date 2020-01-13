@@ -8,6 +8,8 @@ namespace Kajona\System\System\Db;
 
 use Kajona\System\System\Database;
 use Kajona\System\System\Db\Schema\TableIndex;
+use Kajona\System\System\DbDatatypes;
+use Kajona\System\System\StringUtil;
 
 
 /**
@@ -327,5 +329,25 @@ abstract class DbBase implements DbDriverInterface
     public function getConcatExpression(array $parts)
     {
         return 'CONCAT(' . implode(', ', $parts) . ')';
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function convertToDatabaseValue($value, string $type)
+    {
+        if ($type === DbDatatypes::STR_TYPE_CHAR10) {
+            return StringUtil::truncate($value, 10, '');
+        } elseif ($type === DbDatatypes::STR_TYPE_CHAR20) {
+            return StringUtil::truncate($value, 20, '');
+        } elseif ($type === DbDatatypes::STR_TYPE_CHAR100) {
+            return StringUtil::truncate($value, 100, '');
+        } elseif ($type === DbDatatypes::STR_TYPE_CHAR254) {
+            return StringUtil::truncate($value, 254, '');
+        } elseif ($type === DbDatatypes::STR_TYPE_CHAR500) {
+            return StringUtil::truncate($value, 500, '');
+        }
+
+        return $value;
     }
 }
