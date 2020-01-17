@@ -1323,10 +1323,10 @@ class Database
     public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)
     {
         //skip for numeric values to avoid php type juggling/autoboxing
-        if (is_float($strString)) {
+        if (is_float($strString) || is_int($strString)) {
             return $strString;
-        } elseif (is_int($strString)) {
-            return $strString;
+        } else if (is_bool($strString)) {
+            return (int) $strString;
         }
 
         if ($strString === null) {
