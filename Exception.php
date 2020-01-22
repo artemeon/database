@@ -64,104 +64,13 @@ class Exception extends \Exception
      * Therefore the errorlevel defines the "weight" of the exception
      *
      * @return void
+     * @deprecated - please use the exception logger directly and pass the exception to the log method
      */
     public function processException()
     {
-
-        //set which POST parameters should read out
-        $arrPostParams = array("module", "action", "page", "systemid");
-
-        $objHistory = new History();
-
-        //send an email to the admin?
-        $strAdminMail = "";
-        try {
-            if (Database::getInstance()->getBitConnected()) {
-                $strAdminMail = SystemSetting::getConfigValue("_system_admin_email_");
-            }
-        } catch (Exception $objEx) {
-        }
-
-        if ($strAdminMail != "") {
-            $strMailtext = "";
-            $strMailtext .= "The system installed at "._webpath_." registered an error!\n\n";
-            $strMailtext .= "The error message was:\n";
-            $strMailtext .= "\t".$this->getMessage()."\n\n";
-            $strMailtext .= "The level of this error was:\n";
-            $strMailtext .= "\t";
-            if ($this->getErrorlevel() == self::$level_FATALERROR) {
-                $strMailtext .= "FATAL ERROR";
-            }
-            if ($this->getErrorlevel() == self::$level_ERROR) {
-                $strMailtext .= "REGULAR ERROR";
-            }
-            $strMailtext .= "\n\n";
-            $strMailtext .= "File and line number the error was thrown:\n";
-            $strMailtext .= "\t".basename($this->getFile())." in line ".$this->getLine()."\n\n";
-            $strMailtext .= "Callstack / Backtrace:\n\n";
-            $strMailtext .= $this->getTraceAsString();
-            $previous = $this->getPrevious();
-            while ($previous !== null) {
-                $strMailtext .= "\n\nPrevious Exception:\n\n";
-                $strMailtext .= "\t".basename($previous->getFile())." in line ".$previous->getLine()."\n\n";
-                $strMailtext .= $previous->getTraceAsString();
-                $previous = $previous->getPrevious();
-            }
-            $strMailtext .= "\n\n";
-            $strMailtext .= "User: ".Carrier::getInstance()->getObjSession()->getUserID()." (".Carrier::getInstance()->getObjSession()->getUsername().")\n";
-            $strMailtext .= "Source host: ".getServer("REMOTE_ADDR")." (".@gethostbyaddr(getServer("REMOTE_ADDR")).")\n";
-            $strMailtext .= "Query string: ".getServer("REQUEST_URI")."\n";
-            $strMailtext .= "POST data (selective):\n";
-            foreach ($arrPostParams as $strParam) {
-                if (getPost($strParam) != "") {
-                    $strMailtext .= "\t".$strParam.": ".getPost($strParam)."\n";
-                }
-            }
-            $strMailtext .= "\n\n";
-            $strMailtext .= "Last actions called:\n";
-            $strMailtext .= "Admin:\n";
-            $arrHistory = $objHistory->getArrAdminHistory();
-            if (is_array($arrHistory)) {
-                foreach ($arrHistory as $intIndex => $strOneUrl) {
-                    $strMailtext .= " #".$intIndex.": ".$strOneUrl."\n";
-                }
-            }
-            $strMailtext .= "Portal:\n";
-            $arrHistory = $objHistory->getArrPortalHistory();
-            if (is_array($arrHistory)) {
-                foreach ($arrHistory as $intIndex => $strOneUrl) {
-                    $strMailtext .= " #".$intIndex.": ".$strOneUrl."\n";
-                }
-            }
-            $strMailtext .= "\n\n";
-
-            $strMailtext .= "Callstack:\n";
-            $strMailtext .= $this->getTraceAsString();
-            $strMailtext .= "\n\n";
-
-
-            $strMailtext .= "If you don't know what to do, feel free to open a ticket.\n\n";
-            $strMailtext .= "For more help visit http://www.kajona.de.\n\n";
-
-            $objMail = new Mail();
-            $objMail->setSubject("Error on website "._webpath_." occured!");
-            $objMail->setSender($strAdminMail);
-            $objMail->setText($strMailtext);
-            $objMail->addTo($strAdminMail);
-            $objMail->sendMail();
-
-
-            $objMessageHandler = new MessagingMessagehandler();
-            $objMessage = new MessagingMessage();
-            $objMessage->setStrBody($strMailtext);
-            $objMessage->setObjMessageProvider(new MessageproviderExceptions());
-            $objMessageHandler->sendMessageObject($objMessage, Objectfactory::getInstance()->getObject(SystemSetting::getConfigValue("_admins_group_id_")));
-        }
-
-
-        //Handle  errors.
-        $strLogMessage = basename($this->getFile()).":".$this->getLine()." -- ".$this->getMessage();
-        Logger::getInstance()->error($strLogMessage);
+        /** @var ExceptionLogger $exceptionLogger */
+        $exceptionLogger = Carrier::getInstance()->getContainer()->offsetGet(ExceptionLogger::class);
+        $exceptionLogger->log($this);
     }
 
     /**
