@@ -7,6 +7,7 @@
 
 namespace Kajona\System\System\Db;
 
+use Kajona\System\System\Config;
 use Kajona\System\System\Database;
 use Kajona\System\System\Db\Schema\Table;
 use Kajona\System\System\Db\Schema\TableColumn;
@@ -43,6 +44,22 @@ class DbOci8 extends DbBase
     private $objErrorStmt = null;
 
     /**
+     * En-/Disables the usage of fast, binary case-insensitive collations, available since ORA 12.2.
+     *
+     * @var bool
+     * @see https://dbaclass.com/article/max_string_size-parameter-oracle-12c/
+     * @see https://oracle-base.com/articles/12c/column-level-collation-and-case-insensitive-database-12cr2
+     * @see https://docs.oracle.com/database/121/REFRN/GUID-D424D23B-0933-425F-BC69-9C0E6724693C.htm#REFRN10321
+     */
+    private $useBinaryCI = false;
+
+    public function __construct()
+    {
+        $this->useBinaryCI = Config::getInstance('module_system', 'config.php')->getConfig('oci8_max_string_size_extended');
+    }
+
+
+    /**
      * Flag whether the sring comparison method (case sensitive / insensitive) should be reset back to default after the current query
      *
      * @var bool
@@ -65,8 +82,13 @@ class DbOci8 extends DbBase
 
 
         if ($this->linkDB !== false) {
-            @oci_set_client_info($this->linkDB, "Kajona CMS");
+            @oci_set_client_info($this->linkDB, "ARTEMEON AGP");
+            @oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
             $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'", array());
+
+            if ($this->useBinaryCI) {
+                $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI;", array());
+            }
             return true;
         } else {
             throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
@@ -540,6 +562,9 @@ class DbOci8 extends DbBase
         //primary keys
         $strQuery .= " CONSTRAINT pk_".generateSystemid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
+        if ($this->useBinaryCI) {
+            $strQuery .= "DEFAULT COLLATION BINARY_CI ";
+        }
 
         return $this->_pQuery($strQuery, array());
     }
@@ -678,7 +703,7 @@ class DbOci8 extends DbBase
             return ':' . $i;
         }, $strQuery);
 
-        if ($params !== null && StringUtil::indexOf($strQuery, " like ", false) !== false) {
+        if (!$this->useBinaryCI && $params !== null && StringUtil::indexOf($strQuery, " like ", false) !== false) {
 
             foreach ($params as $param) {
                 if (substr($param, -1) === '%' || substr($param, 0, 1) === '%') {
