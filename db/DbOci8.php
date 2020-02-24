@@ -403,6 +403,8 @@ class DbOci8 extends DbBase
                 return DbDatatypes::STR_TYPE_CHAR500;
             } elseif ($infoSchemaRow["data_length"] == "4000") {
                 return DbDatatypes::STR_TYPE_TEXT;
+            } elseif ($infoSchemaRow["data_length"] == "32767") {
+                return DbDatatypes::STR_TYPE_TEXT;
             }
         } elseif ($infoSchemaRow["data_type"] == "CLOB") {
             return DbDatatypes::STR_TYPE_LONGTEXT;
@@ -449,7 +451,11 @@ class DbOci8 extends DbBase
         } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR2( 500 ) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
-            $strReturn .= " VARCHAR2( 4000 ) ";
+            if ($this->useBinaryCI) {
+                $strReturn .= " VARCHAR2( 32767 ) ";
+            } else {
+                $strReturn .= " VARCHAR2( 4000 ) ";
+            }
         } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
             $strReturn .= " CLOB ";
         } else {
