@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kajona\System\System\Db\Schema;
 
+use Kajona\System\System\Database;
+
 /**
  * Base information about a database table
  * @package Kajona\System\System\Db\Schema
@@ -29,6 +31,30 @@ class Table implements \JsonSerializable
     public function __construct(string $name)
     {
         $this->name = $name;
+    }
+
+    /**
+     * Generates the tables as configured by the current object model using the passed Database instance
+     * @param Database $connection
+     * @throws \Kajona\System\System\Exception
+     */
+    public function generateTable(Database $connection)
+    {
+        $columns = [];
+        foreach ($this->getColumns() as $colDef) {
+            $columns[$colDef->getName()] = [$colDef->getInternalType(), $colDef->isNullable()];
+        }
+
+        $primary = [];
+        foreach ($this->getPrimaryKeys() as $keyDef) {
+            $primary[] = $keyDef->getName();
+        }
+
+        $connection->createTable($this->name, $columns, $primary);
+
+        foreach ($this->getIndexes() as $indexDef) {
+            $connection->addIndex($this->name, $indexDef);
+        }
     }
 
     /**
