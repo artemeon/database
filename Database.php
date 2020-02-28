@@ -1300,6 +1300,12 @@ class Database
     {
         $replace = [];
         foreach ($arrParams as $intKey => $strParam) {
+
+            if ($strParam instanceof OrmQueryParam && !$strParam->isEscape()) {
+                $replace[$intKey] = $strParam->getValue();
+                continue;
+            }
+
             if (isset($arrEscapes[$intKey])) {
                 $strParam = $this->dbsafeString($strParam, $arrEscapes[$intKey], false);
             } else {
