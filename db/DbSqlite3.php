@@ -727,4 +727,13 @@ class DbSqlite3 extends DbBase
     {
         return implode(' || ', $parts);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLeastExpression(array $parts): string
+    {
+        return 'MIN(' . implode(', ', $parts) . ')';
+    }
+
 }

@@ -395,6 +395,18 @@ interface DbDriverInterface
      * @return mixed
      */
     public function convertToDatabaseValue($value, string $type);
+
+    /**
+     * Returns a LEAST() query expression which selects the minimum value of goven columns.
+     * <code>
+     *  $connection->getLeastExpression(['column1','column2', ...])
+     * </code>
+     *
+     * @param array $parts
+     * @return string
+     */
+    public function getLeastExpression(array $parts): string;
+
 }
 
 

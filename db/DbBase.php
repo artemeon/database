@@ -350,4 +350,13 @@ abstract class DbBase implements DbDriverInterface
 
         return $value;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLeastExpression(array $parts): string
+    {
+        return 'LEAST(' . implode(', ', $parts) . ')';
+    }
+
 }

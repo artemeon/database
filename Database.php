@@ -1538,4 +1538,13 @@ class Database
     {
         return $this->objDbDriver->convertToDatabaseValue($value, $type);
     }
+
+    /**
+     * @param array $parts
+     * @return string
+     */
+    public function getLeastExpression(array $parts): string
+    {
+        return $this->objDbDriver->getLeastExpression($parts);
+    }
 }
