@@ -735,5 +735,4 @@ class DbSqlite3 extends DbBase
     {
         return 'MIN(' . implode(', ', $parts) . ')';
     }
-
 }

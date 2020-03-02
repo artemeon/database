@@ -397,7 +397,7 @@ interface DbDriverInterface
     public function convertToDatabaseValue($value, string $type);
 
     /**
-     * Returns a LEAST() query expression which selects the minimum value of goven columns.
+     * Returns a LEAST() query expression which selects the minimum value of given columns.
      * <code>
      *  $connection->getLeastExpression(['column1','column2', ...])
      * </code>
