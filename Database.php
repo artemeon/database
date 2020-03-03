@@ -866,6 +866,31 @@ class Database
     }
 
     /**
+     * Generates a tables as configured by the passed Table definition. Includes all metadata such as
+     * primary keys, indexes and columns.
+     * @param Table $table
+     * @throws Exception
+     */
+    public function generateTableFromMetadata(Table $table): void
+    {
+        $columns = [];
+        foreach ($table->getColumns() as $colDef) {
+            $columns[$colDef->getName()] = [$colDef->getInternalType(), $colDef->isNullable()];
+        }
+
+        $primary = [];
+        foreach ($table->getPrimaryKeys() as $keyDef) {
+            $primary[] = $keyDef->getName();
+        }
+
+        $this->createTable($table->getName(), $columns, $primary);
+
+        foreach ($this->getIndexes() as $indexDef) {
+            $this->addIndex($table->getName(), $indexDef);
+        }
+    }
+
+    /**
      * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
      * where each index can only occur once in the table
      *

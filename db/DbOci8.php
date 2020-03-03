@@ -53,12 +53,6 @@ class DbOci8 extends DbBase
      */
     private $useBinaryCI = false;
 
-    public function __construct()
-    {
-        $this->useBinaryCI = Config::getInstance('module_system', 'config.php')->getConfig('oci8_max_string_size_extended');
-    }
-
-
     /**
      * Flag whether the sring comparison method (case sensitive / insensitive) should be reset back to default after the current query
      *
@@ -75,24 +69,25 @@ class DbOci8 extends DbBase
             $objParams->setIntPort(1521);
         }
         $this->objCfg = $objParams;
-                //try to set the NLS_LANG env attribute
+        $this->useBinaryCI = Config::getInstance('module_system', 'config.php')->getConfig('oci8_max_string_size_extended');
+
+        //try to set the NLS_LANG env attribute
         putenv("NLS_LANG=American_America.UTF8");
 
         $this->linkDB = @oci_pconnect($this->objCfg->getStrUsername(), $this->objCfg->getStrPass(), $this->objCfg->getStrHost().":".$this->objCfg->getIntPort()."/".$this->objCfg->getStrDbName(), "AL32UTF8");
 
-
         if ($this->linkDB !== false) {
             @oci_set_client_info($this->linkDB, "ARTEMEON AGP");
             @oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
-            $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'", array());
+            $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS='.,'", []);
 
             if ($this->useBinaryCI) {
-                $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI;", array());
+                $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI;", []);
             }
             return true;
-        } else {
-            throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
         }
+
+        throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
     }
 
     /**
