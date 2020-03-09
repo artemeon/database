@@ -750,14 +750,14 @@ function createFilename($strName, $bitFolder = false)
 {
     //$strName = StringUtil::toLowerCase($strName);
 
-    if (!$bitFolder) {
+    if (!$bitFolder && StringUtil::lastIndexOf($strName, ".")  !== false) {
         $strEnding = StringUtil::substring($strName, (StringUtil::lastIndexOf($strName, ".") + 1));
     }
     else {
         $strEnding = "";
     }
 
-    if (!$bitFolder) {
+    if (!$bitFolder && StringUtil::lastIndexOf($strName, ".")  !== false) {
         $strReturn = StringUtil::substring($strName, 0, (StringUtil::lastIndexOf($strName, ".")));
     }
     else {
