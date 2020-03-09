@@ -1,13 +1,7 @@
 <?php
-/*"******************************************************************************************************
-*   (c) 2004-2006 by MulchProductions, www.mulchprod.de                                                 *
-*   (c) 2007-2016 by Kajona, www.kajona.de                                                              *
-*       Published under the GNU LGPL v2.1, see /system/licence_lgpl.txt                                 *
-********************************************************************************************************/
 
 namespace Kajona\System\System\Db;
 
-use Kajona\System\System\Database;
 use Kajona\System\System\Db\Schema\Table;
 use Kajona\System\System\Db\Schema\TableColumn;
 use Kajona\System\System\Db\Schema\TableIndex;
@@ -20,7 +14,6 @@ use Kajona\System\System\StringUtil;
 use mysqli;
 use mysqli_stmt;
 
-
 /**
  * db-driver for MySQL using the php-mysqli-interface
  *
@@ -28,14 +21,19 @@ use mysqli_stmt;
  */
 class DbMysqli extends DbBase
 {
-
     /**  @var mysqli */
     private $linkDB; //DB-Link
+
     /** @var  DbConnectionParams */
     private $objCfg;
+
+    /** @var string  */
     private $strDumpBin = "mysqldump"; //Binary to dump db (if not in path, add the path here)
+
+    /** @var string  */
     private $strRestoreBin = "mysql"; //Binary to dump db (if not in path, add the path here)
 
+    /** @var string  */
     private $strErrorMessage = "";
 
     /**
@@ -50,7 +48,14 @@ class DbMysqli extends DbBase
         //save connection-details
         $this->objCfg = $objParams;
 
-        $this->linkDB = @new mysqli($this->objCfg->getStrHost(), $this->objCfg->getStrUsername(), $this->objCfg->getStrPass(), $this->objCfg->getStrDbName(), $this->objCfg->getIntPort());
+        $this->linkDB = @new mysqli(
+            $this->objCfg->getStrHost(),
+            $this->objCfg->getStrUsername(),
+            $this->objCfg->getStrPass(),
+            $this->objCfg->getStrDbName(),
+            $this->objCfg->getIntPort()
+        );
+
         if ($this->linkDB !== false) {
             if (@$this->linkDB->select_db($this->objCfg->getStrDbName())) {
                 //erst ab mysql-client-bib > 4
@@ -79,7 +84,6 @@ class DbMysqli extends DbBase
         $this->linkDB->close();
     }
 
-
     /**
      * Sends a prepared statement to the database. All params must be represented by the ? char.
      * The params themself are stored using the second params using the matching order.
@@ -104,7 +108,6 @@ class DbMysqli extends DbBase
                 } else {
                     $strTypes .= "s";
                 }
-
             }
 
             if (count($arrParams) > 0) {
@@ -137,8 +140,8 @@ class DbMysqli extends DbBase
      * @param string $strQuery
      * @param array $arrParams
      *
-     * @since 3.4
      * @return array|bool
+     * @since 3.4
      */
     public function getPArray($strQuery, $arrParams)
     {
@@ -200,14 +203,16 @@ class DbMysqli extends DbBase
         foreach ($arrColumns as $strOneCol) {
             $arrPlaceholder[] = "?";
             $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
-            $arrKeyValuePairs[] = $this->encloseColumnName($strOneCol)." = ?";
+            $arrKeyValuePairs[] = $this->encloseColumnName($strOneCol) . " = ?";
         }
 
-        $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")
-                        ON DUPLICATE KEY UPDATE ".implode(", ", $arrKeyValuePairs);
+        $strQuery = "INSERT INTO " . $this->encloseTableName($strTable) . " (" . implode(
+                ", ",
+                $arrMappedColumns
+            ) . ") VALUES (" . implode(", ", $arrPlaceholder) . ")
+                        ON DUPLICATE KEY UPDATE " . implode(", ", $arrKeyValuePairs);
         return $this->_pQuery($strQuery, array_merge($arrValues, $arrValues));
     }
-
 
     /**
      * Returns the last error reported by the database.
@@ -217,7 +222,7 @@ class DbMysqli extends DbBase
      */
     public function getError()
     {
-        $strError = $this->strErrorMessage." ".$this->linkDB->error;
+        $strError = $this->strErrorMessage . " " . $this->linkDB->error;
         $this->strErrorMessage = "";
 
         return $strError;
@@ -239,6 +244,7 @@ class DbMysqli extends DbBase
 
     /**
      * Fetches the full table information as retrieved from the rdbms
+     *
      * @param $tableName
      * @return Table
      */
@@ -281,6 +287,7 @@ class DbMysqli extends DbBase
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant
+     *
      * @param $infoSchemaRow
      * @return null|string
      */
@@ -309,7 +316,6 @@ class DbMysqli extends DbBase
         }
         return null;
     }
-
 
     /**
      * Returns the db-specific datatype for the kajona internal datatype.
@@ -378,17 +384,17 @@ class DbMysqli extends DbBase
         $strQuery = "";
 
         //build the mysql code
-        $strQuery .= "CREATE TABLE IF NOT EXISTS `".$strName."` ( \n";
+        $strQuery .= "CREATE TABLE IF NOT EXISTS `" . $strName . "` ( \n";
 
         //loop the fields
         foreach ($arrFields as $strFieldName => $arrColumnSettings) {
-            $strQuery .= " `".$strFieldName."` ";
+            $strQuery .= " `" . $strFieldName . "` ";
 
             $strQuery .= $this->getDatatype($arrColumnSettings[0]);
 
             //any default?
             if (isset($arrColumnSettings[2])) {
-                $strQuery .= "DEFAULT ".$arrColumnSettings[2]." ";
+                $strQuery .= "DEFAULT " . $arrColumnSettings[2] . " ";
             }
 
             //nullable?
@@ -397,11 +403,10 @@ class DbMysqli extends DbBase
             } else {
                 $strQuery .= " NOT NULL , \n";
             }
-
         }
 
         //primary keys
-        $strQuery .= " PRIMARY KEY ( `".implode("` , `", $arrKeys)."` ) \n";
+        $strQuery .= " PRIMARY KEY ( `" . implode("` , `", $arrKeys) . "` ) \n";
         $strQuery .= ") ";
         $strQuery .= " ENGINE = innodb CHARACTER SET utf8 COLLATE utf8_unicode_ci;";
 
@@ -413,7 +418,12 @@ class DbMysqli extends DbBase
      */
     public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
     {
-        return $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." ADD ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." (" . implode(",", $arrColumns) . ")", []);
+        return $this->_pQuery(
+            "ALTER TABLE " . $this->encloseTableName(
+                $strTable
+            ) . " ADD " . ($bitUnique ? "UNIQUE" : "") . " INDEX " . $strName . " (" . implode(",", $arrColumns) . ")",
+            []
+        );
     }
 
     /**
@@ -479,7 +489,7 @@ class DbMysqli extends DbBase
     public function getDbInfo()
     {
         $arrReturn = array();
-        $arrReturn["dbserver"] = "MySQL ".$this->linkDB->server_info;
+        $arrReturn["dbserver"] = "MySQL " . $this->linkDB->server_info;
         $arrReturn["server version"] = $this->linkDB->server_version;
         $arrReturn["dbclient"] = $this->linkDB->client_info;
         $arrReturn["client version"] = $this->linkDB->client_version;
@@ -499,7 +509,7 @@ class DbMysqli extends DbBase
      */
     public function encloseColumnName($strColumn)
     {
-        return "`".$strColumn."`";
+        return "`" . $strColumn . "`";
     }
 
     /**
@@ -511,7 +521,7 @@ class DbMysqli extends DbBase
      */
     public function encloseTableName($strTable)
     {
-        return "`".$strTable."`";
+        return "`" . $strTable . "`";
     }
 
 
@@ -527,27 +537,31 @@ class DbMysqli extends DbBase
      */
     public function dbExport(&$strFilename, $arrTables)
     {
-        $strFilename = _realpath_.$strFilename;
+        $strFilename = _realpath_ . $strFilename;
         $strTables = implode(" ", $arrTables);
         $strParamPass = "";
 
         if ($this->objCfg->getStrPass() != "") {
-            $strParamPass = " -p\"".$this->objCfg->getStrPass()."\"";
+            $strParamPass = " -p\"" . $this->objCfg->getStrPass() . "\"";
         }
 
         if ($this->handlesDumpCompression()) {
             $strFilename .= ".gz";
-            $strCommand = $this->strDumpBin." -h".$this->objCfg->getStrHost()." -u".$this->objCfg->getStrUsername().$strParamPass." -P".$this->objCfg->getIntPort()." ".$this->objCfg->getStrDbName()." ".$strTables." | gzip > \"".$strFilename."\"";
+            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getStrHost(
+                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
+                ) . " " . $this->objCfg->getStrDbName() . " " . $strTables . " | gzip > \"" . $strFilename . "\"";
         } else {
-            $strCommand = $this->strDumpBin." -h".$this->objCfg->getStrHost()." -u".$this->objCfg->getStrUsername().$strParamPass." -P".$this->objCfg->getIntPort()." ".$this->objCfg->getStrDbName()." ".$strTables." > \"".$strFilename."\"";
+            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getStrHost(
+                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
+                ) . " " . $this->objCfg->getStrDbName() . " " . $strTables . " > \"" . $strFilename . "\"";
         }
         //Now do a systemfork
         $intTemp = "";
         system($strCommand, $intTemp);
         if ($intTemp == 0) {
-            Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin." exited with code ".$intTemp);
+            Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin . " exited with code " . $intTemp);
         } else {
-            Logger::getInstance(Logger::DBLOG)->warning($this->strDumpBin." exited with code ".$intTemp);
+            Logger::getInstance(Logger::DBLOG)->warning($this->strDumpBin . " exited with code " . $intTemp);
         }
 
         return $intTemp == 0;
@@ -562,24 +576,28 @@ class DbMysqli extends DbBase
      */
     public function dbImport($strFilename)
     {
-        $strFilename = _realpath_.$strFilename;
+        $strFilename = _realpath_ . $strFilename;
         $strParamPass = "";
 
         if ($this->objCfg->getStrPass() != "") {
-            $strParamPass = " -p\"".$this->objCfg->getStrPass()."\"";
+            $strParamPass = " -p\"" . $this->objCfg->getStrPass() . "\"";
         }
 
         if ($this->handlesDumpCompression() && StringUtil::endsWith($strFilename, ".gz")) {
-            $strCommand = " gunzip -c \"".$strFilename."\" | ".$this->strRestoreBin." -h".$this->objCfg->getStrHost()." -u".$this->objCfg->getStrUsername().$strParamPass." -P".$this->objCfg->getIntPort()." ".$this->objCfg->getStrDbName()."";
+            $strCommand = " gunzip -c \"" . $strFilename . "\" | " . $this->strRestoreBin . " -h" . $this->objCfg->getStrHost(
+                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
+                ) . " " . $this->objCfg->getStrDbName() . "";
         } else {
-            $strCommand = $this->strRestoreBin." -h".$this->objCfg->getStrHost()." -u".$this->objCfg->getStrUsername().$strParamPass." -P".$this->objCfg->getIntPort()." ".$this->objCfg->getStrDbName()." < \"".$strFilename."\"";
+            $strCommand = $this->strRestoreBin . " -h" . $this->objCfg->getStrHost(
+                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
+                ) . " " . $this->objCfg->getStrDbName() . " < \"" . $strFilename . "\"";
         }
         $intTemp = "";
         system($strCommand, $intTemp);
         if ($intTemp == 0) {
-            Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin." exited with code ".$intTemp);
+            Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin . " exited with code " . $intTemp);
         } else {
-            Logger::getInstance(Logger::DBLOG)->warning($this->strDumpBin." exited with code ".$intTemp);
+            Logger::getInstance(Logger::DBLOG)->warning($this->strDumpBin . " exited with code " . $intTemp);
         }
         return $intTemp == 0;
     }
@@ -613,13 +631,11 @@ class DbMysqli extends DbBase
      */
     private function getPreparedStatement($strQuery)
     {
-
         $strName = md5($strQuery);
 
         if (isset($this->arrStatementsCache[$strName])) {
             return $this->arrStatementsCache[$strName];
         }
-
 
         if (count($this->arrStatementsCache) > 300) {
             /** @var mysqli_stmt $objOneEntry */
