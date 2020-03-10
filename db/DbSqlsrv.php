@@ -684,5 +684,13 @@ class DbSqlsrv extends DbBase
     {
         return '"'.$strTable.'"';
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLeastExpression(array $parts): string
+    {
+        return '(SELECT MIN(x) FROM (VALUES (' . implode('),(', $parts) . ')) AS value(x))';
+    }
 }
 
