@@ -286,9 +286,9 @@ class DbMysqli extends DbBase
      */
     private function getCoreTypeForDbType($infoSchemaRow)
     {
-        if ($infoSchemaRow["Type"] == "int(11)") {
+        if ($infoSchemaRow["Type"] == "int(11)" || $infoSchemaRow["Type"] == "int") {
             return DbDatatypes::STR_TYPE_INT;
-        } elseif ($infoSchemaRow["Type"] == "bigint(20)") {
+        } elseif ($infoSchemaRow["Type"] == "bigint(20)" || $infoSchemaRow["Type"] == "bigint") {
             return DbDatatypes::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["Type"] == "double") {
             return DbDatatypes::STR_TYPE_DOUBLE;
