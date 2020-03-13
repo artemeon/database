@@ -234,7 +234,7 @@ class Classloader
             }
 
             [, $modulePath, $moduleName] = $matches;
-            $moduleServiceProviders[$moduleName] = $className;
+            $moduleServiceProviders[$moduleName] = [$className, $classPath];
 
             $moduleDependencies = [];
             if (\file_exists($modulePath . 'metadata.xml')) {
@@ -251,7 +251,8 @@ class Classloader
 
         $sortedServiceProviders = [];
         foreach ($sortedModuleNames as $sortedModuleName) {
-            $sortedServiceProviders[] = $moduleServiceProviders[$sortedModuleName];
+            [$className, $classPath] = $moduleServiceProviders[$sortedModuleName];
+            $sortedServiceProviders[$className] = $classPath;
         }
 
         return $sortedServiceProviders;
