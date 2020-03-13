@@ -9,6 +9,7 @@ namespace Kajona\System\System;
 
 require_once __DIR__."/PharModule.php";
 require_once __DIR__."/BootstrapCache.php";
+require_once __DIR__."/NameListWithDependencySorting.php";
 
 use Kajona\Packagemanager\System\PackagemanagerMetadata;
 use ReflectionClass;
