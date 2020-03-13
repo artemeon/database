@@ -12,6 +12,7 @@ require_once __DIR__."/BootstrapCache.php";
 
 use Kajona\Packagemanager\System\PackagemanagerMetadata;
 use ReflectionClass;
+use SimpleXMLElement;
 
 /**
  * Class-loader for all Kajona classes.
@@ -222,6 +223,40 @@ class Classloader
         $this->indexAvailableCodefiles(true);
     }
 
+    private function getServiceProviderClassNamesSortedByModuleDependencies(array $unsortedServiceProviders): array
+    {
+        $sortedModuleNames = new NameListWithDependencySorting();
+        $moduleServiceProviders = [];
+
+        foreach ($unsortedServiceProviders as $className => $classPath) {
+            if (!\preg_match('#(^.+?/module_(\w+)/)#', $classPath, $matches)) {
+                continue;
+            }
+
+            [, $modulePath, $moduleName] = $matches;
+            $moduleServiceProviders[$moduleName] = $className;
+
+            $moduleDependencies = [];
+            if (\file_exists($modulePath . 'metadata.xml')) {
+                $metadata = new SimpleXMLElement(\file_get_contents($modulePath . 'metadata.xml'));
+                if (isset($metadata->requiredModules)) {
+                    foreach ($metadata->requiredModules->module as $requiredModule) {
+                        $moduleDependencies[] = (string) $requiredModule['name'];
+                    }
+                }
+            }
+
+            $sortedModuleNames->add($moduleName, $moduleDependencies);
+        }
+
+        $sortedServiceProviders = [];
+        foreach ($sortedModuleNames as $sortedModuleName) {
+            $sortedServiceProviders[] = $moduleServiceProviders[$sortedModuleName];
+        }
+
+        return $sortedServiceProviders;
+    }
+
     /**
      * Indexes all available code-files, so classes.
      * Therefore, all relevant folders are traversed.
@@ -263,7 +298,7 @@ class Classloader
         $value = $arrServiceProvider[\Kajona\System\System\ServiceProvider::class];
         $arrServiceProvider = [\Kajona\System\System\ServiceProvider::class => $value] + $arrServiceProvider;
         BootstrapCache::getInstance()->updateCache(BootstrapCache::CACHE_CLASSES, $arrMergedFiles);
-        BootstrapCache::getInstance()->updateCache(BootstrapCache::CACHE_SERVICES, $arrServiceProvider);
+        BootstrapCache::getInstance()->updateCache(BootstrapCache::CACHE_SERVICES, $this->getServiceProviderClassNamesSortedByModuleDependencies($arrServiceProvider));
     }
 
     /**
