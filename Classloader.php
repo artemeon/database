@@ -13,7 +13,6 @@ require_once __DIR__."/NameListWithDependencySorting.php";
 
 use Kajona\Packagemanager\System\PackagemanagerMetadata;
 use ReflectionClass;
-use SimpleXMLElement;
 
 /**
  * Class-loader for all Kajona classes.
@@ -239,7 +238,7 @@ class Classloader
 
             $moduleDependencies = [];
             if (\file_exists($modulePath . 'metadata.xml')) {
-                $metadata = new SimpleXMLElement(\file_get_contents($modulePath . 'metadata.xml'));
+                $metadata = new \SimpleXMLElement(\file_get_contents($modulePath . 'metadata.xml'));
                 if (isset($metadata->requiredModules)) {
                     foreach ($metadata->requiredModules->module as $requiredModule) {
                         $moduleDependencies[] = (string) $requiredModule['name'];
