@@ -229,7 +229,7 @@ class Classloader
         $moduleServiceProviders = [];
 
         foreach ($unsortedServiceProviders as $className => $classPath) {
-            if (!\preg_match('#(^.+?/module_(\w+)/)#', $classPath, $matches)) {
+            if (!\preg_match('#(^.+?/module_(\w+)(\.phar)?/)#', $classPath, $matches)) {
                 continue;
             }
 
