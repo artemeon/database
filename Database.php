@@ -204,6 +204,31 @@ class Database
         return $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
     }
 
+    public function selectRow(string $tableName, array $columns, array $identifier, bool $cache = true, ?array $escapes = []): ?array
+    {
+        $query = \sprintf(
+            'SELECT %s FROM %s WHERE %s',
+            \implode(', ', $columns),
+            $tableName,
+            \implode(
+                ' AND ',
+                \array_map(
+                    static function (string $column): string {
+                        return $column . ' = ?';
+                    },
+                    \array_keys($identifier)
+                )
+            )
+        );
+
+        $row = $this->getPRow($query, \array_values($identifier), 0, $cache, $escapes);
+        if ($row === []) {
+            return null;
+        }
+
+        return $row;
+    }
+
     /**
      * Updates a row on the provided table by the identifier columns
      *
