@@ -204,7 +204,17 @@ class Database
         return $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
     }
 
-    public function selectRow(string $tableName, array $columns, array $identifier, bool $cache = true, ?array $escapes = []): ?array
+    /**
+     * Retrieves a single row of the referenced table, returning the requested columns and filtering by the given identifier(s).
+     *
+     * @param string $tableName the table from which to select the row
+     * @param array $columns a flat list of columns to select (may also include expressions)
+     * @param array $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
+     * @param bool $cached whether a previously selected result can be reused
+     * @param array|null $escapes which parameters to escape (described in {@see dbsafeParams})
+     * @return array|null
+     */
+    public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array
     {
         $query = \sprintf(
             'SELECT %s FROM %s WHERE %s',
@@ -216,12 +226,12 @@ class Database
                     static function (string $column): string {
                         return $column . ' = ?';
                     },
-                    \array_keys($identifier)
+                    \array_keys($identifiers)
                 )
             )
         );
 
-        $row = $this->getPRow($query, \array_values($identifier), 0, $cache, $escapes);
+        $row = $this->getPRow($query, \array_values($identifiers), 0, $cached, $escapes);
         if ($row === []) {
             return null;
         }
