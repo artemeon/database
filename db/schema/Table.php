@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kajona\System\System\Db\Schema;
 
+use Kajona\System\System\Database;
+
 /**
  * Base information about a database table
  * @package Kajona\System\System\Db\Schema

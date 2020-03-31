@@ -204,6 +204,15 @@ class Date implements \JsonSerializable
                 $intMonth = strftime("%m", $intTimestamp);
                 $intDay = strftime("%d", $intTimestamp);
             }
+
+            $objDateTime = DateTime::createFromFormat(Carrier::getInstance()->getObjLang()->getLang("dateStyle_months", "system"), $arrParams[$strFieldname]);
+            if ($objDateTime) {
+                $intTimestamp = $objDateTime->getTimestamp();
+                $intYear = strftime("%Y", $intTimestamp);
+                $intMonth = strftime("%m", $intTimestamp);
+                $intDay = strftime("%d", $intTimestamp);
+            }
+
         }
 
         $this->setIntYear($intYear);

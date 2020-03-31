@@ -7,6 +7,7 @@
 
 namespace Kajona\System\System\Db;
 
+use Kajona\System\System\Config;
 use Kajona\System\System\Database;
 use Kajona\System\System\Db\Schema\Table;
 use Kajona\System\System\Db\Schema\TableColumn;
@@ -43,6 +44,16 @@ class DbOci8 extends DbBase
     private $objErrorStmt = null;
 
     /**
+     * En-/Disables the usage of fast, binary case-insensitive collations, available since ORA 12.2.
+     *
+     * @var bool
+     * @see https://dbaclass.com/article/max_string_size-parameter-oracle-12c/
+     * @see https://oracle-base.com/articles/12c/column-level-collation-and-case-insensitive-database-12cr2
+     * @see https://docs.oracle.com/database/121/REFRN/GUID-D424D23B-0933-425F-BC69-9C0E6724693C.htm#REFRN10321
+     */
+    private $useBinaryCI = false;
+
+    /**
      * Flag whether the sring comparison method (case sensitive / insensitive) should be reset back to default after the current query
      *
      * @var bool
@@ -58,19 +69,25 @@ class DbOci8 extends DbBase
             $objParams->setIntPort(1521);
         }
         $this->objCfg = $objParams;
-                //try to set the NLS_LANG env attribute
+        $this->useBinaryCI = Config::getInstance('module_system', 'config.php')->getConfig('oci8_max_string_size_extended');
+
+        //try to set the NLS_LANG env attribute
         putenv("NLS_LANG=American_America.UTF8");
 
         $this->linkDB = @oci_pconnect($this->objCfg->getStrUsername(), $this->objCfg->getStrPass(), $this->objCfg->getStrHost().":".$this->objCfg->getIntPort()."/".$this->objCfg->getStrDbName(), "AL32UTF8");
 
-
         if ($this->linkDB !== false) {
-            @oci_set_client_info($this->linkDB, "Kajona CMS");
-            $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'", array());
+            @oci_set_client_info($this->linkDB, "ARTEMEON AGP");
+            @oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
+            $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS='.,'", []);
+
+            if ($this->useBinaryCI) {
+                $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI;", []);
+            }
             return true;
-        } else {
-            throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
         }
+
+        throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
     }
 
     /**
@@ -381,6 +398,8 @@ class DbOci8 extends DbBase
                 return DbDatatypes::STR_TYPE_CHAR500;
             } elseif ($infoSchemaRow["data_length"] == "4000") {
                 return DbDatatypes::STR_TYPE_TEXT;
+            } elseif ($infoSchemaRow["data_length"] == "32767") {
+                return DbDatatypes::STR_TYPE_TEXT;
             }
         } elseif ($infoSchemaRow["data_type"] == "CLOB") {
             return DbDatatypes::STR_TYPE_LONGTEXT;
@@ -427,7 +446,11 @@ class DbOci8 extends DbBase
         } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR2( 500 ) ";
         } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
-            $strReturn .= " VARCHAR2( 4000 ) ";
+            if ($this->useBinaryCI) {
+                $strReturn .= " VARCHAR2( 32767 ) ";
+            } else {
+                $strReturn .= " VARCHAR2( 4000 ) ";
+            }
         } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
             $strReturn .= " CLOB ";
         } else {
@@ -540,6 +563,9 @@ class DbOci8 extends DbBase
         //primary keys
         $strQuery .= " CONSTRAINT pk_".generateSystemid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
+        if ($this->useBinaryCI) {
+            $strQuery .= "DEFAULT COLLATION BINARY_CI ";
+        }
 
         return $this->_pQuery($strQuery, array());
     }
@@ -678,7 +704,7 @@ class DbOci8 extends DbBase
             return ':' . $i;
         }, $strQuery);
 
-        if ($params !== null && StringUtil::indexOf($strQuery, " like ", false) !== false) {
+        if (!$this->useBinaryCI && $params !== null && StringUtil::indexOf($strQuery, " like ", false) !== false) {
 
             foreach ($params as $param) {
                 if (substr($param, -1) === '%' || substr($param, 0, 1) === '%') {
