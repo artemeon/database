@@ -207,8 +207,8 @@ class Database
     /**
      * Retrieves a single row of the referenced table, returning the requested columns and filtering by the given identifier(s).
      *
-     * @param string $tableName the table from which to select the row
-     * @param array $columns a flat list of columns to select (may also include expressions)
+     * @param string $tableName the table name from which to select the row
+     * @param array $columns a flat list of column names to select
      * @param array $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
      * @param bool $cached whether a previously selected result can be reused
      * @param array|null $escapes which parameters to escape (described in {@see dbsafeParams})
@@ -218,13 +218,18 @@ class Database
     {
         $query = \sprintf(
             'SELECT %s FROM %s WHERE %s',
-            \implode(', ', $columns),
-            $tableName,
+            \implode(', ', \array_map(
+                function ($columnName): string {
+                    return $this->encloseColumnName((string) $columnName);
+                },
+                $columns
+            )),
+            $this->encloseTableName($tableName),
             \implode(
                 ' AND ',
                 \array_map(
-                    static function (string $column): string {
-                        return $column . ' = ?';
+                    function (string $columnName): string {
+                        return $this->encloseColumnName($columnName) . ' = ?';
                     },
                     \array_keys($identifiers)
                 )
