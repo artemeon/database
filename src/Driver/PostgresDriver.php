@@ -521,7 +521,7 @@ class PostgresDriver extends DriverAbstract
         }
 
 
-        if ($this->handlesDumpCompression() && StringUtil::endsWith($strFilename, ".gz")) {
+        if ($this->handlesDumpCompression() && pathinfo($strFilename, PATHINFO_EXTENSION) === 'gz') {
             $strCommand .= " gunzip -c \"".$strFilename."\" | ".$this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()."";
         } else {
             $strCommand .= $this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";

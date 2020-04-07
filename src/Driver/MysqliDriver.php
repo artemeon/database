@@ -586,7 +586,7 @@ class MysqliDriver extends DriverAbstract
             $strParamPass = " -p\"" . $this->objCfg->getPassword() . "\"";
         }
 
-        if ($this->handlesDumpCompression() && StringUtil::endsWith($strFilename, ".gz")) {
+        if ($this->handlesDumpCompression() && pathinfo($strFilename, PATHINFO_EXTENSION) === 'gz') {
             $strCommand = " gunzip -c \"" . $strFilename . "\" | " . $this->strRestoreBin . " -h" . $this->objCfg->getHost(
                 ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
                 ) . " " . $this->objCfg->getDatabase() . "";
