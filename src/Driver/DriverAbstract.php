@@ -20,7 +20,7 @@ namespace Artemeon\Database\Driver;
  * @since 4.5
  * @author sidler@mulchprod.de
  */
-abstract class DbBase implements DbDriverInterface
+abstract class DriverAbstract implements DbDriverInterface
 {
 
     protected $arrStatementsCache = array();
