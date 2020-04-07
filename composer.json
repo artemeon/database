@@ -20,7 +20,8 @@
   "autoload": {
     "psr-4": {
       "Artemeon\\Database\\": "src/"
-    }
+    },
+    "files": ["bc_layer.php"]
   },
   "autoload-dev": {
     "psr-4": {
@@ -30,7 +31,8 @@
   "require": {
     "php": ">=7.2",
     "psr/log": "^1.1",
-    "symfony/process": "^5.0"
+    "symfony/process": "^5.0",
+    "symfony/polyfill-mbstring": "^1.15"
   },
   "require-dev": {
     "phpunit/phpunit": "^8.0"
