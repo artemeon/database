@@ -977,7 +977,7 @@ class Connection implements ConnectionInterface
 
         //escape special chars
         if ($bitHtmlSpecialChars) {
-            $strString = html_entity_decode($strString, ENT_COMPAT, "UTF-8");
+            $strString = html_entity_decode((string) $strString, ENT_COMPAT, "UTF-8");
             $strString = htmlspecialchars($strString, ENT_COMPAT, "UTF-8");
         }
 
