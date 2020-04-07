@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Artemeon\Database\Driver;
+namespace Artemeon\Database;
 
 /**
  * Interface to specify the layout of db-drivers.
