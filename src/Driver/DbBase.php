@@ -1,16 +1,17 @@
 <?php
-/*"******************************************************************************************************
-*   (c) 2013-2016 by Kajona, www.kajona.de                                                              *
-*       Published under the GNU LGPL v2.1, see /system/licence_lgpl.txt                                 *
-********************************************************************************************************/
 
-namespace Kajona\System\System\Db;
+/*
+ * This file is part of the Artemeon Core - Web Application Framework.
+ *
+ * (c) Artemeon <www.artemeon.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Kajona\System\System\Database;
-use Kajona\System\System\Db\Schema\TableIndex;
-use Kajona\System\System\DbDatatypes;
-use Kajona\System\System\StringUtil;
+declare(strict_types=1);
 
+namespace Artemeon\Database\Driver;
 
 /**
  * Base class for all database-drivers, holds methods to be used by all drivers

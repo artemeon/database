@@ -1,25 +1,17 @@
 <?php
-/*"******************************************************************************************************
-*   (c) 2004-2006 by MulchProductions, www.mulchprod.de                                                 *
-*   (c) 2007-2016 by Kajona, www.kajona.de                                                              *
-*       Published under the GNU LGPL v2.1, see /system/licence_lgpl.txt                                 *
-********************************************************************************************************/
 
-namespace Kajona\System\System\Db;
+/*
+ * This file is part of the Artemeon Core - Web Application Framework.
+ *
+ * (c) Artemeon <www.artemeon.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Kajona\System\System\Database;
-use Kajona\System\System\Db\Schema\Table;
-use Kajona\System\System\Db\Schema\TableColumn;
-use Kajona\System\System\Db\Schema\TableIndex;
-use Kajona\System\System\Db\Schema\TableKey;
-use Kajona\System\System\DbConnectionParams;
-use Kajona\System\System\DbDatatypes;
-use Kajona\System\System\Exception;
-use Kajona\System\System\Filesystem;
-use Kajona\System\System\StringUtil;
-use SQLite3;
-use SQLite3Stmt;
+declare(strict_types=1);
 
+namespace Artemeon\Database\Driver;
 
 /**
  * db-driver for sqlite3 using the php-sqlite3-interface.

@@ -1,13 +1,17 @@
 <?php
-/*"******************************************************************************************************
-*   (c) 2004-2006 by MulchProductions, www.mulchprod.de                                                 *
-*   (c) 2007-2016 by Kajona, www.kajona.de                                                              *
-*       Published under the GNU LGPL v2.1, see /system/licence_lgpl.txt                                 *
-*-------------------------------------------------------------------------------------------------------*
-*	$Id$	                                            *
-********************************************************************************************************/
 
-namespace Kajona\System\System;
+/*
+ * This file is part of the Artemeon Core - Web Application Framework.
+ *
+ * (c) Artemeon <www.artemeon.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
+namespace Artemeon\Database;
 
 use Kajona\Dbdump\System\DbExport;
 use Kajona\Dbdump\System\DbImport;

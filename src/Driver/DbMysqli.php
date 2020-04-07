@@ -1,18 +1,17 @@
 <?php
 
-namespace Kajona\System\System\Db;
+/*
+ * This file is part of the Artemeon Core - Web Application Framework.
+ *
+ * (c) Artemeon <www.artemeon.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Kajona\System\System\Db\Schema\Table;
-use Kajona\System\System\Db\Schema\TableColumn;
-use Kajona\System\System\Db\Schema\TableIndex;
-use Kajona\System\System\Db\Schema\TableKey;
-use Kajona\System\System\DbConnectionParams;
-use Kajona\System\System\DbDatatypes;
-use Kajona\System\System\Exception;
-use Kajona\System\System\Logger;
-use Kajona\System\System\StringUtil;
-use mysqli;
-use mysqli_stmt;
+declare(strict_types=1);
+
+namespace Artemeon\Database\Driver;
 
 /**
  * db-driver for MySQL using the php-mysqli-interface
