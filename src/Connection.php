@@ -271,16 +271,7 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * Sending a prepared statement to the database
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param array $arrEscapes An array of booleans for each param, used to block the escaping of html-special chars.
-     *                          If not passed, all params will be cleaned.
-     *
-     * @return bool
-     * @since 3.4
-     * @see - please use executeUpdate method
+     * @inheritDoc
      */
     public function _pQuery($strQuery, $arrParams, $arrEscapes = array())
     {
@@ -318,18 +309,6 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
-     */
-    public function executeUpdate(string $query, array $params = []): int
-    {
-        $this->_pQuery($query, $params, array_fill(0, count($params), false));
-
-        return (int) $this->objDbDriver->getIntAffectedRows();
-    }
-
-    /**
-     * Returns the number of affected rows from the last _pQuery call
-     *
-     * @return integer
      */
     public function getIntAffectedRows()
     {

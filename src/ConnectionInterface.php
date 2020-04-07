@@ -87,12 +87,24 @@ interface ConnectionInterface
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true);
 
     /**
-     * @param string $query
-     * @param array $params
-     * @return int
+     * Sending a prepared statement to the database
+     *
+     * @param string $strQuery
+     * @param array $arrParams
+     * @param array $arrEscapes An array of booleans for each param, used to block the escaping of html-special chars.
+     *                          If not passed, all params will be cleaned.
+     * @return bool
      * @throws QueryException
+     * @since 3.4
      */
-    public function executeUpdate(string $query, array $params = []): int;
+    public function _pQuery($strQuery, $arrParams, $arrEscapes = array());
+
+    /**
+     * Returns the number of affected rows from the last _pQuery call
+     *
+     * @return integer
+     */
+    public function getIntAffectedRows();
 
     /**
      * Creates a simple insert for a single row where the values parameter is an associative array with column names to
