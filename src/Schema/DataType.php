@@ -20,7 +20,7 @@ namespace Artemeon\Database\Schema;
  * @author sidler@mulchprod.de
  * @since 4.5
  */
-class DbDatatypes
+class DataType
 {
     const STR_TYPE_INT = "int";
     const STR_TYPE_LONG = "long";
