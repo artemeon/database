@@ -143,7 +143,7 @@ class Connection implements ConnectionInterface
      *
      * @return void
      */
-    private function dbconnect()
+    protected function dbconnect()
     {
         $this->objDbDriver->dbconnect($this->connectionParams);
     }
