@@ -50,6 +50,11 @@ class ConnectionParameters
     private $port;
 
     /**
+     * @var string
+     */
+    private $driver;
+
+    /**
      * @var array
      */
     private $attributes;
@@ -60,14 +65,16 @@ class ConnectionParameters
      * @param string $password
      * @param string $database
      * @param int|null $port
+     * @param string $driver
      */
-    public function __construct(string $host, string $username, string $password, string $database, ?int $port = null)
+    public function __construct(string $host, string $username, string $password, string $database, ?int $port, string $driver)
     {
         $this->host = $host;
         $this->username = $username;
         $this->password = $password;
         $this->database = $database;
         $this->port = $port;
+        $this->driver = $driver;
         $this->attributes = [];
     }
 
@@ -112,6 +119,14 @@ class ConnectionParameters
     }
 
     /**
+     * @return string
+     */
+    public function getDriver(): string
+    {
+        return $this->driver;
+    }
+
+    /**
      * @param string $key
      * @param mixed $value
      */
@@ -127,5 +142,21 @@ class ConnectionParameters
     public function getAttribute(string $key)
     {
         return $this->attributes[$key] ?? null;
+    }
+
+    /**
+     * @param array $data
+     * @return ConnectionParameters
+     */
+    public static function fromArray(array $data): ConnectionParameters
+    {
+        return new static(
+            $data['dbhost'] ?? '',
+            $data['dbusername'] ?? '',
+            $data['dbpassword'] ?? '',
+            $data['dbname'] ?? '',
+            isset($data['dbport']) ? (int) $data['dbport'] : 0,
+            $data['dbdriver'] ?? ''
+        );
     }
 }
