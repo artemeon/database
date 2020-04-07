@@ -20,6 +20,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\Process;
 
 /**
  * db-driver for MySQL using the php-mysqli-interface
@@ -545,7 +546,6 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbExport(&$strFilename, $arrTables)
     {
-        $strFilename = _realpath_ . $strFilename;
         $strTables = implode(" ", $arrTables);
         $strParamPass = "";
 
@@ -563,16 +563,12 @@ class MysqliDriver extends DriverAbstract
                 ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
                 ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " > \"" . $strFilename . "\"";
         }
-        //Now do a systemfork
-        $intTemp = "";
-        system($strCommand, $intTemp);
-        if ($intTemp == 0) {
-            Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin . " exited with code " . $intTemp);
-        } else {
-            Logger::getInstance(Logger::DBLOG)->warning($this->strDumpBin . " exited with code " . $intTemp);
-        }
 
-        return $intTemp == 0;
+        $process = Process::fromShellCommandline($strCommand);
+        $process->setTimeout(3600.0);
+        $process->run();
+
+        return $process->isSuccessful();
     }
 
     /**
@@ -584,7 +580,6 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbImport($strFilename)
     {
-        $strFilename = _realpath_ . $strFilename;
         $strParamPass = "";
 
         if ($this->objCfg->getPassword() != "") {
@@ -600,14 +595,12 @@ class MysqliDriver extends DriverAbstract
                 ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
                 ) . " " . $this->objCfg->getDatabase() . " < \"" . $strFilename . "\"";
         }
-        $intTemp = "";
-        system($strCommand, $intTemp);
-        if ($intTemp == 0) {
-            Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin . " exited with code " . $intTemp);
-        } else {
-            Logger::getInstance(Logger::DBLOG)->warning($this->strDumpBin . " exited with code " . $intTemp);
-        }
-        return $intTemp == 0;
+
+        $process = Process::fromShellCommandline($strCommand);
+        $process->setTimeout(3600.0);
+        $process->run();
+
+        return $process->isSuccessful();
     }
 
     /**

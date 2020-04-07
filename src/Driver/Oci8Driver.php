@@ -21,6 +21,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\Process;
 
 /**
  * db-driver for oracle using the ovi8-interface
@@ -660,17 +661,15 @@ class Oci8Driver extends DriverAbstract
      */
     public function dbExport(&$strFilename, $arrTables)
     {
-
-        $strFilename = _realpath_.$strFilename;
         $strTables = implode(",", $arrTables);
 
         $strCommand = $this->strDumpBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
-        Logger::getInstance(Logger::DBLOG)->info("dump command: ".$strCommand);
-        //Now do a systemfork
-        $intTemp = "";
-        system($strCommand, $intTemp);
-        Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin." exited with code ".$intTemp);
-        return $intTemp == 0;
+
+        $process = Process::fromShellCommandline($strCommand);
+        $process->setTimeout(3600.0);
+        $process->run();
+
+        return $process->isSuccessful();
     }
 
     /**
@@ -682,13 +681,13 @@ class Oci8Driver extends DriverAbstract
      */
     public function dbImport($strFilename)
     {
-
-        $strFilename = _realpath_.$strFilename;
         $strCommand = $this->strRestoreBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." FILE='".$strFilename."'";
-        $intTemp = "";
-        system($strCommand, $intTemp);
-        Logger::getInstance(Logger::DBLOG)->info($this->strRestoreBin." exited with code ".$intTemp);
-        return $intTemp == 0;
+
+        $process = Process::fromShellCommandline($strCommand);
+        $process->setTimeout(3600.0);
+        $process->run();
+
+        return $process->isSuccessful();
     }
 
     /**

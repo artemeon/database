@@ -592,8 +592,8 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function dbExport(&$strFilename, $arrTables)
     {
-        $objFilesystem = new Filesystem();
-        return $objFilesystem->fileCopy($this->strDbFile, $strFilename);
+        // @TODO implement
+        return false;
     }
 
 
@@ -606,8 +606,8 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function dbImport($strFilename)
     {
-        $objFilesystem = new Filesystem();
-        return $objFilesystem->fileCopy($strFilename, $this->strDbFile, true);
+        // @TODO implement
+        return false;
     }
 
 

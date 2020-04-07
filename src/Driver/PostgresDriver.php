@@ -20,6 +20,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\Process;
 
 /**
  * db-driver for postgres using the php-postgres-interface
@@ -477,7 +478,6 @@ class PostgresDriver extends DriverAbstract
      */
     public function dbExport(&$strFilename, $arrTables)
     {
-        $strFilename = _realpath_.$strFilename;
         $strTables = "-t ".implode(" -t ", $arrTables);
 
         if ($this->objCfg->getPassword() != "") {
@@ -494,11 +494,12 @@ class PostgresDriver extends DriverAbstract
         } else {
             $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
         }
-        //Now do a systemfork
-        $intTemp = "";
-        $strResult = system($strCommand, $intTemp);
-        Logger::getInstance(Logger::DBLOG)->info($this->strDumpBin." exited with code ".$intTemp);
-        return $intTemp == 0;
+
+        $process = Process::fromShellCommandline($strCommand);
+        $process->setTimeout(3600.0);
+        $process->run();
+
+        return $process->isSuccessful();
     }
 
     /**
@@ -510,8 +511,6 @@ class PostgresDriver extends DriverAbstract
      */
     public function dbImport($strFilename)
     {
-        $strFilename = _realpath_.$strFilename;
-
         $strCommand= '';
         if ($this->objCfg->getPassword() != "") {
             if ($this->isWinOs()) {
@@ -528,10 +527,11 @@ class PostgresDriver extends DriverAbstract
             $strCommand .= $this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
         }
 
-        $intTemp = "";
-        $strResult = system($strCommand, $intTemp);
-        Logger::getInstance(Logger::DBLOG)->info($this->strRestoreBin." exited with code ".$intTemp);
-        return $intTemp == 0;
+        $process = Process::fromShellCommandline($strCommand);
+        $process->setTimeout(3600.0);
+        $process->run();
+
+        return $process->isSuccessful();
     }
 
     public function encloseTableName($strTable)
