@@ -21,6 +21,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use SQLite3;
 
 /**
  * db-driver for sqlite3 using the php-sqlite3-interface.

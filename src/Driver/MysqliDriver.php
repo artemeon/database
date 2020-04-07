@@ -21,6 +21,7 @@ use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
 use Symfony\Component\Process\Process;
+use mysqli;
 
 /**
  * db-driver for MySQL using the php-mysqli-interface
