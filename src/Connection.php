@@ -995,10 +995,7 @@ class Connection implements ConnectionInterface
      */
     public function flushQueryCache()
     {
-        //Logger::getInstance(Logger::DBLOG)->addLogRow("Flushing query cache", Logger::$levelInfo);
         $this->arrQueryCache = array();
-        // @TODO we can not do this here
-        //Objectfactory::getInstance()->flushCache();
     }
 
     /**
