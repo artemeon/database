@@ -145,7 +145,7 @@ class Connection implements ConnectionInterface
      */
     protected function dbconnect()
     {
-        $this->objDbDriver->dbconnect($this->connectionParams);
+        $this->bitConnected = $this->objDbDriver->dbconnect($this->connectionParams);
     }
 
     /**
@@ -159,7 +159,7 @@ class Connection implements ConnectionInterface
 
         //chunk columns down to less then 1000 params, could lead to errors on oracle and sqlite otherwise
         $bitReturn = true;
-        $intSetsPerInsert = floor(970 / count($arrColumns));
+        $intSetsPerInsert = (int) floor(970 / count($arrColumns));
 
         foreach (array_chunk($arrValueSets, $intSetsPerInsert) as $arrSingleValueSet) {
             $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this, $arrEscapes);
@@ -464,7 +464,9 @@ class Connection implements ConnectionInterface
             }
         }
         //send a warning to the logger
-        $this->logger->warning($strErrorCode);
+        if ($this->logger !== null) {
+            $this->logger->warning($strErrorCode);
+        }
 
         if ($this->debugLevel > 0) {
             throw new QueryException($strError, $strQuery, $arrParams);
