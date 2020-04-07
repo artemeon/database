@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Schema\Table;
+use Artemeon\Database\Schema\TableIndex;
+
 /**
  * Interface to specify the layout of db-drivers.
  * Implement this interface, if you want to provide a db-layer for Kajona.
@@ -25,11 +28,10 @@ interface DriverInterface
     /**
      * This method makes sure to connect to the database properly
      *
-     * @param DbConnectionParams $objParams
-     *
+     * @param ConnectionParameters $objParams
      * @return bool
      */
-    public function dbconnect(DbConnectionParams $objParams);
+    public function dbconnect(ConnectionParameters $objParams);
 
     /**
      * Closes the connection to the database
@@ -48,12 +50,12 @@ interface DriverInterface
      * @param string $strTable
      * @param string[] $arrColumns
      * @param array $arrValueSets
-     * @param Database $objDb
+     * @param ConnectionInterface $objDb
      *
      * @param array|null $arrEscapes
      * @return bool
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, Database $objDb, ?array $arrEscapes);
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes);
 
     /**
      * Fires an insert or update of a single record. it's up to the database (driver)
