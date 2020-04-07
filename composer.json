@@ -1,0 +1,38 @@
+{
+  "name": "artemeon/database",
+  "license": "MIT",
+  "type": "library",
+  "description": "",
+  "authors": [
+    {
+      "name": "Christoph Kappestein",
+      "email": "christoph.kappestein@artemeon.de"
+    },
+    {
+      "name": "Stefan Idler",
+      "email": "stefan.idler@artemeon.de"
+    },
+    {
+      "name": "Mike Marshall",
+      "email": "mike.marshall@artemeon.de"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Artemeon\\Database\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Artemeon\\Database\\Tests\\": "tests/"
+    }
+  },
+  "require": {
+    "php": ">=7.2",
+    "psr/log": "^1.1",
+    "symfony/process": "^5.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.0"
+  }
+}
