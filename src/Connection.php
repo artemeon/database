@@ -33,7 +33,7 @@ use Kajona\System\System\Db\Schema\TableIndex;
  * @package module_system
  * @author sidler@mulchprod.de
  */
-class Database
+class Connection implements ConnectionInterface
 {
     private $arrQueryCache = array(); //Array to cache queries
     private $arrTablesCache = [];
@@ -131,21 +131,6 @@ class Database
     }
 
     /**
-     * Method to get an instance of the db-class
-     *
-     * @return Database
-     */
-    public static function getInstance()
-    {
-        if (self::$objDB == null) {
-            self::$objDB = new Database();
-        }
-
-        return self::$objDB;
-    }
-
-
-    /**
      * This method connects with the database
      *
      * @return void
@@ -167,15 +152,7 @@ class Database
     }
 
     /**
-     * Creates a single query in order to insert multiple rows at one time.
-     * For most databases, this will create s.th. like
-     * INSERT INTO $strTable ($arrColumns) VALUES (?, ?), (?, ?)...
-     *
-     * @param string $strTable
-     * @param string[] $arrColumns
-     * @param array $arrValueSets
-     * @param array|null $arrEscapes
-     * @return bool
+     * @inheritDoc
      */
     public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null)
     {
@@ -195,13 +172,7 @@ class Database
     }
 
     /**
-     * Creates a simple insert for a single row where the values parameter is an associative array with column names to
-     * value mapping
-     *
-     * @param string $tableName
-     * @param array $values
-     * @param array $escapes
-     * @return bool
+     * @inheritDoc
      */
     public function insert(string $tableName, array $values, ?array $escapes = null)
     {
@@ -209,14 +180,7 @@ class Database
     }
 
     /**
-     * Retrieves a single row of the referenced table, returning the requested columns and filtering by the given identifier(s).
-     *
-     * @param string $tableName the table name from which to select the row
-     * @param array $columns a flat list of column names to select
-     * @param array $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
-     * @param bool $cached whether a previously selected result can be reused
-     * @param array|null $escapes which parameters to escape (described in {@see dbsafeParams})
-     * @return array|null
+     * @inheritDoc
      */
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array
     {
@@ -249,13 +213,7 @@ class Database
     }
 
     /**
-     * Updates a row on the provided table by the identifier columns
-     *
-     * @param string $tableName
-     * @param array $values
-     * @param array $identifier
-     * @param array|null $escapes
-     * @return bool
+     * @inheritDoc
      */
     public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool
     {
@@ -282,11 +240,7 @@ class Database
     }
 
     /**
-     * Deletes a row on the provided table by the identifier columns
-     *
-     * @param string $tableName
-     * @param array $identifier
-     * @return bool
+     * @inheritDoc
      */
     public function delete(string $tableName, array $identifier): bool
     {
@@ -307,18 +261,7 @@ class Database
     }
 
     /**
-     * Fires an insert or update of a single record. it's up to the database (driver)
-     * to detect whether a row is already present or not.
-     * Please note: since some dbrms fire a delete && insert, make sure to pass ALL columns and values,
-     * otherwise data might be lost. And: params are sent to the datebase unescaped.
-     *
-     * @param $strTable
-     * @param $arrColumns
-     * @param $arrValues
-     *
-     * @param $arrPrimaryColumns
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
     {
@@ -331,19 +274,6 @@ class Database
     }
 
     /**
-     * Sending a query to the database
-     *
-     * @param string $strQuery
-     *
-     * @return bool
-     * @deprecated
-     */
-    public function _query($strQuery)
-    {
-        return $this->_pQuery($strQuery, array());
-    }
-
-    /**
      * Sending a prepared statement to the database
      *
      * @param string $strQuery
@@ -353,6 +283,7 @@ class Database
      *
      * @return bool
      * @since 3.4
+     * @deprecated - please use executeUpdate method
      */
     public function _pQuery($strQuery, $arrParams, $arrEscapes = array())
     {
@@ -387,20 +318,14 @@ class Database
         return $bitReturn;
     }
 
-
     /**
-     * Returns one row from a result-set
-     *
-     * @param string $strQuery
-     * @param int $intNr
-     * @param bool $bitCache
-     *
-     * @return array
-     * @deprecated use getPRow() instead
+     * @inheritDoc
      */
-    public function getRow($strQuery, $intNr = 0, $bitCache = true)
+    public function executeUpdate(string $query, array $params = []): int
     {
-        return $this->getPRow($strQuery, array(), $intNr, $bitCache);
+        $this->_pQuery($query, $params, array_fill(0, count($params), false));
+
+        return (int) $this->objDbDriver->getIntAffectedRows();
     }
 
     /**
@@ -414,16 +339,7 @@ class Database
     }
 
     /**
-     * Returns one row from a result-set.
-     * Makes use of prepared statements.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int $intNr
-     * @param bool $bitCache
-     * @param array $arrEscapes
-     *
-     * @return array
+     * @inheritDoc
      */
     public function getPRow($strQuery, $arrParams, $intNr = 0, $bitCache = true, array $arrEscapes = [])
     {
@@ -441,34 +357,7 @@ class Database
     }
 
     /**
-     * Method to get an array of rows for a given query from the database
-     *
-     * @param string $strQuery
-     * @param bool $bitCache
-     *
-     * @return array
-     * @deprecated use getPArray() instead
-     */
-    public function getArray($strQuery, $bitCache = true)
-    {
-        Logger::getInstance(Logger::DBLOG)->warning("deprecated getArray call: ".$strQuery);
-        return $this->getPArray($strQuery, array(), null, null, $bitCache);
-    }
-
-
-    /**
-     * Method to get an array of rows for a given query from the database.
-     * Makes use of prepared statements.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int|null $intStart
-     * @param int|null $intEnd
-     * @param bool $bitCache
-     * @param array $arrEscapes
-     *
-     * @return array
-     * @since 3.4
+     * @inheritDoc
      */
     public function getPArray($strQuery, $arrParams, $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = [])
     {
@@ -530,21 +419,7 @@ class Database
     }
 
     /**
-     * Returns a generator which can be used to iterate over a section of the query without loading the complete data
-     * into the memory. This can be used to query big result sets i.e. on installation update.
-     * Make sure to have an ORDER BY in the statement, otherwise the chunks may use duplicate entries depending on the RDBMS.
-     *
-     * NOTE if the loop which consumes the generator reduces the result set i.e. you delete for each result set all
-     * entries then you need to set paging to false. In this mode we always query the first 0 to chunk size rows, since
-     * the loop reduces the result set we dont need to move the start and end values forward. NOTE if you set $paging to
-     * false and dont modify the result set you will get an endless loop, so you must get sure that in the end the
-     * result set will be empty.
-     *
-     * @param string $query
-     * @param array $params
-     * @param int $chunkSize
-     * @param bool $paging
-     * @return \Generator
+     * @inheritDoc
      */
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
     {
@@ -565,48 +440,6 @@ class Database
 
             $this->flushQueryCache();
         } while (!empty($result));
-    }
-
-    /**
-     * Returns just a part of a recordset, defined by the start- and the end-rows,
-     * defined by the params.
-     * <b>Note:</b> Use array-like counters, so the first row is startRow 0 whereas
-     * the n-th row is the (n-1)th key!!!
-     *
-     * @param string $strQuery
-     * @param int $intStart
-     * @param int $intEnd
-     * @param bool $bitCache
-     *
-     * @return array
-     * @deprecated use getPArray() instead
-     */
-    public function getArraySection($strQuery, $intStart, $intEnd, $bitCache = true)
-    {
-        Logger::getInstance(Logger::DBLOG)->warning("deprecated getArraySection call: ".$strQuery);
-        return $this->getPArray($strQuery, array(), $intStart, $intEnd, $bitCache);
-    }
-
-
-    /**
-     * Returns just a part of a recordset, defined by the start- and the end-rows,
-     * defined by the params. Makes use of prepared statements
-     * <b>Note:</b> Use array-like counters, so the first row is startRow 0 whereas
-     * the n-th row is the (n-1)th key!!!
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int $intStart
-     * @param int $intEnd
-     * @param bool $bitCache
-     *
-     * @return array
-     * @deprecated use getPArray() instead
-     */
-    public function getPArraySection($strQuery, $arrParams, $intStart, $intEnd, $bitCache = true)
-    {
-        Logger::getInstance(Logger::DBLOG)->warning("deprecated getPArraySection call: ".$strQuery);
-        return $this->getPArray($strQuery, $arrParams, $intStart, $intEnd, $bitCache);
     }
 
     /**
@@ -662,11 +495,8 @@ class Database
 
     }
 
-
     /**
-     * Starts a transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionBegin()
     {
@@ -687,9 +517,7 @@ class Database
     }
 
     /**
-     * Ends a tx successfully
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionCommit()
     {
@@ -718,9 +546,7 @@ class Database
     }
 
     /**
-     * Rollback of the current tx
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionRollback()
     {
@@ -751,10 +577,7 @@ class Database
     }
 
     /**
-     * Returns all tables used by the project
-     *
-     * @param string|null $prefix - only used internally to migrate old databases with non agp_ prefix
-     * @return array
+     * @inheritDoc
      */
     public function getTables($prefix = null)
     {
@@ -817,9 +640,7 @@ class Database
     }
 
     /**
-     * Fetches extensive information per database table
-     * @param $tableName
-     * @return Table
+     * @inheritDoc
      */
     public function getTableInformation($tableName): Table
     {
@@ -831,14 +652,7 @@ class Database
     }
 
     /**
-     * Returns the db-specific datatype for the kajona internal datatype.
-     * Currently, this are
-     *
-     * @param string $strType
-     *
-     * @see Db_datatypes
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getDatatype($strType)
     {
@@ -846,32 +660,7 @@ class Database
     }
 
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = array(string data-type, boolean isNull [, default (only if not null)])
-     * whereas data-type is one of the following:
-     *         int
-     *      long
-     *         double
-     *         char10
-     *         char20
-     *         char100
-     *         char254
-     *      char500
-     *         text
-     *      longtext
-     *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
-     *
-     * @return bool
-     * @throws Exception
-     * @see DbDatatypes
-     *
+     * @inheritDoc
      */
     public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array())
     {
@@ -910,10 +699,7 @@ class Database
     }
 
     /**
-     * Generates a tables as configured by the passed Table definition. Includes all metadata such as
-     * primary keys, indexes and columns.
-     * @param Table $table
-     * @throws Exception
+     * @inheritDoc
      */
     public function generateTableFromMetadata(Table $table): void
     {
@@ -935,15 +721,7 @@ class Database
     }
 
     /**
-     * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
-     * where each index can only occur once in the table
-     *
-     * @param string $strTable
-     * @param string $strName
-     * @param array $arrColumns
-     * @param bool $bitUnique
-     * @return bool
-     * @throws Exception
+     * @inheritDoc
      */
     public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
     {
@@ -963,10 +741,7 @@ class Database
     }
 
     /**
-     * Removes an index from the database / table
-     * @param string $table
-     * @param string $index
-     * @return bool
+     * @inheritDoc
      */
     public function deleteIndex(string $table, string $index): bool
     {
@@ -978,11 +753,7 @@ class Database
     }
 
     /**
-     * Adds an index to a table based on the import / export format
-     * @param string $table
-     * @param TableIndex $index
-     * @return bool
-     * @internal
+     * @inheritDoc
      */
     public function addIndex(string $table, TableIndex $index)
     {
@@ -994,11 +765,7 @@ class Database
     }
 
     /**
-     * Checks whether the table has an index with the provided name
-     *
-     * @param string $strTable
-     * @param string $strName
-     * @return bool
+     * @inheritDoc
      */
     public function hasIndex($strTable, $strName): bool
     {
@@ -1010,12 +777,7 @@ class Database
     }
 
     /**
-     * Renames a table
-     *
-     * @param $strOldName
-     * @param $strNewName
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function renameTable($strOldName, $strNewName)
     {
@@ -1028,17 +790,7 @@ class Database
     }
 
     /**
-     * Changes a single column, e.g. the datatype. Note in case you only change the column type you should be aware that
-     * not all database engines support changing the type freely. Most engines disallow changing the type in case you
-     * would loose data i.e. on oracle it is not possible to change from longtext to char(10) since then the db engine
-     * would may need to truncate some rows
-     *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
@@ -1050,15 +802,7 @@ class Database
     }
 
     /**
-     * Adds a column to a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     * @param $strDatatype
-     * @param null $bitNull
-     * @param null $strDefault
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
     {
@@ -1074,12 +818,7 @@ class Database
     }
 
     /**
-     * Removes a column from a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function removeColumn($strTable, $strColumn)
     {
@@ -1092,11 +831,7 @@ class Database
     }
 
     /**
-     * Checks whether a table has a specific column
-     *
-     * @param string $strTable
-     * @param string $strColumn
-     * @return bool
+     * @inheritDoc
      */
     public function hasColumn($strTable, $strColumn)
     {
@@ -1111,10 +846,7 @@ class Database
     }
 
     /**
-     * Checks whether the provided table exists
-     *
-     * @param string $strTable
-     * @return bool
+     * @inheritDoc
      */
     public function hasTable($strTable)
     {
@@ -1461,12 +1193,7 @@ class Database
     }
 
     /**
-     * Allows the db-driver to add database-specific surroundings to column-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strColumn
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseColumnName($strColumn)
     {
@@ -1474,18 +1201,12 @@ class Database
     }
 
     /**
-     * Allows the db-driver to add database-specific surroundings to table-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strTable
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseTableName($strTable)
     {
         return $this->objDbDriver->encloseTableName($strTable);
     }
-
 
     /**
      * Tries to validate the passed connection data.
@@ -1524,7 +1245,7 @@ class Database
     }
 
     /**
-     * @return boolean
+     * @inheritDoc
      */
     public function getBitConnected()
     {
@@ -1546,13 +1267,7 @@ class Database
     }
 
     /**
-     * Helper to replace all param-placeholder with the matching value, only to be used
-     * to render a debuggable-statement.
-     *
-     * @param $strQuery
-     * @param $arrParams
-     *
-     * @return string
+     * @inheritDoc
      */
     public function prettifyQuery($strQuery, $arrParams)
     {
@@ -1574,13 +1289,7 @@ class Database
     }
 
     /**
-     * Appends a limit expression to the provided query
-     *
-     * @param string $strQuery
-     * @param int $intStart
-     * @param int $intEnd
-     *
-     * @return string
+     * @inheritDoc
      */
     public function appendLimitExpression($strQuery, $intStart, $intEnd)
     {
@@ -1588,7 +1297,7 @@ class Database
     }
 
     /**
-     * @return string
+     * @inheritDoc
      */
     public function getConcatExpression(array $parts)
     {
@@ -1596,12 +1305,7 @@ class Database
     }
 
     /**
-     * Method which converts a PHP value to a value which can be inserted into a table. I.e. it truncates the value to
-     * the fitting length for the provided datatype
-     *
-     * @param mixed $value
-     * @param string $type
-     * @return mixed
+     * @inheritDoc
      */
     public function convertToDatabaseValue($value, string $type)
     {
@@ -1609,8 +1313,7 @@ class Database
     }
 
     /**
-     * @param array $parts
-     * @return string
+     * @inheritDoc
      */
     public function getLeastExpression(array $parts): string
     {
