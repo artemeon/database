@@ -21,7 +21,7 @@ namespace Artemeon\Database\Driver;
  * @author sidler@mulchprod.de
  * @package module_system
  */
-class DbSqlite3 extends DbBase
+class Sqlite3Driver extends DriverAbstract
 {
 
     /**

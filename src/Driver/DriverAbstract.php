@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Driver;
 
+use Artemeon\Database\DriverInterface;
+
 /**
  * Base class for all database-drivers, holds methods to be used by all drivers
  *
@@ -20,7 +22,7 @@ namespace Artemeon\Database\Driver;
  * @since 4.5
  * @author sidler@mulchprod.de
  */
-abstract class DriverAbstract implements DbDriverInterface
+abstract class DriverAbstract implements DriverInterface
 {
 
     protected $arrStatementsCache = array();

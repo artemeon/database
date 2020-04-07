@@ -18,7 +18,7 @@ namespace Artemeon\Database\Driver;
  *
  * @package module_system
  */
-class DbMysqli extends DbBase
+class MysqliDriver extends DriverAbstract
 {
     /**  @var mysqli */
     private $linkDB; //DB-Link

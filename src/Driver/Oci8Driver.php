@@ -20,7 +20,7 @@ namespace Artemeon\Database\Driver;
  * @author sidler@mulchprod.de
  * @since 3.4.1
  */
-class DbOci8 extends DbBase
+class Oci8Driver extends DriverAbstract
 {
 
     private $linkDB; //DB-Link

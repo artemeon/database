@@ -19,7 +19,7 @@ namespace Artemeon\Database\Driver;
  * @package module_system
  * @author sidler@mulchprod.de
  */
-class DbPostgres extends DbBase
+class PostgresDriver extends DriverAbstract
 {
 
     private $linkDB; //DB-Link

@@ -20,7 +20,7 @@ namespace Artemeon\Database\Driver;
  * @author christoph.kappestein@gmail.com
  * @since 7.0
  */
-class DbSqlsrv extends DbBase
+class SqlsrvDriver extends DriverAbstract
 {
     /**
      * @var resource
