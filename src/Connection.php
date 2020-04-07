@@ -13,12 +13,12 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
-use Kajona\Dbdump\System\DbExport;
-use Kajona\Dbdump\System\DbImport;
-use Kajona\Packagemanager\System\PackagemanagerManager;
-use Kajona\System\System\Db\DbDriverInterface;
-use Kajona\System\System\Db\Schema\Table;
-use Kajona\System\System\Db\Schema\TableIndex;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\DriverNotFoundException;
+use Artemeon\Database\Exception\QueryException;
+use Artemeon\Database\Schema\Table;
+use Artemeon\Database\Schema\TableIndex;
+use Psr\Log\LoggerInterface;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
@@ -41,12 +41,31 @@ class Connection implements ConnectionInterface
     private $intNumberCache = 0; //Number of queries returned from cache
 
     /**
+     * @var ConnectionParameters
+     */
+    private $connectionParams;
+
+    /**
+     * @var DriverFactory
+     */
+    private $driverFactory;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var int
+     */
+    private $debugLevel;
+
+    /**
      * Instance of the db-driver defined in the configs
      *
-     * @var DbDriverInterface
+     * @var DriverInterface
      */
     private $objDbDriver = null; //An object of the db-driver defined in the configs
-    private static $objDB = null; //An object of this class
 
     /**
      * The number of transactions currently opened
@@ -79,35 +98,19 @@ class Connection implements ConnectionInterface
     public static $bitDbSafeStringEnabled = true;
 
     /**
-     * Simple boolean to cache the info whether logging is enabled or not
-     * @var bool
+     * @param ConnectionParameters $connectionParams
+     * @param DriverFactory $driverFactory
+     * @param LoggerInterface|null $logger
+     * @param int|null $debugLevel
+     * @throws Exception\DriverNotFoundException
      */
-    private $loggingEnabled = false;
-
-    /**
-     * Constructor
-     */
-    private function __construct()
+    public function __construct(ConnectionParameters $connectionParams, DriverFactory $driverFactory, ?LoggerInterface $logger = null, ?int $debugLevel = null)
     {
-
-        //Load the defined db-driver
-        $strDriver = Config::getInstance()->getConfig("dbdriver");
-        if ($strDriver != "%%defaultdriver%%") {
-            //build a class-name & include the driver
-            $strPath = Resourceloader::getInstance()->getPathForFile("/system/db/Db".ucfirst($strDriver).".php");
-            $objDriver = Classloader::getInstance()->getInstanceFromFilename($strPath);
-            if ($objDriver !== null) {
-                $this->objDbDriver = $objDriver;
-            } else {
-                throw new Exception("db-driver Db".ucfirst($strDriver)." could not be loaded", Exception::$level_FATALERROR);
-            }
-
-        } else {
-            //Do not throw any exception here, otherwise an endless loop will exit with an overloaded stack frame
-            //throw new Exception("No db-driver defined!", Exception::$level_FATALERROR);
-        }
-
-        $this->loggingEnabled = Logger::getInstance(Logger::QUERIES)->getIntLogLevel() == Logger::$levelInfo;
+        $this->connectionParams = $connectionParams;
+        $this->driverFactory = $driverFactory;
+        $this->logger = $logger;
+        $this->debugLevel = $debugLevel;
+        $this->objDbDriver = $this->driverFactory->factory($this->connectionParams->getDriver());
     }
 
     /**
@@ -119,12 +122,17 @@ class Connection implements ConnectionInterface
         if ($this->intNumberOfOpenTransactions != 0) {
             //something bad happened. rollback, plz
             $this->objDbDriver->transactionRollback();
-            Logger::getInstance(Logger::DBLOG)->warning("Rolled back open transactions on deletion of current instance of Db!");
+            if ($this->logger !== null) {
+                $this->logger->warning("Rolled back open transactions on deletion of current instance of Db!");
+            }
         }
 
 
         if ($this->objDbDriver !== null && $this->bitConnected) {
-            Logger::getInstance(Logger::DBLOG)->info("closing database-connection");
+            if ($this->logger !== null) {
+                $this->logger->info("closing database-connection");
+            }
+
             $this->objDbDriver->dbclose();
         }
 
@@ -137,18 +145,7 @@ class Connection implements ConnectionInterface
      */
     private function dbconnect()
     {
-        if ($this->objDbDriver !== null) {
-            try {
-                //Logger::getInstance(Logger::DBLOG)->info("creating database-connection using driver ".get_class($this->objDbDriver));
-                $objCfg = Config::getInstance("module_system", "config.php");
-                $this->objDbDriver->dbconnect(new DbConnectionParams($objCfg->getConfig("dbhost"), $objCfg->getConfig("dbusername"), $objCfg->getConfig("dbpassword"), $objCfg->getConfig("dbname"), $objCfg->getConfig("dbport")));
-            } catch (Exception $objException) {
-                echo(Exception::renderException($objException));
-                die();
-            }
-
-            $this->bitConnected = true;
-        }
+        $this->objDbDriver->dbconnect($this->connectionParams);
     }
 
     /**
@@ -283,7 +280,7 @@ class Connection implements ConnectionInterface
      *
      * @return bool
      * @since 3.4
-     * @deprecated - please use executeUpdate method
+     * @see - please use executeUpdate method
      */
     public function _pQuery($strQuery, $arrParams, $arrEscapes = array())
     {
@@ -295,9 +292,10 @@ class Connection implements ConnectionInterface
 
         $strQuery = $this->processQuery($strQuery);
 
-        if ($this->loggingEnabled) {
-            $queryId = generateSystemid();
-            Logger::getInstance(Logger::QUERIES)->info($queryId." ".$this->prettifyQuery($strQuery, $arrParams));
+        $queryId = '';
+        if ($this->logger !== null) {
+            $queryId = uniqid();
+            $this->logger->info($queryId." ".$this->prettifyQuery($strQuery, $arrParams));
         }
 
         //Increasing the counter
@@ -311,8 +309,8 @@ class Connection implements ConnectionInterface
             $this->getError($strQuery, $arrParams);
         }
 
-        if ($this->loggingEnabled) {
-            Logger::getInstance(Logger::QUERIES)->info($queryId." "."Query finished");
+        if ($this->logger !== null) {
+            $this->logger->info($queryId." "."Query finished");
         }
 
         return $bitReturn;
@@ -391,9 +389,10 @@ class Connection implements ConnectionInterface
 
         $arrReturn = array();
 
-        if ($this->loggingEnabled) {
-            $queryId = generateSystemid();
-            Logger::getInstance(Logger::QUERIES)->info($queryId." ".$this->prettifyQuery($strQuery, $arrParams));
+        $queryId = '';
+        if ($this->logger !== null) {
+            $queryId = uniqid();
+            $this->logger->info($queryId." ".$this->prettifyQuery($strQuery, $arrParams));
         }
 
         if ($this->objDbDriver != null) {
@@ -403,8 +402,8 @@ class Connection implements ConnectionInterface
                 $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
             }
 
-            if ($this->loggingEnabled) {
-                Logger::getInstance(Logger::QUERIES)->info($queryId." "."Query finished");
+            if ($this->logger !== null) {
+                $this->logger->info($queryId." "."Query finished");
             }
 
             if ($arrReturn === false) {
@@ -446,8 +445,7 @@ class Connection implements ConnectionInterface
      * Writes the last DB-Error to the screen
      *
      * @param string $strQuery
-     *
-     * @throws Exception
+     * @throws QueryException
      * @return void
      */
     private function getError($strQuery, $arrParams)
@@ -487,12 +485,11 @@ class Connection implements ConnectionInterface
             }
         }
         //send a warning to the logger
-        Logger::getInstance(Logger::DBLOG)->warning($strErrorCode);
+        $this->logger->warning($strErrorCode);
 
-        if (Config::getInstance()->getDebug("debuglevel") > 0) {
-            throw new Exception($strErrorCode, Exception::$level_ERROR);
+        if ($this->debugLevel > 0) {
+            throw new QueryException($strError, $strQuery, $arrParams);
         }
-
     }
 
     /**
@@ -601,7 +598,7 @@ class Connection implements ConnectionInterface
             $arrTemp = $this->objDbDriver->getTables();
 
             foreach ($arrTemp as $arrTable) {
-                if (StringUtil::startsWith($arrTable["name"], $prefix)) {
+                if (substr($arrTable["name"], 0, strlen($prefix)) === $prefix) {
                     $this->arrTablesCache[$prefix][] = $arrTable["name"];
                 }
             }
@@ -686,9 +683,9 @@ class Connection implements ConnectionInterface
         if ($bitReturn && count($arrIndices) > 0) {
             foreach ($arrIndices as $strOneIndex) {
                 if (is_array($strOneIndex)) {
-                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), $strOneIndex);
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".uniqid(), $strOneIndex);
                 } else {
-                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".generateSystemid(), [$strOneIndex]);
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".uniqid(), [$strOneIndex]);
                 }
             }
         }
@@ -1102,7 +1099,7 @@ class Connection implements ConnectionInterface
         $replace = [];
         foreach ($arrParams as $intKey => $strParam) {
 
-            if ($strParam instanceof OrmQueryParam && !$strParam->isEscape()) {
+            if ($strParam instanceof EscapeableParameterInterface && !$strParam->isEscape()) {
                 $replace[$intKey] = $strParam->getValue();
                 continue;
             }
@@ -1166,7 +1163,8 @@ class Connection implements ConnectionInterface
     {
         //Logger::getInstance(Logger::DBLOG)->addLogRow("Flushing query cache", Logger::$levelInfo);
         $this->arrQueryCache = array();
-        Objectfactory::getInstance()->flushCache();
+        // @TODO we can not do this here
+        //Objectfactory::getInstance()->flushCache();
     }
 
     /**
@@ -1215,30 +1213,18 @@ class Connection implements ConnectionInterface
      * The connection established will be closed directly and is not usable by other modules.
      *
      * @param string $strDriver
-     * @param DbConnectionParams $objCfg
+     * @param ConnectionParameters $objCfg
      *
      * @return bool
      */
-    public function validateDbCxData($strDriver, DbConnectionParams $objCfg)
+    public function validateDbCxData($strDriver, ConnectionParameters $objCfg)
     {
-
-        /** @var $objDbDriver DbDriverInterface */
-        $objDbDriver = null;
-
-        $strPath = Resourceloader::getInstance()->getPathForFile("/system/db/Db".ucfirst($strDriver).".php");
-        if ($strPath != null) {
-            $objDbDriver = Classloader::getInstance()->getInstanceFromFilename($strPath);
-        } else {
-            return false;
-        }
-
         try {
-            if ($objDbDriver != null && $objDbDriver->dbconnect($objCfg)) {
-                $objDbDriver->dbclose();
-                return true;
-            }
-        } catch (Exception $objEx) {
-            return false;
+            $this->driverFactory->factory($strDriver)->dbconnect($objCfg);
+
+            return true;
+        } catch (ConnectionException $objEx) {
+        } catch (DriverNotFoundException $objEx) {
         }
 
         return false;
@@ -1279,7 +1265,7 @@ class Connection implements ConnectionInterface
                 $strOneParam = 'null';
             }
 
-            $intPos = StringUtil::indexOf($strQuery, '?');
+            $intPos = strpos($strQuery, '?');
             if ($intPos !== false) {
                 $strQuery = substr_replace($strQuery, $strOneParam, $intPos, 1);
             }
