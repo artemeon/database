@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Driver;
 
+use Artemeon\Database\ConnectionInterface;
 use Artemeon\Database\DriverInterface;
+use Artemeon\Database\Schema\DataType;
+use Artemeon\Database\Schema\TableIndex;
 
 /**
  * Base class for all database-drivers, holds methods to be used by all drivers
@@ -159,11 +162,11 @@ abstract class DriverAbstract implements DriverInterface
      * @param string $tableName
      * @param string[] $columns
      * @param array $valueSets
-     * @param Database $Db
+     * @param ConnectionInterface $Db
      * @param array|null $escapes
      * @return bool
      */
-    public function triggerMultiInsert($tableName, $columns, $valueSets, Database $Db, ?array $escapes): bool
+    public function triggerMultiInsert($tableName, $columns, $valueSets, ConnectionInterface $Db, ?array $escapes): bool
     {
         $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
@@ -339,16 +342,16 @@ abstract class DriverAbstract implements DriverInterface
      */
     public function convertToDatabaseValue($value, string $type)
     {
-        if ($type === DbDatatypes::STR_TYPE_CHAR10) {
-            return StringUtil::truncate($value, 10, '');
-        } elseif ($type === DbDatatypes::STR_TYPE_CHAR20) {
-            return StringUtil::truncate($value, 20, '');
-        } elseif ($type === DbDatatypes::STR_TYPE_CHAR100) {
-            return StringUtil::truncate($value, 100, '');
-        } elseif ($type === DbDatatypes::STR_TYPE_CHAR254) {
-            return StringUtil::truncate($value, 254, '');
-        } elseif ($type === DbDatatypes::STR_TYPE_CHAR500) {
-            return StringUtil::truncate($value, 500, '');
+        if ($type === DataType::STR_TYPE_CHAR10) {
+            return mb_substr($value, 0, 10);
+        } elseif ($type === DataType::STR_TYPE_CHAR20) {
+            return mb_substr($value, 0, 20);
+        } elseif ($type === DataType::STR_TYPE_CHAR100) {
+            return mb_substr($value, 0, 100);
+        } elseif ($type === DataType::STR_TYPE_CHAR254) {
+            return mb_substr($value, 0, 254);
+        } elseif ($type === DataType::STR_TYPE_CHAR500) {
+            return mb_substr($value, 0, 500);
         }
 
         return $value;

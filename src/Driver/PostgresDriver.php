@@ -13,6 +13,14 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Driver;
 
+use Artemeon\Database\ConnectionParameters;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Schema\DataType;
+use Artemeon\Database\Schema\Table;
+use Artemeon\Database\Schema\TableColumn;
+use Artemeon\Database\Schema\TableIndex;
+use Artemeon\Database\Schema\TableKey;
+
 /**
  * db-driver for postgres using the php-postgres-interface
  *
@@ -24,7 +32,7 @@ class PostgresDriver extends DriverAbstract
 
     private $linkDB; //DB-Link
 
-    /** @var DbConnectionParams */
+    /** @var ConnectionParameters */
     private $objCfg = null;
 
     private $strDumpBin = "pg_dump"; //Binary to dump db (if not in path, add the path here)
@@ -35,13 +43,14 @@ class PostgresDriver extends DriverAbstract
     /**
      * @inheritdoc
      */
-    public function dbconnect(DbConnectionParams $objParams)
+    public function dbconnect(ConnectionParameters $objParams)
     {
-        if ($objParams->getIntPort() == "" || $objParams->getIntPort() == 0) {
-            $objParams->setIntPort(5432);
+        $port = $objParams->getPort();
+        if (empty($port)) {
+            $port = 5432;
         }
         $this->objCfg = $objParams;
-        $this->linkDB = @pg_connect("host='".$objParams->getStrHost()."' port='".$objParams->getIntPort()."' dbname='".$objParams->getStrDbName()."' user='".$objParams->getStrUsername()."' password='".$objParams->getStrPass()."'");
+        $this->linkDB = @pg_connect("host='".$objParams->getHost()."' port='".$port."' dbname='".$objParams->getDatabase()."' user='".$objParams->getUsername()."' password='".$objParams->getPassword()."'");
 
         if ($this->linkDB !== false) {
             $this->_pQuery("SET client_encoding='UTF8'", array());
@@ -49,7 +58,7 @@ class PostgresDriver extends DriverAbstract
             $this->arrCxInfo = pg_version($this->linkDB);
             return true;
         } else {
-            throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
+            throw new ConnectionException("Error connecting to database");
         }
     }
 
@@ -259,25 +268,25 @@ class PostgresDriver extends DriverAbstract
     private function getCoreTypeForDbType($infoSchemaRow)
     {
         if ($infoSchemaRow["data_type"] == "integer") {
-            return DbDatatypes::STR_TYPE_INT;
+            return DataType::STR_TYPE_INT;
         } elseif ($infoSchemaRow["data_type"] == "bigint") {
-            return DbDatatypes::STR_TYPE_LONG;
+            return DataType::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["data_type"] == "numeric") {
-            return DbDatatypes::STR_TYPE_DOUBLE;
+            return DataType::STR_TYPE_DOUBLE;
         } elseif ($infoSchemaRow["data_type"] == "character varying") {
             if ($infoSchemaRow["character_maximum_length"] == "10") {
-                return DbDatatypes::STR_TYPE_CHAR10;
+                return DataType::STR_TYPE_CHAR10;
             } elseif ($infoSchemaRow["character_maximum_length"] == "20") {
-                return DbDatatypes::STR_TYPE_CHAR20;
+                return DataType::STR_TYPE_CHAR20;
             } elseif ($infoSchemaRow["character_maximum_length"] == "100") {
-                return DbDatatypes::STR_TYPE_CHAR100;
+                return DataType::STR_TYPE_CHAR100;
             } elseif ($infoSchemaRow["character_maximum_length"] == "254") {
-                return DbDatatypes::STR_TYPE_CHAR254;
+                return DataType::STR_TYPE_CHAR254;
             } elseif ($infoSchemaRow["character_maximum_length"] == "500") {
-                return DbDatatypes::STR_TYPE_CHAR500;
+                return DataType::STR_TYPE_CHAR500;
             }
         } elseif ($infoSchemaRow["data_type"] == "text") {
-            return DbDatatypes::STR_TYPE_TEXT;
+            return DataType::STR_TYPE_TEXT;
         }
         return null;
     }
@@ -293,25 +302,25 @@ class PostgresDriver extends DriverAbstract
     {
         $strReturn = "";
 
-        if ($strType == DbDatatypes::STR_TYPE_INT) {
+        if ($strType == DataType::STR_TYPE_INT) {
             $strReturn .= " INT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONG) {
+        } elseif ($strType == DataType::STR_TYPE_LONG) {
             $strReturn .= " BIGINT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_DOUBLE) {
+        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
             $strReturn .= " NUMERIC ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR10) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
             $strReturn .= " VARCHAR( 10 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR20) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
             $strReturn .= " VARCHAR( 20 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR100) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
             $strReturn .= " VARCHAR( 100 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR254) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
             $strReturn .= " VARCHAR( 254 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR( 500 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
+        } elseif ($strType == DataType::STR_TYPE_TEXT) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
+        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
             $strReturn .= " TEXT ";
         } else {
             $strReturn .= " VARCHAR( 254 ) ";
@@ -471,19 +480,19 @@ class PostgresDriver extends DriverAbstract
         $strFilename = _realpath_.$strFilename;
         $strTables = "-t ".implode(" -t ", $arrTables);
 
-        if ($this->objCfg->getStrPass() != "") {
+        if ($this->objCfg->getPassword() != "") {
             if ($this->isWinOs()) {
-                $strCommand = "SET \"PGPASSWORD=".$this->objCfg->getStrPass()."\" && ";
+                $strCommand = "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
             } else {
-                $strCommand = "PGPASSWORD=\"".$this->objCfg->getStrPass()."\" ";
+                $strCommand = "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
             }
         }
 
         if ($this->handlesDumpCompression()) {
             $strFilename .= ".gz";
-            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getStrHost().($this->objCfg->getStrUsername() != "" ? " -U".$this->objCfg->getStrUsername() : "")." -p".$this->objCfg->getIntPort()." ".$strTables." ".$this->objCfg->getStrDbName()." | gzip > \"".$strFilename."\"";
+            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." | gzip > \"".$strFilename."\"";
         } else {
-            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getStrHost().($this->objCfg->getStrUsername() != "" ? " -U".$this->objCfg->getStrUsername() : "")." -p".$this->objCfg->getIntPort()." ".$strTables." ".$this->objCfg->getStrDbName()." > \"".$strFilename."\"";
+            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
         }
         //Now do a systemfork
         $intTemp = "";
@@ -504,19 +513,19 @@ class PostgresDriver extends DriverAbstract
         $strFilename = _realpath_.$strFilename;
 
         $strCommand= '';
-        if ($this->objCfg->getStrPass() != "") {
+        if ($this->objCfg->getPassword() != "") {
             if ($this->isWinOs()) {
-                $strCommand .= "SET \"PGPASSWORD=".$this->objCfg->getStrPass()."\" && ";
+                $strCommand .= "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
             } else {
-                $strCommand .= "PGPASSWORD=\"".$this->objCfg->getStrPass()."\" ";
+                $strCommand .= "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
             }
         }
 
 
         if ($this->handlesDumpCompression() && StringUtil::endsWith($strFilename, ".gz")) {
-            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$this->strRestoreBin." -q -h".$this->objCfg->getStrHost().($this->objCfg->getStrUsername() != "" ? " -U".$this->objCfg->getStrUsername() : "")." -p".$this->objCfg->getIntPort()." ".$this->objCfg->getStrDbName()."";
+            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()."";
         } else {
-            $strCommand .= $this->strRestoreBin." -q -h".$this->objCfg->getStrHost().($this->objCfg->getStrUsername() != "" ? " -U".$this->objCfg->getStrUsername() : "")." -p".$this->objCfg->getIntPort()." ".$this->objCfg->getStrDbName()." < \"".$strFilename."\"";
+            $strCommand .= $this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
         }
 
         $intTemp = "";
@@ -556,7 +565,7 @@ class PostgresDriver extends DriverAbstract
             return '$' . $intI;
         }, $strQuery);
 
-        $strQuery = StringUtil::replace(" LIKE ", " ILIKE ", $strQuery, true, true);
+        $strQuery = str_replace(" LIKE ", " ILIKE ", $strQuery);
 
         return $strQuery;
     }

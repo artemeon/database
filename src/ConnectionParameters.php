@@ -21,80 +21,111 @@ namespace Artemeon\Database;
  */
 class ConnectionParameters
 {
-
-    private $strHost = "";
-    private $strUsername = "";
-    private $strPass = "";
-    private $strDbName = "";
-    private $intPort = 0;
+    public const OCI8_MAX_STRING_SIZE_EXTENDED = 'oci8_max_string_size_extended';
+    public const SQLITE3_BASE_PATH = 'sqlite3_base_path';
 
     /**
-     * DbConnectionParams constructor.
-     *
-     * @param string $strHost
-     * @param string $strUsername
-     * @param string $strPass
-     * @param string $strDbName
-     * @param int $intPort
+     * @var string
      */
-    public function __construct($strHost, $strUsername, $strPass, $strDbName, $intPort)
+    private $host;
+
+    /**
+     * @var string
+     */
+    private $username;
+
+    /**
+     * @var string
+     */
+    private $password;
+
+    /**
+     * @var string
+     */
+    private $database;
+
+    /**
+     * @var int
+     */
+    private $port;
+
+    /**
+     * @var array
+     */
+    private $attributes;
+
+    /**
+     * @param string $host
+     * @param string $username
+     * @param string $password
+     * @param string $database
+     * @param int|null $port
+     */
+    public function __construct(string $host, string $username, string $password, string $database, ?int $port = null)
     {
-        $this->strHost = $strHost;
-        $this->strUsername = $strUsername;
-        $this->strPass = $strPass;
-        $this->strDbName = $strDbName;
-        $this->intPort = $intPort;
+        $this->host = $host;
+        $this->username = $username;
+        $this->password = $password;
+        $this->database = $database;
+        $this->port = $port;
+        $this->attributes = [];
     }
 
     /**
      * @return string
      */
-    public function getStrHost()
+    public function getHost(): string
     {
-        return $this->strHost;
+        return $this->host;
     }
 
     /**
      * @return string
      */
-    public function getStrUsername()
+    public function getUsername(): string
     {
-        return $this->strUsername;
+        return $this->username;
     }
 
     /**
      * @return string
      */
-    public function getStrPass()
+    public function getPassword(): string
     {
-        return $this->strPass;
+        return $this->password;
     }
 
     /**
      * @return string
      */
-    public function getStrDbName()
+    public function getDatabase(): string
     {
-        return $this->strDbName;
+        return $this->database;
     }
 
     /**
      * @return int
      */
-    public function getIntPort()
+    public function getPort(): ?int
     {
-        return $this->intPort;
+        return $this->port;
     }
 
     /**
-     * @param int $intPort
+     * @param string $key
+     * @param mixed $value
      */
-    public function setIntPort($intPort)
+    public function setAttribute(string $key, $value)
     {
-        $this->intPort = $intPort;
+        $this->attributes[$key] = $value;
     }
 
-
-
-
+    /**
+     * @param string $key
+     * @return mixed|null
+     */
+    public function getAttribute(string $key)
+    {
+        return $this->attributes[$key] ?? null;
+    }
 }

@@ -13,6 +13,14 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Driver;
 
+use Artemeon\Database\ConnectionParameters;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Schema\DataType;
+use Artemeon\Database\Schema\Table;
+use Artemeon\Database\Schema\TableColumn;
+use Artemeon\Database\Schema\TableIndex;
+use Artemeon\Database\Schema\TableKey;
+
 /**
  * DbSqlsrv
  *
@@ -28,7 +36,7 @@ class SqlsrvDriver extends DriverAbstract
     private $linkDB;
 
     /**
-     * @var DbConnectionParams
+     * @var ConnectionParameters
      */
     private $objCfg;
 
@@ -36,22 +44,18 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritdoc
      */
-    public function dbconnect(DbConnectionParams $objParams)
+    public function dbconnect(ConnectionParameters $objParams)
     {
-        if ($objParams->getIntPort() == "" || $objParams->getIntPort() == 0) {
-            $objParams->setIntPort(1433);
-        }
-
         $this->objCfg = $objParams;
 
         // We need to set this to 0 otherwise i.e. the sp_rename procedure returns false with a warning even if the
         // query was successful
         sqlsrv_configure("WarningsReturnAsErrors", 0);
 
-        $this->linkDB = sqlsrv_connect($this->objCfg->getStrHost(), [
-            "UID" => $this->objCfg->getStrUsername(),
-            "PWD" => $this->objCfg->getStrPass(),
-            "Database" => $this->objCfg->getStrDbName(),
+        $this->linkDB = sqlsrv_connect($this->objCfg->getHost(), [
+            "UID" => $this->objCfg->getUsername(),
+            "PWD" => $this->objCfg->getPassword(),
+            "Database" => $this->objCfg->getDatabase(),
             "CharacterSet" => "UTF-8",
             "ConnectionPooling" => "1",
             "MultipleActiveResultSets"=> "0",
@@ -60,7 +64,7 @@ class SqlsrvDriver extends DriverAbstract
         ]);
 
         if ($this->linkDB === false) {
-            throw new Exception("Error connecting to database: ".$this->getError(), Exception::$level_FATALERROR);
+            throw new ConnectionException("Error connecting to database: ".$this->getError());
         }
     }
 
@@ -256,24 +260,24 @@ class SqlsrvDriver extends DriverAbstract
     private function getCoreTypeForDbType($infoSchemaRow)
     {
         if ($infoSchemaRow["data_type"] == "int") {
-            return DbDatatypes::STR_TYPE_INT;
+            return DataType::STR_TYPE_INT;
         } elseif ($infoSchemaRow["data_type"] == "bigint") {
-            return DbDatatypes::STR_TYPE_LONG;
+            return DataType::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["data_type"] == "real") {
-            return DbDatatypes::STR_TYPE_DOUBLE;
+            return DataType::STR_TYPE_DOUBLE;
         } elseif ($infoSchemaRow["data_type"] == "varchar") {
             if ($infoSchemaRow["character_maximum_length"] == "10") {
-                return DbDatatypes::STR_TYPE_CHAR10;
+                return DataType::STR_TYPE_CHAR10;
             } elseif ($infoSchemaRow["character_maximum_length"] == "20") {
-                return DbDatatypes::STR_TYPE_CHAR20;
+                return DataType::STR_TYPE_CHAR20;
             } elseif ($infoSchemaRow["character_maximum_length"] == "100") {
-                return DbDatatypes::STR_TYPE_CHAR100;
+                return DataType::STR_TYPE_CHAR100;
             } elseif ($infoSchemaRow["character_maximum_length"] == "254") {
-                return DbDatatypes::STR_TYPE_CHAR254;
+                return DataType::STR_TYPE_CHAR254;
             } elseif ($infoSchemaRow["character_maximum_length"] == "500") {
-                return DbDatatypes::STR_TYPE_CHAR500;
+                return DataType::STR_TYPE_CHAR500;
             } elseif ($infoSchemaRow["character_maximum_length"] == "-1") {
-                return DbDatatypes::STR_TYPE_TEXT;
+                return DataType::STR_TYPE_TEXT;
             }
         }
         return null;
@@ -302,25 +306,25 @@ class SqlsrvDriver extends DriverAbstract
     {
         $strReturn = "";
 
-        if ($strType == DbDatatypes::STR_TYPE_INT) {
+        if ($strType == DataType::STR_TYPE_INT) {
             $strReturn .= " INT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONG) {
+        } elseif ($strType == DataType::STR_TYPE_LONG) {
             $strReturn .= " BIGINT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_DOUBLE) {
+        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
             $strReturn .= " FLOAT( 24 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR10) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
             $strReturn .= " VARCHAR( 10 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR20) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
             $strReturn .= " VARCHAR( 20 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR100) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
             $strReturn .= " VARCHAR( 100 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR254) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
             $strReturn .= " VARCHAR( 254 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR( 500 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
+        } elseif ($strType == DataType::STR_TYPE_TEXT) {
             $strReturn .= " VARCHAR( MAX ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
+        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
             $strReturn .= " VARCHAR( MAX ) ";
         } else {
             $strReturn .= " VARCHAR( 254 ) ";
@@ -446,7 +450,7 @@ class SqlsrvDriver extends DriverAbstract
         }
 
         //primary keys
-        $strQuery .= " CONSTRAINT pk_".generateSystemid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
+        $strQuery .= " CONSTRAINT pk_".uniqid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
 
         return $this->_pQuery($strQuery, array());

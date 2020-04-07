@@ -13,6 +13,15 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Driver;
 
+use Artemeon\Database\ConnectionInterface;
+use Artemeon\Database\ConnectionParameters;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Schema\DataType;
+use Artemeon\Database\Schema\Table;
+use Artemeon\Database\Schema\TableColumn;
+use Artemeon\Database\Schema\TableIndex;
+use Artemeon\Database\Schema\TableKey;
+
 /**
  * db-driver for sqlite3 using the php-sqlite3-interface.
  * Based on the sqlite2 driver by phwolfer
@@ -33,17 +42,16 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritdoc
      */
-    public function dbconnect(DbConnectionParams $objParams)
+    public function dbconnect(ConnectionParameters $objParams)
     {
-        if ($objParams->getStrDbName() == "") {
+        if ($objParams->getDatabase() == "") {
             return false;
         }
 
-        $this->strDbFile = _projectpath_.'/dbdumps/'.$objParams->getStrDbName().'.db3';
+        $this->strDbFile = $objParams->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $objParams->getDatabase().'.db3';
 
         try {
-            $strPath = _realpath_.$this->strDbFile;
-            $this->linkDB = new SQLite3($strPath);
+            $this->linkDB = new SQLite3($this->strDbFile);
             $this->_pQuery('PRAGMA encoding = "UTF-8"', array());
             //TODO deprecated in sqlite, so may be removed
             $this->_pQuery('PRAGMA short_column_names = ON', array());
@@ -54,8 +62,8 @@ class Sqlite3Driver extends DriverAbstract
             }
 
             return true;
-        } catch (Exception $e) {
-            throw new Exception("Error connecting to database: ".$e, Exception::$level_FATALERROR);
+        } catch (\Throwable $e) {
+            throw new ConnectionException("Error connecting to database", 0, $e);
         }
     }
 
@@ -228,12 +236,12 @@ class Sqlite3Driver extends DriverAbstract
      * @param string $tableName
      * @param string[] $columns
      * @param array $valueSets
-     * @param Database $db
+     * @param ConnectionInterface $db
      *
      * @param array|null $escapes
      * @return bool
      */
-    public function triggerMultiInsert($tableName, $columns, $valueSets, Database $db, ?array $escapes): bool
+    public function triggerMultiInsert($tableName, $columns, $valueSets, ConnectionInterface $db, ?array $escapes): bool
     {
         $sqliteVersion = SQLite3::version();
         if (version_compare('3.7.11', $sqliteVersion['versionString'], '<=')) {
@@ -437,13 +445,13 @@ class Sqlite3Driver extends DriverAbstract
      */
     private function getCoreTypeForDbType($infoSchemaRow)
     {
-        $val = StringUtil::toLowerCase(StringUtil::trim($infoSchemaRow["type"]));
+        $val = strtolower(trim($infoSchemaRow["type"]));
         if ($val == "integer") {
-            return DbDatatypes::STR_TYPE_INT;
+            return DataType::STR_TYPE_INT;
         } elseif ($val == "real") {
-            return DbDatatypes::STR_TYPE_DOUBLE;
+            return DataType::STR_TYPE_DOUBLE;
         } elseif ($val == "text") {
-            return DbDatatypes::STR_TYPE_TEXT;
+            return DataType::STR_TYPE_TEXT;
         }
         return null;
     }
@@ -625,25 +633,25 @@ class Sqlite3Driver extends DriverAbstract
     {
         $strReturn = "";
 
-        if ($strType == DbDatatypes::STR_TYPE_INT) {
+        if ($strType == DataType::STR_TYPE_INT) {
             $strReturn .= " INTEGER ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONG) {
+        } elseif ($strType == DataType::STR_TYPE_LONG) {
             $strReturn .= " INTEGER ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_DOUBLE) {
+        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
             $strReturn .= " REAL ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR10) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR20) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR100) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR254) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
+        } elseif ($strType == DataType::STR_TYPE_TEXT) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
+        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
             $strReturn .= " TEXT ";
         } else {
             $strReturn .= " TEXT ";

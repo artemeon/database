@@ -13,6 +13,14 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Driver;
 
+use Artemeon\Database\ConnectionParameters;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Schema\DataType;
+use Artemeon\Database\Schema\Table;
+use Artemeon\Database\Schema\TableColumn;
+use Artemeon\Database\Schema\TableIndex;
+use Artemeon\Database\Schema\TableKey;
+
 /**
  * db-driver for MySQL using the php-mysqli-interface
  *
@@ -23,7 +31,7 @@ class MysqliDriver extends DriverAbstract
     /**  @var mysqli */
     private $linkDB; //DB-Link
 
-    /** @var  DbConnectionParams */
+    /** @var  ConnectionParameters */
     private $objCfg;
 
     /** @var string  */
@@ -38,25 +46,26 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritdoc
      */
-    public function dbconnect(DbConnectionParams $objParams)
+    public function dbconnect(ConnectionParameters $objParams)
     {
-        if ($objParams->getIntPort() == "" || $objParams->getIntPort() == 0) {
-            $objParams->setIntPort(3306);
+        $port = $objParams->getPort();
+        if (empty($port)) {
+            $port = 3306;
         }
 
         //save connection-details
         $this->objCfg = $objParams;
 
         $this->linkDB = @new mysqli(
-            $this->objCfg->getStrHost(),
-            $this->objCfg->getStrUsername(),
-            $this->objCfg->getStrPass(),
-            $this->objCfg->getStrDbName(),
-            $this->objCfg->getIntPort()
+            $this->objCfg->getHost(),
+            $this->objCfg->getUsername(),
+            $this->objCfg->getPassword(),
+            $this->objCfg->getDatabase(),
+            $port
         );
 
         if ($this->linkDB !== false) {
-            if (@$this->linkDB->select_db($this->objCfg->getStrDbName())) {
+            if (@$this->linkDB->select_db($this->objCfg->getDatabase())) {
                 //erst ab mysql-client-bib > 4
                 //mysqli_set_charset($this->linkDB, "utf8");
                 $this->_pQuery("SET NAMES 'utf8'", array());
@@ -66,10 +75,10 @@ class MysqliDriver extends DriverAbstract
                 $this->_pQuery("SET character_set_server ='utf8'", array());
                 return true;
             } else {
-                throw new Exception("Error selecting database", Exception::$level_FATALERROR);
+                throw new ConnectionException("Error selecting database");
             }
         } else {
-            throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
+            throw new ConnectionException("Error connecting to database");
         }
     }
 
@@ -293,25 +302,25 @@ class MysqliDriver extends DriverAbstract
     private function getCoreTypeForDbType($infoSchemaRow)
     {
         if ($infoSchemaRow["Type"] == "int(11)" || $infoSchemaRow["Type"] == "int") {
-            return DbDatatypes::STR_TYPE_INT;
+            return DataType::STR_TYPE_INT;
         } elseif ($infoSchemaRow["Type"] == "bigint(20)" || $infoSchemaRow["Type"] == "bigint") {
-            return DbDatatypes::STR_TYPE_LONG;
+            return DataType::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["Type"] == "double") {
-            return DbDatatypes::STR_TYPE_DOUBLE;
+            return DataType::STR_TYPE_DOUBLE;
         } elseif ($infoSchemaRow["Type"] == "varchar(10)") {
-            return DbDatatypes::STR_TYPE_CHAR10;
+            return DataType::STR_TYPE_CHAR10;
         } elseif ($infoSchemaRow["Type"] == "varchar(20)") {
-            return DbDatatypes::STR_TYPE_CHAR20;
+            return DataType::STR_TYPE_CHAR20;
         } elseif ($infoSchemaRow["Type"] == "varchar(100)") {
-            return DbDatatypes::STR_TYPE_CHAR100;
+            return DataType::STR_TYPE_CHAR100;
         } elseif ($infoSchemaRow["Type"] == "varchar(254)") {
-            return DbDatatypes::STR_TYPE_CHAR254;
+            return DataType::STR_TYPE_CHAR254;
         } elseif ($infoSchemaRow["Type"] == "varchar(500)") {
-            return DbDatatypes::STR_TYPE_CHAR500;
+            return DataType::STR_TYPE_CHAR500;
         } elseif ($infoSchemaRow["Type"] == "text") {
-            return DbDatatypes::STR_TYPE_TEXT;
+            return DataType::STR_TYPE_TEXT;
         } elseif ($infoSchemaRow["Type"] == "longtext") {
-            return DbDatatypes::STR_TYPE_LONGTEXT;
+            return DataType::STR_TYPE_LONGTEXT;
         }
         return null;
     }
@@ -327,25 +336,25 @@ class MysqliDriver extends DriverAbstract
     {
         $strReturn = "";
 
-        if ($strType == DbDatatypes::STR_TYPE_INT) {
+        if ($strType == DataType::STR_TYPE_INT) {
             $strReturn .= " INT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONG) {
+        } elseif ($strType == DataType::STR_TYPE_LONG) {
             $strReturn .= " BIGINT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_DOUBLE) {
+        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
             $strReturn .= " DOUBLE ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR10) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
             $strReturn .= " VARCHAR( 10 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR20) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
             $strReturn .= " VARCHAR( 20 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR100) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
             $strReturn .= " VARCHAR( 100 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR254) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
             $strReturn .= " VARCHAR( 254 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR( 500 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
+        } elseif ($strType == DataType::STR_TYPE_TEXT) {
             $strReturn .= " TEXT ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
+        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
             $strReturn .= " LONGTEXT ";
         } else {
             $strReturn .= " VARCHAR( 254 ) ";
@@ -540,19 +549,19 @@ class MysqliDriver extends DriverAbstract
         $strTables = implode(" ", $arrTables);
         $strParamPass = "";
 
-        if ($this->objCfg->getStrPass() != "") {
-            $strParamPass = " -p\"" . $this->objCfg->getStrPass() . "\"";
+        if ($this->objCfg->getPassword() != "") {
+            $strParamPass = " -p\"" . $this->objCfg->getPassword() . "\"";
         }
 
         if ($this->handlesDumpCompression()) {
             $strFilename .= ".gz";
-            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getStrHost(
-                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
-                ) . " " . $this->objCfg->getStrDbName() . " " . $strTables . " | gzip > \"" . $strFilename . "\"";
+            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getHost(
+                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
+                ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " | gzip > \"" . $strFilename . "\"";
         } else {
-            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getStrHost(
-                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
-                ) . " " . $this->objCfg->getStrDbName() . " " . $strTables . " > \"" . $strFilename . "\"";
+            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getHost(
+                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
+                ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " > \"" . $strFilename . "\"";
         }
         //Now do a systemfork
         $intTemp = "";
@@ -578,18 +587,18 @@ class MysqliDriver extends DriverAbstract
         $strFilename = _realpath_ . $strFilename;
         $strParamPass = "";
 
-        if ($this->objCfg->getStrPass() != "") {
-            $strParamPass = " -p\"" . $this->objCfg->getStrPass() . "\"";
+        if ($this->objCfg->getPassword() != "") {
+            $strParamPass = " -p\"" . $this->objCfg->getPassword() . "\"";
         }
 
         if ($this->handlesDumpCompression() && StringUtil::endsWith($strFilename, ".gz")) {
-            $strCommand = " gunzip -c \"" . $strFilename . "\" | " . $this->strRestoreBin . " -h" . $this->objCfg->getStrHost(
-                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
-                ) . " " . $this->objCfg->getStrDbName() . "";
+            $strCommand = " gunzip -c \"" . $strFilename . "\" | " . $this->strRestoreBin . " -h" . $this->objCfg->getHost(
+                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
+                ) . " " . $this->objCfg->getDatabase() . "";
         } else {
-            $strCommand = $this->strRestoreBin . " -h" . $this->objCfg->getStrHost(
-                ) . " -u" . $this->objCfg->getStrUsername() . $strParamPass . " -P" . $this->objCfg->getIntPort(
-                ) . " " . $this->objCfg->getStrDbName() . " < \"" . $strFilename . "\"";
+            $strCommand = $this->strRestoreBin . " -h" . $this->objCfg->getHost(
+                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
+                ) . " " . $this->objCfg->getDatabase() . " < \"" . $strFilename . "\"";
         }
         $intTemp = "";
         system($strCommand, $intTemp);

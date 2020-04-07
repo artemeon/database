@@ -13,6 +13,15 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Driver;
 
+use Artemeon\Database\ConnectionInterface;
+use Artemeon\Database\ConnectionParameters;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Schema\DataType;
+use Artemeon\Database\Schema\Table;
+use Artemeon\Database\Schema\TableColumn;
+use Artemeon\Database\Schema\TableIndex;
+use Artemeon\Database\Schema\TableKey;
+
 /**
  * db-driver for oracle using the ovi8-interface
  *
@@ -24,7 +33,7 @@ class Oci8Driver extends DriverAbstract
 {
 
     private $linkDB; //DB-Link
-    /** @var DbConnectionParams  */
+    /** @var ConnectionParameters  */
     private $objCfg = null;
 
     private $strDumpBin = "exp"; // Binary to dump db (if not in path, add the path here)
@@ -55,18 +64,20 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritdoc
      */
-    public function dbconnect(DbConnectionParams $objParams)
+    public function dbconnect(ConnectionParameters $objParams)
     {
-        if ($objParams->getIntPort() == "" || $objParams->getIntPort() == 0) {
-            $objParams->setIntPort(1521);
+        $port = $objParams->getPort();
+        if (empty($port)) {
+            $port = 1521;
         }
         $this->objCfg = $objParams;
-        $this->useBinaryCI = Config::getInstance('module_system', 'config.php')->getConfig('oci8_max_string_size_extended');
+
+        $this->useBinaryCI = $objParams->getAttribute(ConnectionParameters::OCI8_MAX_STRING_SIZE_EXTENDED);
 
         //try to set the NLS_LANG env attribute
         putenv("NLS_LANG=American_America.UTF8");
 
-        $this->linkDB = @oci_pconnect($this->objCfg->getStrUsername(), $this->objCfg->getStrPass(), $this->objCfg->getStrHost().":".$this->objCfg->getIntPort()."/".$this->objCfg->getStrDbName(), "AL32UTF8");
+        $this->linkDB = @oci_pconnect($this->objCfg->getUsername(), $this->objCfg->getPassword(), $this->objCfg->getHost().":".$port."/".$this->objCfg->getDatabase(), "AL32UTF8");
 
         if ($this->linkDB !== false) {
             @oci_set_client_info($this->linkDB, "ARTEMEON AGP");
@@ -79,7 +90,7 @@ class Oci8Driver extends DriverAbstract
             return true;
         }
 
-        throw new Exception("Error connecting to database", Exception::$level_FATALERROR);
+        throw new ConnectionException("Error connecting to database");
     }
 
     /**
@@ -104,12 +115,12 @@ class Oci8Driver extends DriverAbstract
      * @param string $tableName
      * @param string[] $columns
      * @param array $valueSets
-     * @param Database $Db
+     * @param ConnectionInterface $Db
      *
      * @param array|null $escapes
      * @return bool
      */
-    public function triggerMultiInsert($tableName, $columns, $valueSets, Database $Db, ?array $escapes): bool
+    public function triggerMultiInsert($tableName, $columns, $valueSets, ConnectionInterface $Db, ?array $escapes): bool
     {
         $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
@@ -314,7 +325,7 @@ class Oci8Driver extends DriverAbstract
     {
         $table = new Table($tableName);
 
-        $tableName = StringUtil::toUpperCase($tableName);
+        $tableName = strtoupper($tableName);
 
         //fetch all columns
         $columnInfo = $this->getPArray("SELECT * FROM user_tab_columns WHERE table_name = ?", [$tableName]) ?: [];
@@ -370,31 +381,31 @@ class Oci8Driver extends DriverAbstract
     private function getCoreTypeForDbType($infoSchemaRow)
     {
         if ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
-            return DbDatatypes::STR_TYPE_LONG;
+            return DataType::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
-            return DbDatatypes::STR_TYPE_LONG;
+            return DataType::STR_TYPE_LONG;
         } elseif ($infoSchemaRow["data_type"] == "FLOAT" && $infoSchemaRow["data_precision"] == 24) {
-            return DbDatatypes::STR_TYPE_DOUBLE;
+            return DataType::STR_TYPE_DOUBLE;
         } elseif ($infoSchemaRow["data_type"] == "VARCHAR2") {
             if ($infoSchemaRow["data_length"] == "10") {
-                return DbDatatypes::STR_TYPE_CHAR10;
+                return DataType::STR_TYPE_CHAR10;
             } elseif ($infoSchemaRow["data_length"] == "20") {
-                return DbDatatypes::STR_TYPE_CHAR20;
+                return DataType::STR_TYPE_CHAR20;
             } elseif ($infoSchemaRow["data_length"] == "100") {
-                return DbDatatypes::STR_TYPE_CHAR100;
+                return DataType::STR_TYPE_CHAR100;
             } elseif ($infoSchemaRow["data_length"] == "254") {
-                return DbDatatypes::STR_TYPE_CHAR254;
+                return DataType::STR_TYPE_CHAR254;
             } elseif ($infoSchemaRow["data_length"] == "280") {
-                return DbDatatypes::STR_TYPE_CHAR254;
+                return DataType::STR_TYPE_CHAR254;
             } elseif ($infoSchemaRow["data_length"] == "500") {
-                return DbDatatypes::STR_TYPE_CHAR500;
+                return DataType::STR_TYPE_CHAR500;
             } elseif ($infoSchemaRow["data_length"] == "4000") {
-                return DbDatatypes::STR_TYPE_TEXT;
+                return DataType::STR_TYPE_TEXT;
             } elseif ($infoSchemaRow["data_length"] == "32767") {
-                return DbDatatypes::STR_TYPE_TEXT;
+                return DataType::STR_TYPE_TEXT;
             }
         } elseif ($infoSchemaRow["data_type"] == "CLOB") {
-            return DbDatatypes::STR_TYPE_LONGTEXT;
+            return DataType::STR_TYPE_LONGTEXT;
         }
         return null;
     }
@@ -421,29 +432,29 @@ class Oci8Driver extends DriverAbstract
     {
         $strReturn = "";
 
-        if ($strType == DbDatatypes::STR_TYPE_INT) {
+        if ($strType == DataType::STR_TYPE_INT) {
             $strReturn .= " NUMBER(19, 0) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONG) {
+        } elseif ($strType == DataType::STR_TYPE_LONG) {
             $strReturn .= " NUMBER(19, 0) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_DOUBLE) {
+        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
             $strReturn .= " FLOAT (24) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR10) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
             $strReturn .= " VARCHAR2( 10 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR20) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
             $strReturn .= " VARCHAR2( 20 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR100) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
             $strReturn .= " VARCHAR2( 100 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR254) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
             $strReturn .= " VARCHAR2( 280 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_CHAR500) {
+        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR2( 500 ) ";
-        } elseif ($strType == DbDatatypes::STR_TYPE_TEXT) {
+        } elseif ($strType == DataType::STR_TYPE_TEXT) {
             if ($this->useBinaryCI) {
                 $strReturn .= " VARCHAR2( 32767 ) ";
             } else {
                 $strReturn .= " VARCHAR2( 4000 ) ";
             }
-        } elseif ($strType == DbDatatypes::STR_TYPE_LONGTEXT) {
+        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
             $strReturn .= " CLOB ";
         } else {
             $strReturn .= " VARCHAR2( 280 ) ";
@@ -553,7 +564,7 @@ class Oci8Driver extends DriverAbstract
         }
 
         //primary keys
-        $strQuery .= " CONSTRAINT pk_".generateSystemid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
+        $strQuery .= " CONSTRAINT pk_".uniqid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
         if ($this->useBinaryCI) {
             $strQuery .= "DEFAULT COLLATION BINARY_CI ";
@@ -653,7 +664,7 @@ class Oci8Driver extends DriverAbstract
         $strFilename = _realpath_.$strFilename;
         $strTables = implode(",", $arrTables);
 
-        $strCommand = $this->strDumpBin." ".$this->objCfg->getStrUsername()."/".$this->objCfg->getStrPass()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
+        $strCommand = $this->strDumpBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
         Logger::getInstance(Logger::DBLOG)->info("dump command: ".$strCommand);
         //Now do a systemfork
         $intTemp = "";
@@ -673,7 +684,7 @@ class Oci8Driver extends DriverAbstract
     {
 
         $strFilename = _realpath_.$strFilename;
-        $strCommand = $this->strRestoreBin." ".$this->objCfg->getStrUsername()."/".$this->objCfg->getStrPass()." FILE='".$strFilename."'";
+        $strCommand = $this->strRestoreBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." FILE='".$strFilename."'";
         $intTemp = "";
         system($strCommand, $intTemp);
         Logger::getInstance(Logger::DBLOG)->info($this->strRestoreBin." exited with code ".$intTemp);
@@ -696,7 +707,7 @@ class Oci8Driver extends DriverAbstract
             return ':' . $i;
         }, $strQuery);
 
-        if (!$this->useBinaryCI && $params !== null && StringUtil::indexOf($strQuery, " like ", false) !== false) {
+        if (!$this->useBinaryCI && $params !== null && stripos($strQuery, " like ") !== false) {
 
             foreach ($params as $param) {
                 if (substr($param, -1) === '%' || substr($param, 0, 1) === '%') {
@@ -725,8 +736,8 @@ class Oci8Driver extends DriverAbstract
     private function getParsedStatement($strQuery)
     {
 
-        if (StringUtil::indexOf($strQuery, "select", false) !== false) {
-            $strQuery = StringUtil::replace(array(" as ", " AS "), array(" ", " "), $strQuery);
+        if (stripos($strQuery, "select") !== false) {
+            $strQuery = str_replace(array(" as ", " AS "), array(" ", " "), $strQuery);
         }
 
         $objStatement = oci_parse($this->linkDB, $strQuery);
@@ -824,8 +835,8 @@ class Oci8Driver extends DriverAbstract
      */
     public function convertToDatabaseValue($value, string $type)
     {
-        if ($type === DbDatatypes::STR_TYPE_TEXT) {
-            return StringUtil::truncate($value, 4000, '');
+        if ($type === DataType::STR_TYPE_TEXT) {
+            return mb_substr($value, 4000, '');
         } else {
             return parent::convertToDatabaseValue($value, $type);
         }
