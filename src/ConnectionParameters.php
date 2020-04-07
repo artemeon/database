@@ -19,7 +19,7 @@ namespace Artemeon\Database;
  * @author sidler@mulchprod.de
  * @since 5.1
  */
-class DbConnectionParams
+class ConnectionParameters
 {
 
     private $strHost = "";
