@@ -19,7 +19,7 @@ namespace Artemeon\Database;
  *
  * @package module_system
  */
-interface DbDriverInterface
+interface DriverInterface
 {
 
     /**
