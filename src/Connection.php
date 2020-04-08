@@ -273,7 +273,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function _pQuery($strQuery, $arrParams, $arrEscapes = array())
+    public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = [])
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -318,7 +318,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function getPRow($strQuery, $arrParams, $intNr = 0, $bitCache = true, array $arrEscapes = [])
+    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = [])
     {
         if ($intNr !== 0) {
             trigger_error(E_USER_DEPRECATED, "The intNr parameter is deprecated");
@@ -336,7 +336,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams, $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = [])
+    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = [])
     {
         if (!$this->bitConnected) {
             $this->dbconnect();

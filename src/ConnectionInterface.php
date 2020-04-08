@@ -37,7 +37,7 @@ interface ConnectionInterface
      * @throws QueryException
      * @since 3.4
      */
-    public function getPArray($strQuery, $arrParams, $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = []);
+    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = []);
 
     /**
      * Returns one row from a result-set.
@@ -51,7 +51,7 @@ interface ConnectionInterface
      * @return array
      * @throws QueryException
      */
-    public function getPRow($strQuery, $arrParams, $intNr = 0, $bitCache = true, array $arrEscapes = []);
+    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = []);
 
     /**
      * Retrieves a single row of the referenced table, returning the requested columns and filtering by the given identifier(s).
@@ -97,7 +97,7 @@ interface ConnectionInterface
      * @throws QueryException
      * @since 3.4
      */
-    public function _pQuery($strQuery, $arrParams, $arrEscapes = array());
+    public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []);
 
     /**
      * Returns the number of affected rows from the last _pQuery call
