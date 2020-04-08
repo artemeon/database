@@ -1043,15 +1043,13 @@ class Connection implements ConnectionInterface
      * e.g. the installer.
      * The connection established will be closed directly and is not usable by other modules.
      *
-     * @param string $strDriver
      * @param ConnectionParameters $objCfg
-     *
      * @return bool
      */
-    public function validateDbCxData($strDriver, ConnectionParameters $objCfg)
+    public function validateDbCxData(ConnectionParameters $objCfg)
     {
         try {
-            $this->driverFactory->factory($strDriver)->dbconnect($objCfg);
+            $this->driverFactory->factory($objCfg->getDriver())->dbconnect($objCfg);
 
             return true;
         } catch (ConnectionException $objEx) {
