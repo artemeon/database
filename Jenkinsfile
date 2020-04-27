@@ -27,7 +27,7 @@ pipeline {
 
             }
             steps {
-                sh 'tar -czf dist.tar.gz ./src'
+                sh 'tar -czf src.tar.gz ./src'
                 stash 'src.tar.gz'
                 archiveArtifacts artifacts: 'src.tar.gz'
             }
