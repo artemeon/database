@@ -1,8 +1,6 @@
 #!groovy
 @Library('art-shared@master') _
 
-
-
 pipeline {
     agent none
 
@@ -12,9 +10,7 @@ pipeline {
         disableConcurrentBuilds()
     }
 
-
     stages {
-
         stage ('php 7.4 docker') {
             agent {
                 dockerfile {
@@ -24,14 +20,12 @@ pipeline {
             }
             environment {
                 HOME = '.'
-
             }
             steps {
-                sh 'tar -czf src.tar.gz ./src'
-                stash 'src.tar.gz'
-                archiveArtifacts artifacts: 'src.tar.gz'
+                checkout scm
+                sh 'composer install'
+                sh './vendor/bin/phpunit'
             }
-
         }
     }
 }
