@@ -1,5 +1,4 @@
 #!groovy
-@Library('art-shared@master') _
 
 pipeline {
     agent none
@@ -8,6 +7,10 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5'))
         quietPeriod(120)
         disableConcurrentBuilds()
+    }
+
+    triggers {
+        pollSCM('H/15 * * * * ')
     }
 
     stages {
@@ -22,7 +25,7 @@ pipeline {
                 HOME = '.'
             }
             steps {
-                checkout scm
+
                 sh 'composer install'
                 sh './vendor/bin/phpunit'
             }
