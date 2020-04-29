@@ -190,6 +190,16 @@ interface ConnectionInterface
     public function transactionRollback();
 
     /**
+     * Returns whether this connection uses a specific driver. In general please dont use this method
+     * since it makes your code dependent on a specific driver. This is only intended for rare cases i.e.
+     * to execute a migration for a specific database type
+     *
+     * @param string $class
+     * @return bool
+     */
+    public function hasDriver(string $class): bool;
+
+    /**
      * Returns all tables used by the project
      *
      * @return array
