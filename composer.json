@@ -5,16 +5,8 @@
   "description": "",
   "authors": [
     {
-      "name": "Christoph Kappestein",
-      "email": "christoph.kappestein@artemeon.de"
-    },
-    {
-      "name": "Stefan Idler",
-      "email": "stefan.idler@artemeon.de"
-    },
-    {
-      "name": "Mike Marshall",
-      "email": "mike.marshall@artemeon.de"
+      "name": "ARTEMEON Management Partner GmbH",
+      "email": "development@artemeon.de"
     }
   ],
   "autoload": {
