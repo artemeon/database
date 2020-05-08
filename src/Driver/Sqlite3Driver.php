@@ -49,18 +49,16 @@ class Sqlite3Driver extends DriverAbstract
             return false;
         }
 
-        $this->strDbFile = $objParams->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $objParams->getDatabase().'.db3';
+        if ($objParams->getDatabase() === ':memory:') {
+            $this->strDbFile = ':memory:';
+        } else {
+            $this->strDbFile = $objParams->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $objParams->getDatabase().'.db3';
+        }
 
         try {
             $this->linkDB = new SQLite3($this->strDbFile);
             $this->_pQuery('PRAGMA encoding = "UTF-8"', array());
-            //TODO deprecated in sqlite, so may be removed
-            $this->_pQuery('PRAGMA short_column_names = ON', array());
-            $this->_pQuery("PRAGMA journal_mode = MEMORY", array());
-            $this->_pQuery("PRAGMA temp_store = MEMORY", array());
-            if (method_exists($this->linkDB, "busyTimeout")) {
-                $this->linkDB->busyTimeout(5000);
-            }
+            $this->linkDB->busyTimeout(5000);
 
             return true;
         } catch (\Throwable $e) {
