@@ -233,7 +233,7 @@ class Connection implements ConnectionInterface
 
         $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
 
-        return $this->_pQuery($query, $params, $escapes);
+        return $this->_pQuery($query, $params, $escapes ?? []);
     }
 
     /**
@@ -687,6 +687,20 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    public function dropTable(string $tableName): void
+    {
+        if (!$this->hasTable($tableName)) {
+            return;
+        }
+
+        $this->_pQuery('DROP TABLE ' . $tableName);
+
+        $this->flushTablesCache();
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function generateTableFromMetadata(Table $table): void
     {
         $columns = [];
@@ -771,8 +785,11 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        $return = $this->objDbDriver->renameTable($strOldName, $strNewName);
+
         $this->flushTablesCache();
-        return $this->objDbDriver->renameTable($strOldName, $strNewName);
+
+        return $return;
     }
 
     /**
@@ -783,8 +800,12 @@ class Connection implements ConnectionInterface
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
+
+        $return = $this->objDbDriver->changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+
         $this->flushTablesCache();
-        return $this->objDbDriver->changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+
+        return $return;
     }
 
     /**
@@ -796,11 +817,15 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        $this->flushTablesCache();
         if ($this->hasColumn($strTable, $strColumn)) {
             return true;
         }
-        return $this->objDbDriver->addColumn($strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
+
+        $return = $this->objDbDriver->addColumn($strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
+
+        $this->flushTablesCache();
+
+        return $return;
     }
 
     /**
@@ -812,8 +837,11 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        $return = $this->objDbDriver->removeColumn($strTable, $strColumn);
+
         $this->flushTablesCache();
-        return $this->objDbDriver->removeColumn($strTable, $strColumn);
+
+        return $return;
     }
 
     /**
