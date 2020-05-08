@@ -255,6 +255,13 @@ interface ConnectionInterface
     public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array());
 
     /**
+     * Drops a table from the database. Checks also whether the table already exists
+     *
+     * @param string $tableName
+     */
+    public function dropTable(string $tableName): void;
+
+    /**
      * Generates a tables as configured by the passed Table definition. Includes all metadata such as
      * primary keys, indexes and columns.
      * @param Table $table
