@@ -23,8 +23,19 @@ namespace Artemeon\Database\Schema;
 class DataType
 {
     const STR_TYPE_INT = "int";
+
+    const STR_TYPE_BIGINT = "long";
+    /**
+     * @deprecated please use bigint
+     */
     const STR_TYPE_LONG = "long";
+
+    const STR_TYPE_FLOAT = "double";
+    /**
+     * @deprecated please use float
+     */
     const STR_TYPE_DOUBLE = "double";
+
     const STR_TYPE_CHAR10 = "char10";
     const STR_TYPE_CHAR20 = "char20";
     const STR_TYPE_CHAR100 = "char100";
