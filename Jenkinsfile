@@ -38,7 +38,8 @@ pipeline {
                 HOME = '.'
             }
             steps {
-                sh 'docker-compose -f docker-compose-mysql-8.yaml -d up'
+                sh 'docker-compose -f docker-compose-mysql-8.yaml up &'
+                sh 'sleep 60'
                 sh 'docker exec php composer install'
                 sh 'docker exec php ./vendor/bin/phpunit'
                 sh 'docker-compose -f docker-compose-mysql-8.yaml down'
