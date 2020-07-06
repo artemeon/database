@@ -8,7 +8,9 @@ services:
       MYSQL_USER: agp_test
       MYSQL_PASSWORD: devpass
   php:
-    build: php74.build.Dockerfile
+    build:
+      context: .
+      dockerfile: php74.build.Dockerfile
     container_name: php
     environment:
       AGP_BUILD_DBHOST: db
