@@ -1,0 +1,22 @@
+version: '3'
+services:
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: my_secret_pw_shh
+      MYSQL_DATABASE: agp_test
+      MYSQL_USER: agp_test
+      MYSQL_PASSWORD: devpass
+  php:
+    build: php74.build.Dockerfile
+    container_name: php
+    environment:
+      AGP_BUILD_DBHOST: db
+      AGP_BUILD_DBDUSER: agp_test
+      AGP_BUILD_DBDPWD: devpass
+      AGP_BUILD_DBSCHEMA: agp_test
+      AGP_BUILD_DBDRIVER: mysqli
+    depends_on:
+      - db
+    volumes:
+      - ./:/scripts/
