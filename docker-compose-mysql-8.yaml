@@ -22,4 +22,3 @@ services:
       - db
     volumes:
       - ./:/scripts/
-    command: ["wait-for-it.sh", "mysql:3306"]
