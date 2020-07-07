@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Artemeon\Database\Tests;
 
 use Artemeon\Database\Connection;
-use Artemeon\Database\ConnectionInterface;
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\DriverFactory;
 use Artemeon\Database\Schema\DataType;
