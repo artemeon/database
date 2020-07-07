@@ -50,17 +50,19 @@ class PostgresDriver extends DriverAbstract
         if (empty($port)) {
             $port = 5432;
         }
+
         $this->objCfg = $objParams;
-        $this->linkDB = @pg_connect("host='".$objParams->getHost()."' port='".$port."' dbname='".$objParams->getDatabase()."' user='".$objParams->getUsername()."' password='".$objParams->getPassword()."'");
+        $this->linkDB = pg_connect("host='".$objParams->getHost()."' port='".$port."' dbname='".$objParams->getDatabase()."' user='".$objParams->getUsername()."' password='".$objParams->getPassword()."'");
 
-        if ($this->linkDB !== false) {
-            $this->_pQuery("SET client_encoding='UTF8'", array());
-
-            $this->arrCxInfo = pg_version($this->linkDB);
-            return true;
-        } else {
-            throw new ConnectionException("Error connecting to database");
+        if (!$this->linkDB) {
+            throw new ConnectionException("Error connecting to database: " . pg_last_error());
         }
+
+        $this->_pQuery("SET client_encoding='UTF8'", array());
+
+        $this->arrCxInfo = pg_version($this->linkDB);
+        return true;
+
     }
 
     /**
