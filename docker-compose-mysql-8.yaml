@@ -3,10 +3,10 @@ services:
   db:
     image: mysql:8
     environment:
-      MYSQL_ROOT_PASSWORD: my_secret_pw_shh
+      MYSQL_ROOT_PASSWORD: agp_pw
       MYSQL_DATABASE: agp_test
-      MYSQL_USER: agp_test
-      MYSQL_PASSWORD: devpass
+      MYSQL_USER: agp_user
+      MYSQL_PASSWORD: agp_pw
   php:
     build:
       context: .
@@ -14,8 +14,8 @@ services:
     container_name: php
     environment:
       AGP_BUILD_DBHOST: db
-      AGP_BUILD_DBDUSER: agp_test
-      AGP_BUILD_DBDPWD: devpass
+      AGP_BUILD_DBDUSER: agp_user
+      AGP_BUILD_DBDPWD: agp_pw
       AGP_BUILD_DBSCHEMA: agp_test
       AGP_BUILD_DBDRIVER: mysqli
     depends_on:
