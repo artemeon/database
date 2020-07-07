@@ -12,5 +12,10 @@ RUN composer --version \
     echo "date.timezone = 'Europe/Berlin' " >> /usr/local/etc/php/conf.d/x-docker-php.ini; \
     echo "phar.readonly = 0 " >> /usr/local/etc/php/conf.d/x-docker-php.ini;
 
+COPY ci/wait-for-it.sh /usr/bin/wait-for-it.sh
+COPY ci/run_tests.sh /usr/bin/run_tests.sh
+
 RUN mkdir /scripts
+VOLUME /scripts
+
 WORKDIR /scripts
