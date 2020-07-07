@@ -38,6 +38,7 @@ pipeline {
                 HOME = '.'
             }
             steps {
+                sh 'docker-compose -f docker-compose-mysql-8.yaml down'
                 sh 'docker-compose -f docker-compose-mysql-8.yaml build'
                 sh 'docker-compose -f docker-compose-mysql-8.yaml run php /usr/bin/run_tests.sh'
                 sh 'docker-compose -f docker-compose-mysql-8.yaml down'

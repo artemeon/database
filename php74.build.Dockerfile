@@ -14,6 +14,8 @@ RUN composer --version \
 
 COPY ci/wait-for-it.sh /usr/bin/wait-for-it.sh
 COPY ci/run_tests.sh /usr/bin/run_tests.sh
+RUN chmod +x /usr/bin/wait-for-it.sh
+RUN chmod +x /usr/bin/run_tests.sh
 
 RUN mkdir /scripts
 VOLUME /scripts
