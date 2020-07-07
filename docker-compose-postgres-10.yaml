@@ -7,7 +7,9 @@ services:
       POSTGRES_USER: agp_user
       POSTGRES_DB: agp_test
   php:
-    build: php74.build.Dockerfile
+    build:
+      context: .
+      dockerfile: php74.build.Dockerfile
     container_name: php
     environment:
       DB_HOST: db
