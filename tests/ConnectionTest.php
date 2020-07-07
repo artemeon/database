@@ -101,12 +101,13 @@ class ConnectionTest extends ConnectionTestCase
         $connection->insert(self::TEST_TABLE_NAME, array('temp_id' => 'bbb', 'temp_int' => 222));
 
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_id'));
+        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_int'));
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint'));
 
         $this->assertTrue($connection->changeColumn(self::TEST_TABLE_NAME, "temp_int", "temp_bigint_new", DataType::STR_TYPE_BIGINT));
 
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_id'));
-        $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint'));
+        $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_int'));
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint_new'));
 
         $row = $connection->getPRow("SELECT temp_id, temp_bigint_new FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", ['aaa']);
