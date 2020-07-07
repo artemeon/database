@@ -463,14 +463,13 @@ class Connection implements ConnectionInterface
                 $strErrorCode .= (isset($arrValue["file"]) ? $arrValue["file"] : "n.a.")."\n\t Row ".(isset($arrValue["line"]) ? $arrValue["line"] : "n.a.").", function ".$arrStack[$intPos]["function"]."\n";
             }
         }
+
         //send a warning to the logger
         if ($this->logger !== null) {
             $this->logger->warning($strErrorCode);
         }
 
-        if ($this->debugLevel > 0) {
-            throw new QueryException($strError, $strQuery, $arrParams);
-        }
+        throw new QueryException($strError, $strQuery, $arrParams);
     }
 
     /**
