@@ -229,7 +229,7 @@ class ConnectionTest extends ConnectionTestCase
             'temp_int' => 123456,
             'temp_bigint' => 20200508095300,
             'temp_float' => 23.45,
-            'temp_char10' => 'Foo\\Bar\\Baz',
+            'temp_char10' => 'Foo\\Bar',
             'temp_char20' => 'Foo\\Bar\\Baz',
             'temp_char100' => 'Foo\\Bar\\Baz',
             'temp_char254' => 'Foo\\Bar\\Baz',
