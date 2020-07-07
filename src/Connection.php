@@ -1071,6 +1071,10 @@ class Connection implements ConnectionInterface
      */
     public function flushPreparedStatementsCache()
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $this->objDbDriver->flushQueryCache();
     }
 
