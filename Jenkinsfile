@@ -59,5 +59,20 @@ pipeline {
                 sh 'docker-compose -f docker-compose-mysql-5-7.yaml down'
             }
         }
+
+        stage ('php 7.4 docker-postgres-10') {
+            agent {
+                label 'dockerhost'
+            }
+            environment {
+                HOME = '.'
+            }
+            steps {
+                sh 'docker-compose -f docker-compose-postgres-10.yaml down'
+                sh 'docker-compose -f docker-compose-postgres-10.yaml build'
+                sh 'docker-compose -f docker-compose-postgres-10.yaml run php /usr/bin/run_tests.sh'
+                sh 'docker-compose -f docker-compose-postgres-10.yaml down'
+            }
+        }
     }
 }
