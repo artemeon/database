@@ -58,7 +58,7 @@ class MysqliDriver extends DriverAbstract
         //save connection-details
         $this->objCfg = $objParams;
 
-        $this->linkDB = @new mysqli(
+        $this->linkDB = new mysqli(
             $this->objCfg->getHost(),
             $this->objCfg->getUsername(),
             $this->objCfg->getPassword(),
@@ -67,7 +67,7 @@ class MysqliDriver extends DriverAbstract
         );
 
         if ($this->linkDB !== false) {
-            if (@$this->linkDB->select_db($this->objCfg->getDatabase())) {
+            if ($this->linkDB->select_db($this->objCfg->getDatabase())) {
                 //erst ab mysql-client-bib > 4
                 //mysqli_set_charset($this->linkDB, "utf8");
                 $this->_pQuery("SET NAMES 'utf8'", array());
@@ -77,7 +77,7 @@ class MysqliDriver extends DriverAbstract
                 $this->_pQuery("SET character_set_server ='utf8'", array());
                 return true;
             } else {
-                throw new ConnectionException("Error selecting database");
+                throw new ConnectionException("Error selecting database " . $this->objCfg->getDatabase());
             }
         } else {
             throw new ConnectionException("Error connecting to database");
