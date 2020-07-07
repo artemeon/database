@@ -30,7 +30,7 @@ pipeline {
             }
         }
 
-        stage ('php 7.4 docker-mysql') {
+        stage ('php 7.4 docker-mysql-8') {
             agent {
                 label 'dockerhost'
             }
@@ -42,6 +42,21 @@ pipeline {
                 sh 'docker-compose -f docker-compose-mysql-8.yaml build'
                 sh 'docker-compose -f docker-compose-mysql-8.yaml run php /usr/bin/run_tests.sh'
                 sh 'docker-compose -f docker-compose-mysql-8.yaml down'
+            }
+        }
+
+        stage ('php 7.4 docker-mysql-5-7') {
+            agent {
+                label 'dockerhost'
+            }
+            environment {
+                HOME = '.'
+            }
+            steps {
+                sh 'docker-compose -f docker-compose-mysql-5-7.yaml down'
+                sh 'docker-compose -f docker-compose-mysql-5-7.yaml build'
+                sh 'docker-compose -f docker-compose-mysql-5-7.yaml run php /usr/bin/run_tests.sh'
+                sh 'docker-compose -f docker-compose-mysql-5-7.yaml down'
             }
         }
     }
