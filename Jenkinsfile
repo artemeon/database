@@ -62,6 +62,14 @@ pipeline {
                         sh 'docker-compose -f docker-compose-postgres-10.yaml down'
                     }
                 }
+                stage ('php 7.4 docker-postgres-11') {
+                    steps {
+                        sh 'docker-compose -f docker-compose-postgres-11.yaml down'
+                        sh 'docker-compose -f docker-compose-postgres-11.yaml build'
+                        sh 'docker-compose -f docker-compose-postgres-11.yaml run php /usr/bin/run_tests.sh'
+                        sh 'docker-compose -f docker-compose-postgres-11.yaml down'
+                    }
+                }
             }
         }
     }
