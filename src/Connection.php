@@ -13,9 +13,12 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Exception\AddColumnException;
+use Artemeon\Database\Exception\ChangeColumnException;
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\DriverNotFoundException;
 use Artemeon\Database\Exception\QueryException;
+use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use Psr\Log\LoggerInterface;
@@ -802,6 +805,11 @@ class Connection implements ConnectionInterface
 
         $return = $this->objDbDriver->changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
 
+        if (!$return) {
+            $error = $this->objDbDriver->getError();
+            throw new ChangeColumnException('Could not change column: ' . $error, $strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+        }
+
         $this->flushTablesCache();
 
         return $return;
@@ -822,6 +830,11 @@ class Connection implements ConnectionInterface
 
         $return = $this->objDbDriver->addColumn($strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
 
+        if (!$return) {
+            $error = $this->objDbDriver->getError();
+            throw new AddColumnException('Could not add column: ' . $error, $strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
+        }
+
         $this->flushTablesCache();
 
         return $return;
@@ -837,6 +850,11 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->objDbDriver->removeColumn($strTable, $strColumn);
+
+        if (!$return) {
+            $error = $this->objDbDriver->getError();
+            throw new RemoveColumnException('Could not remove column: ' . $error, $strTable, $strColumn);
+        }
 
         $this->flushTablesCache();
 

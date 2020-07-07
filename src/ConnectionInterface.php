@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Exception\AddColumnException;
+use Artemeon\Database\Exception\ChangeColumnException;
 use Artemeon\Database\Exception\QueryException;
+use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
@@ -332,7 +335,7 @@ interface ConnectionInterface
      * @param $strNewColumnName
      * @param $strNewDatatype
      * @return bool
-     * @throws QueryException
+     * @throws ChangeColumnException
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
 
@@ -345,7 +348,7 @@ interface ConnectionInterface
      * @param null $bitNull
      * @param null $strDefault
      * @return bool
-     * @throws QueryException
+     * @throws AddColumnException
      */
     public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null);
 
@@ -355,7 +358,7 @@ interface ConnectionInterface
      * @param $strTable
      * @param $strColumn
      * @return bool
-     * @throws QueryException
+     * @throws RemoveColumnException
      */
     public function removeColumn($strTable, $strColumn);
 
