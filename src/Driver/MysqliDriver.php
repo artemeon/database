@@ -66,22 +66,19 @@ class MysqliDriver extends DriverAbstract
             $port
         );
 
-        if ($this->linkDB !== false) {
-            if ($this->linkDB->select_db($this->objCfg->getDatabase())) {
-                //erst ab mysql-client-bib > 4
-                //mysqli_set_charset($this->linkDB, "utf8");
-                $this->_pQuery("SET NAMES 'utf8'", array());
-                $this->_pQuery("SET CHARACTER SET utf8", array());
-                $this->_pQuery("SET character_set_connection ='utf8'", array());
-                $this->_pQuery("SET character_set_database ='utf8'", array());
-                $this->_pQuery("SET character_set_server ='utf8'", array());
-                return true;
-            } else {
-                throw new ConnectionException("Error selecting database " . $this->objCfg->getDatabase());
-            }
-        } else {
-            throw new ConnectionException("Error connecting to database");
+        if (!$this->linkDB) {
+            throw new ConnectionException("Error connecting to database: " . $this->linkDB->connect_error);
         }
+
+        //erst ab mysql-client-bib > 4
+        //mysqli_set_charset($this->linkDB, "utf8");
+        $this->_pQuery("SET NAMES 'utf8'", array());
+        $this->_pQuery("SET CHARACTER SET utf8", array());
+        $this->_pQuery("SET character_set_connection ='utf8'", array());
+        $this->_pQuery("SET character_set_database ='utf8'", array());
+        $this->_pQuery("SET character_set_server ='utf8'", array());
+
+        return true;
     }
 
     /**
