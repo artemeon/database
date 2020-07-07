@@ -233,7 +233,7 @@ class PostgresDriver extends DriverAbstract
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['indexname']);
             //scrape the columns from the indexdef
-            $cols = StringUtil::substring($indexInfo['indexdef'], StringUtil::indexOf($indexInfo['indexdef'], "(")+1, StringUtil::indexOf($indexInfo['indexdef'], ")")-StringUtil::indexOf($indexInfo['indexdef'], "(")-1);
+            $cols = substr($indexInfo['indexdef'], strpos($indexInfo['indexdef'], "(")+1, strpos($indexInfo['indexdef'], ")")-strpos($indexInfo['indexdef'], "(")-1);
             $index->setDescription($cols);
             $table->addIndex($index);
         }
