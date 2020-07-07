@@ -13,11 +13,12 @@ services:
       dockerfile: php74.build.Dockerfile
     container_name: php
     environment:
-      AGP_BUILD_DBHOST: db
-      AGP_BUILD_DBDUSER: agp_user
-      AGP_BUILD_DBDPWD: agp_pw
-      AGP_BUILD_DBSCHEMA: agp_test
-      AGP_BUILD_DBDRIVER: mysqli
+      DB_HOST: db
+      DB_USER: agp_user
+      DB_PWD: agp_pw
+      DB_SCHEMA: agp_test
+      DB_PORT: 3306
+      DB_DRIVER: mysqli
     depends_on:
       - db
     volumes:

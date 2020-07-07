@@ -48,12 +48,12 @@ abstract class ConnectionTestCase extends TestCase
             return self::$connection;
         }
 
-        $host = getenv('AGP_BUILD_DBHOST') ?: 'localhost';
-        $user = getenv('AGP_BUILD_DBDUSER') ?: 'test';
-        $password = getenv('AGP_BUILD_DBDPWD') ?: 'test';
-        $database = getenv('AGP_BUILD_DBSCHEMA') ?: ':memory:';
-        $port = getenv('AGP_BUILD_DBPORT') ?: null;
-        $driver = getenv('AGP_BUILD_DBDRIVER') ?: 'sqlite3';
+        $host = getenv('DB_HOST') ?: 'localhost';
+        $user = getenv('DB_USER') ?: 'test';
+        $password = getenv('DB_PWD') ?: 'test';
+        $database = getenv('DB_SCHEMA') ?: ':memory:';
+        $port = getenv('DB_PORT') ? (int) getenv('DB_PORT') : null;
+        $driver = getenv('DB_DRIVER') ?: 'sqlite3';
 
         $params = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
         $factory = new DriverFactory();
