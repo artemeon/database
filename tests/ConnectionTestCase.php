@@ -55,6 +55,8 @@ abstract class ConnectionTestCase extends TestCase
         $port = getenv('DB_PORT') ? (int) getenv('DB_PORT') : null;
         $driver = getenv('DB_DRIVER') ?: 'sqlite3';
 
+        var_dump($host, $user, $password, $database, $port, $driver);
+
         $params = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
         $factory = new DriverFactory();
 
