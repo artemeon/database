@@ -176,7 +176,12 @@ class MysqliDriver extends DriverAbstract
             $arrParams = array();
             $arrRow = array();
 
-            while ($objField = $objMetadata->fetch_field()) {
+            if ($objMetadata === false) {
+                $objStatement->free_result();
+                return [];
+            }
+
+            while ($objMetadata && $objField = $objMetadata->fetch_field()) {
                 $arrParams[] = &$arrRow[$objField->name];
             }
 

@@ -59,8 +59,8 @@ class SqlsrvDriver extends DriverAbstract
             "CharacterSet" => "UTF-8",
             "ConnectionPooling" => "1",
             "MultipleActiveResultSets"=> "0",
-            "APP" => "Artemeon Core"
-
+            "APP" => "Artemeon Core",
+            "TransactionIsolation" => SQLSRV_TXN_READ_UNCOMMITTED
         ]);
 
         if ($this->linkDB === false) {
