@@ -16,6 +16,7 @@ namespace Artemeon\Database\Driver;
 use Artemeon\Database\ConnectionInterface;
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
@@ -67,9 +68,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Closes the connection to the database
-     *
-     * @return void
+     * @inheritDoc
      */
     public function dbclose()
     {
@@ -79,8 +78,6 @@ class Sqlite3Driver extends DriverAbstract
 
     private function buildAndCopyTempTables($strTargetTableName, $arrSourceTableInfo, $arrTargetTableInfo)
     {
-        $bitReturn = true;
-
         /* Get existing table info */
         $arrPragmaTableInfo = $this->getPArray("PRAGMA table_info('{$strTargetTableName}')", array());
         $arrColumnsPragma = array();
@@ -147,7 +144,7 @@ class Sqlite3Driver extends DriverAbstract
 
         $strQuery .= ")\n";
 
-        $bitReturn = $bitReturn && $this->_pQuery($strQuery, array());
+        $bitReturn = $this->_pQuery($strQuery, array());
 
         //copy all values
         $strQuery = "INSERT INTO ".$strTargetTableName."_temp (".implode(",", $arrTargetColumns).") SELECT ".implode(",", $arrSourceColumns)." FROM ".$strTargetTableName;
@@ -159,17 +156,8 @@ class Sqlite3Driver extends DriverAbstract
         return $bitReturn && $this->renameTable($strTargetTableName."_temp", $strTargetTableName);
     }
 
-
     /**
-     * Renames a single column of the table
-     *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
@@ -198,15 +186,8 @@ class Sqlite3Driver extends DriverAbstract
         return $this->buildAndCopyTempTables($strTable, $arrTableInfo, $arrTargetTableInfo);
     }
 
-
     /**
-     * removes a single column from the table
-     *
-     * @param $strTable
-     * @param $strColumn
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function removeColumn($strTable, $strColumn)
     {
@@ -226,43 +207,30 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Creates a single query in order to insert multiple rows at one time.
-     * For most databases, this will create s.th. like
-     * INSERT INTO $tableName($columns) VALUES (?, ?), (?, ?)...
-     * Please note that this method is used to create the query itself, based on the Kajona-internal syntax.
-     * The query is fired to the database by Database
-     *
-     * @param string $tableName
-     * @param string[] $columns
-     * @param array $valueSets
-     * @param ConnectionInterface $db
-     *
-     * @param array|null $escapes
-     * @return bool
+     * @inheritDoc
      */
-    public function triggerMultiInsert($tableName, $columns, $valueSets, ConnectionInterface $db, ?array $escapes): bool
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
     {
         $sqliteVersion = SQLite3::version();
         if (version_compare('3.7.11', $sqliteVersion['versionString'], '<=')) {
-            return parent::triggerMultiInsert($tableName, $columns, $valueSets, $db, $escapes);
+            return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb, $arrEscapes);
         }
         //legacy code
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
+        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
         $params = [];
         $escapeValues = [];
-        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($tableName) . '  (' . implode(',', $safeColumns) . ') ';
-        foreach ($valueSets as $key => $valueSet) {
+        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($strTable) . '  (' . implode(',', $safeColumns) . ') ';
+        foreach ($arrValueSets as $key => $valueSet) {
             $selectStatement = $key === 0 ? ' SELECT ' : ' UNION SELECT ';
             $insertStatement .= $selectStatement . implode(', ', array_map(function ($column) { return ' ? AS ' . $column; }, $safeColumns));
             $params[] = array_values($valueSet);
-            if ($escapes !== null) {
-                $escapeValues[] = $escapes;
+            if ($arrEscapes !== null) {
+                $escapeValues[] = $arrEscapes;
             }
         }
 
-        return $db->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
     }
-
 
     /**
      * @inheritDoc
@@ -281,16 +249,8 @@ class Sqlite3Driver extends DriverAbstract
         return $this->_pQuery($strQuery, $arrValues);
     }
 
-
     /**
-     * Sends a prepared statement to the database. All params must be represented by the ? char.
-     * The params themselves are stored using the second params using the matching order.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @return bool
-     * @since 3.4
+     * @inheritDoc
      */
     public function _pQuery($strQuery, $arrParams)
     {
@@ -325,15 +285,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * This method is used to retrieve an array of resultsets from the database usin
-     *
-     * a prepared statement
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @since 3.4
-     * @return array|bool
+     * @inheritDoc
      */
     public function getPArray($strQuery, $arrParams)
     {
@@ -342,7 +294,7 @@ class Sqlite3Driver extends DriverAbstract
 
         $objStmt = $this->getPreparedStatement($strQuery);
         if ($objStmt === false) {
-            return false;
+            throw new QueryException('Could not execute query', $strQuery, $arrParams);
         }
 
         $intCount = 1;
@@ -363,7 +315,7 @@ class Sqlite3Driver extends DriverAbstract
         $objResult = $objStmt->execute();
 
         if ($objResult === false) {
-            return false;
+            throw new QueryException('Could not execute query', $strQuery, $arrParams);
         }
 
         while ($arrTemp = $objResult->fetchArray(SQLITE3_ASSOC)) {
@@ -373,12 +325,8 @@ class Sqlite3Driver extends DriverAbstract
         return $arrResult;
     }
 
-
     /**
-     * Returns the last error reported by the database.
-     * Is being called after unsuccessful queries
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getError()
     {
@@ -386,11 +334,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Returns ALL tables in the database currently connected to.
-     * The method should return an array using the following keys:
-     * name => Table name
-     *
-     * @return array
+     * @inheritDoc
      */
     public function getTables()
     {
@@ -403,9 +347,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Fetches the full table information as retrieved from the rdbms
-     * @param $tableName
-     * @return Table
+     * @inheritDoc
      */
     public function getTableInformation(string $tableName): Table
     {
@@ -436,7 +378,6 @@ class Sqlite3Driver extends DriverAbstract
         return $table;
     }
 
-
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant
      * @param $infoSchemaRow
@@ -456,28 +397,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = array(string datatype, boolean isNull [, default (only if not null)])
-     * whereas datatype is one of the following:
-     *         int
-     *      long
-     *         double
-     *         char10
-     *         char20
-     *         char100
-     *         char254
-     *      char500
-     *         text
-     *      longtext
-     *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function createTable($strName, $arrFields, $arrKeys)
     {
@@ -523,9 +443,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Starts a transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionBegin()
     {
@@ -533,9 +451,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Ends a successful operation by Committing the transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionCommit()
     {
@@ -543,9 +459,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Ends a non-successfull transaction by using a rollback
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionRollback()
     {
@@ -581,13 +495,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Creates an db-dump usind the given filename. the filename is relative to _realpath_
-     * The dump must include, and ONLY include the pass tables
-     *
-     * @param string $strFilename
-     * @param array $arrTables
-     *
-     * @return bool Indicates, if the dump worked or not
+     * @inheritDoc
      */
     public function dbExport(&$strFilename, $arrTables)
     {
@@ -595,13 +503,8 @@ class Sqlite3Driver extends DriverAbstract
         return false;
     }
 
-
     /**
-     * Imports the given db-dump file to the database. The filename ist relative to _realpath_
-     *
-     * @param string $strFilename
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbImport($strFilename)
     {
@@ -609,24 +512,8 @@ class Sqlite3Driver extends DriverAbstract
         return false;
     }
 
-
     /**
-     * Returns the db-specific datatype for the kajona internal datatype.
-     * Currently, this are
-     *      int
-     *      long
-     *      double
-     *      char10
-     *      char20
-     *      char100
-     *      char254
-     *      char500
-     *      text
-     *      longtext
-     *
-     * @param string $strType
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getDatatype($strType)
     {
@@ -697,7 +584,7 @@ class Sqlite3Driver extends DriverAbstract
      *
      * @param string $strQuery
      *
-     * @return SQLite3Stmt
+     * @return \SQLite3Stmt
      */
     private function getPreparedStatement($strQuery)
     {
@@ -714,6 +601,9 @@ class Sqlite3Driver extends DriverAbstract
         return $objStmt;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function encloseTableName($strTable)
     {
         return "'".$strTable."'";

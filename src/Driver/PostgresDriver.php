@@ -15,6 +15,7 @@ namespace Artemeon\Database\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
@@ -66,25 +67,15 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Closes the connection to the database
-     *
-     * @return void
+     * @inheritDoc
      */
     public function dbclose()
     {
         @pg_close($this->linkDB);
     }
 
-
     /**
-     * Sends a prepared statement to the database. All params must be represented by the ? char.
-     * The params themself are stored using the second params using the matching order.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @return bool
-     * @since 3.4
+     * @inheritDoc
      */
     public function _pQuery($strQuery, $arrParams)
     {
@@ -106,14 +97,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * This method is used to retrieve an array of resultsets from the database using
-     * a prepared statement
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @since 3.4
-     * @return array|bool
+     * @inheritDoc
      */
     public function getPArray($strQuery, $arrParams)
     {
@@ -123,13 +107,13 @@ class PostgresDriver extends DriverAbstract
         $strQuery = $this->processQuery($strQuery);
         $strName = $this->getPreparedStatementName($strQuery);
         if ($strName === false) {
-            return false;
+            throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
         }
 
         $resultSet = pg_execute($this->linkDB, $strName, $arrParams);
 
         if ($resultSet === false) {
-            return false;
+            throw new QueryException('Could not execute query', $strQuery, $arrParams);
         }
 
         while ($arrRow = pg_fetch_array($resultSet, null, PGSQL_ASSOC)) {
@@ -142,7 +126,7 @@ class PostgresDriver extends DriverAbstract
             $arrReturn[$intCounter++] = $arrRow;
         }
 
-        @pg_free_result($resultSet);
+        pg_free_result($resultSet);
 
         return $arrReturn;
     }
@@ -188,10 +172,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Returns the last error reported by the database.
-     * Is being called after unsuccessful queries
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getError()
     {
@@ -200,9 +181,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Returns ALL tables in the database currently connected to
-     *
-     * @return mixed
+     * @inheritDoc
      */
     public function getTables()
     {
@@ -210,9 +189,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Fetches the full table information as retrieved from the rdbms
-     * @param $tableName
-     * @return Table
+     * @inheritDoc
      */
     public function getTableInformation(string $tableName): Table
     {
@@ -295,11 +272,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Returns the db-specific datatype for the kajona internal datatype.
-     *
-     * @param string $strType
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getDatatype($strType)
     {
@@ -333,15 +306,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Renames a single column of the table
-     *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
@@ -354,30 +319,8 @@ class PostgresDriver extends DriverAbstract
         return $bitReturn && $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." ALTER COLUMN ".$this->encloseColumnName($strNewColumnName)." TYPE ".$this->getDatatype($strNewDatatype), array());
     }
 
-
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = array(string datatype, boolean isNull [, default (only if not null)])
-     * whereas datatype is one of the following:
-     *         int
-     *         long
-     *         double
-     *         char10
-     *         char20
-     *         char100
-     *         char254
-     *      char500
-     *         text
-     *      longtext
-     *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function createTable($strName, $arrFields, $arrKeys)
     {
@@ -424,11 +367,8 @@ class PostgresDriver extends DriverAbstract
         return count($arrIndex) > 0;
     }
 
-
     /**
-     * Starts a transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionBegin()
     {
@@ -437,9 +377,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Ends a successful operation by Committing the transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionCommit()
     {
@@ -448,9 +386,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Ends a non-successful transaction by using a rollback
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionRollback()
     {
@@ -459,7 +395,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * @return array|mixed
+     * @inheritDoc
      */
     public function getDbInfo()
     {
@@ -471,12 +407,7 @@ class PostgresDriver extends DriverAbstract
     //--- DUMP & RESTORE ------------------------------------------------------------------------------------
 
     /**
-     * Dumps the current db
-     *
-     * @param string $strFilename
-     * @param array $arrTables
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbExport(&$strFilename, $arrTables)
     {
@@ -505,11 +436,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * Imports the given db-dump to the database
-     *
-     * @param string $strFilename
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbImport($strFilename)
     {
@@ -541,11 +468,8 @@ class PostgresDriver extends DriverAbstract
         return "\"{$strTable}\"";
     }
 
-
     /**
-     * @param string $strValue
-     *
-     * @return mixed
+     * @inheritDoc
      */
     public function escape($strValue)
     {
@@ -578,7 +502,7 @@ class PostgresDriver extends DriverAbstract
      *
      * @param string $strQuery
      *
-     * @return resource|bool
+     * @return string|bool
      * @since 3.4
      */
     private function getPreparedStatementName($strQuery)

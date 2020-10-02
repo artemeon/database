@@ -16,6 +16,7 @@ namespace Artemeon\Database\Driver;
 use Artemeon\Database\ConnectionInterface;
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
@@ -95,9 +96,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Closes the connection to the database
-     *
-     * @return void
+     * @inheritDoc
      */
     public function dbclose()
     {
@@ -106,52 +105,31 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Creates a single query in order to insert multiple rows at one time.
-     * For most databases, this will create s.th. like
-     * INSERT INTO $tableName ($columns) VALUES (?, ?), (?, ?)...
-     *
-     * Please note that this method is used to create the query itself, based on the Kajona-internal syntax.
-     * The query is fired to the database by Database
-     *
-     * @param string $tableName
-     * @param string[] $columns
-     * @param array $valueSets
-     * @param ConnectionInterface $Db
-     *
-     * @param array|null $escapes
-     * @return bool
+     * @inheritDoc
      */
-    public function triggerMultiInsert($tableName, $columns, $valueSets, ConnectionInterface $Db, ?array $escapes): bool
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
     {
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
+        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $columnNames = ' (' . implode(',', $safeColumns) . ') ';
 
         $params = [];
         $escapeValues = [];
         $insertStatement = 'INSERT ALL ';
-        foreach ($valueSets as $valueSet) {
+        foreach ($arrValueSets as $valueSet) {
             $params[] = array_values($valueSet);
-            if ($escapes !== null) {
-                $escapeValues[] = $escapes;
+            if ($arrEscapes !== null) {
+                $escapeValues[] = $arrEscapes;
             }
-            $insertStatement .= ' INTO ' . $this->encloseTableName($tableName) . ' ' . $columnNames . ' VALUES ' . $paramsPlaceholder . ' ';
+            $insertStatement .= ' INTO ' . $this->encloseTableName($strTable) . ' ' . $columnNames . ' VALUES ' . $paramsPlaceholder . ' ';
         }
         $insertStatement .= ' SELECT * FROM dual';
 
-        return $Db->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
     }
 
-
     /**
-     * Sends a prepared statement to the database. All params must be represented by the ? char.
-     * The params themself are stored using the second params using the matching order.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @return bool
-     * @since 3.4
+     * @inheritDoc
      */
     public function _pQuery($strQuery, $arrParams)
     {
@@ -162,29 +140,28 @@ class Oci8Driver extends DriverAbstract
         }
 
         foreach ($arrParams as $intPos => $strValue) {
-            if (!@oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos])) {
+            if (!oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos])) {
                 //echo "oci_bind_by_name failed to bind at pos >".$intPos."<, \n value: ".$strValue."\nquery: ".$strQuery;
                 return false;
             }
         }
 
-        $bitAddon = OCI_COMMIT_ON_SUCCESS;
+        $bitAddon = \OCI_COMMIT_ON_SUCCESS;
         if ($this->bitTxOpen) {
-            $bitAddon = OCI_NO_AUTO_COMMIT;
+            $bitAddon = \OCI_NO_AUTO_COMMIT;
         }
-        $bitResult = @oci_execute($objStatement, $bitAddon);
+        $bitResult = oci_execute($objStatement, $bitAddon);
 
         if (!$bitResult) {
             $this->objErrorStmt = $objStatement;
             return false;
         }
 
-        $this->intAffectedRows = @oci_num_rows($objStatement);
+        $this->intAffectedRows = oci_num_rows($objStatement);
 
-        @oci_free_statement($objStatement);
+        oci_free_statement($objStatement);
         return $bitResult;
     }
-
 
     /**
      * @inheritDoc
@@ -233,16 +210,8 @@ class Oci8Driver extends DriverAbstract
         return $this->_pQuery($strQuery, $arrParams);
     }
 
-
     /**
-     * This method is used to retrieve an array of resultsets from the database using
-     * a prepared statement
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @since 3.4
-     * @return array
+     * @inheritDoc
      */
     public function getPArray($strQuery, $arrParams)
     {
@@ -253,7 +222,7 @@ class Oci8Driver extends DriverAbstract
         $objStatement = $this->getParsedStatement($strQuery);
 
         if ($objStatement === false) {
-            return false;
+            throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
         }
 
         foreach ($arrParams as $intPos => $strValue) {
@@ -270,7 +239,7 @@ class Oci8Driver extends DriverAbstract
 
         if (!$resultSet) {
             $this->objErrorStmt = $objStatement;
-            return false;
+            throw new QueryException('Could not execute query', $strQuery, $arrParams);
         }
 
         //this was the old way, we're now no longer loading LOBS by default
@@ -290,10 +259,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Returns the last error reported by the database.
-     * Is being called after unsuccessful queries
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getError()
     {
@@ -303,24 +269,20 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Returns ALL tables in the database currently connected to
-     *
-     * @return mixed
+     * @inheritDoc
      */
     public function getTables()
     {
         $arrTemp = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES", array());
 
         foreach ($arrTemp as $intKey => $strValue) {
-            $arrTemp[$intKey]["name"] = StringUtil::toLowerCase($strValue["name"]);
+            $arrTemp[$intKey]["name"] = strtolower($strValue["name"]);
         }
         return $arrTemp;
     }
 
     /**
-     * Fetches the full table information as retrieved from the rdbms
-     * @param $tableName
-     * @return Table
+     * @inheritDoc
      */
     public function getTableInformation(string $tableName): Table
     {
@@ -412,22 +374,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Returns the db-specific datatype for the kajona internal datatype.
-     * Currently, this are
-     *      int
-     *      long
-     *      double
-     *      char10
-     *      char20
-     *      char100
-     *      char254
-     *      char500
-     *      text
-     *      longtext
-     *
-     * @param string $strType
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getDatatype($strType)
     {
@@ -465,15 +412,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Renames a single column of the table
-     *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
@@ -487,14 +426,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Adds a column to a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     * @param $strDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
     {
@@ -512,28 +444,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = array(string datatype, boolean isNull [, default (only if not null)])
-     * whereas datatype is one of the following:
-     *         int
-     *         long
-     *         double
-     *         char10
-     *         char20
-     *         char100
-     *         char254
-     *      char500
-     *         text
-     *      longtext
-     *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function createTable($strName, $arrFields, $arrKeys)
     {
@@ -584,9 +495,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Starts a transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionBegin()
     {
@@ -594,9 +503,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Ends a successful operation by committing the transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionCommit()
     {
@@ -605,9 +512,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Ends a non-successful transaction by using a rollback
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionRollback()
     {
@@ -616,12 +521,12 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * @return array|mixed
+     * @inheritDoc
      */
     public function getDbInfo()
     {
         $arrReturn = array();
-        $arrReturn["version"] = $this->getServerVersion($this->linkDB);
+        $arrReturn["version"] = $this->getServerVersion();
         $arrReturn["dbserver"] = oci_server_version($this->linkDB);
         $arrReturn["dbclient"] = function_exists("oci_client_version") ? oci_client_version() : "";
         $arrReturn["nls_sort"] = $this->getPArray("select sys_context ('userenv', 'nls_sort') val1 from sys.dual", array())[0]["val1"];
@@ -638,7 +543,7 @@ class Oci8Driver extends DriverAbstract
     private function getServerVersion()
     {
         if (! preg_match('/\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+/', oci_server_version($this->linkDB), $version)) {
-            throw new UnexpectedValueException(oci_server_version($this->linkDB));
+            throw new \UnexpectedValueException(oci_server_version($this->linkDB));
         }
         return $version[1];
     }
@@ -652,12 +557,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Dumps the current db
-     *
-     * @param string $strFilename
-     * @param array $arrTables
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbExport(&$strFilename, $arrTables)
     {
@@ -673,11 +573,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Imports the given db-dump to the database
-     *
-     * @param string $strFilename
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbImport($strFilename)
     {
@@ -779,12 +675,7 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * A method triggered in special cases in order to
-     * have even the caches stored at the db-driver being flushed.
-     * This could get important in case of schema updates since pre-compiled queries may get invalid due
-     * to updated table definitions.
-     *
-     * @return void
+     * @inheritDoc
      */
     public function flushQueryCache()
     {
@@ -835,7 +726,7 @@ class Oci8Driver extends DriverAbstract
     public function convertToDatabaseValue($value, string $type)
     {
         if ($type === DataType::STR_TYPE_TEXT) {
-            return mb_substr($value, 4000, '');
+            return mb_substr($value, 0, 4000);
         } else {
             return parent::convertToDatabaseValue($value, $type);
         }

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 
@@ -79,7 +80,7 @@ interface DriverInterface
      * The params themselves are stored using the second params using the matching order.
      *
      * @param string $strQuery
-     * @param array $arrParams
+     * @param array<int, scalar> $arrParams
      *
      * @return bool
      * @since 3.4
@@ -95,6 +96,7 @@ interface DriverInterface
      *
      * @since 3.4
      * @return array
+     * @throws QueryException
      */
     public function getPArray($strQuery, $arrParams);
 

@@ -324,7 +324,7 @@ class Connection implements ConnectionInterface
     public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = [])
     {
         if ($intNr !== 0) {
-            trigger_error(E_USER_DEPRECATED, "The intNr parameter is deprecated");
+            trigger_error("The intNr parameter is deprecated", E_USER_DEPRECATED);
         }
 
         $arrTemp = $this->getPArray($strQuery, $arrParams, null, null, $bitCache, $arrEscapes);
@@ -717,7 +717,7 @@ class Connection implements ConnectionInterface
 
         $this->createTable($table->getName(), $columns, $primary);
 
-        foreach ($this->getIndexes() as $indexDef) {
+        foreach ($table->getIndexes() as $indexDef) {
             $this->addIndex($table->getName(), $indexDef);
         }
     }
@@ -1008,7 +1008,7 @@ class Connection implements ConnectionInterface
      * @param bool $bitHtmlSpecialChars
      * @param bool $bitAddSlashes
      *
-     * @return string
+     * @return int|null|string
      * @deprecated we need to get rid of this
      */
     public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)

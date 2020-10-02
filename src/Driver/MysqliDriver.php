@@ -15,6 +15,7 @@ namespace Artemeon\Database\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
@@ -66,7 +67,7 @@ class MysqliDriver extends DriverAbstract
             $port
         );
 
-        if (!$this->linkDB) {
+        if ($this->linkDB->connect_errno) {
             throw new ConnectionException("Error connecting to database: " . $this->linkDB->connect_error);
         }
 
@@ -82,9 +83,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Closes the connection to the database
-     *
-     * @return void
+     * @inheritDoc
      */
     public function dbclose()
     {
@@ -92,14 +91,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Sends a prepared statement to the database. All params must be represented by the ? char.
-     * The params themself are stored using the second params using the matching order.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @return bool
-     * @since 3.4
+     * @inheritDoc
      */
     public function _pQuery($strQuery, $arrParams)
     {
@@ -141,14 +133,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * This method is used to retrieve an array of resultsets from the database using
-     * a prepared statement.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @return array|bool
-     * @since 3.4
+     * @inheritDoc
      */
     public function getPArray($strQuery, $arrParams)
     {
@@ -166,7 +151,7 @@ class MysqliDriver extends DriverAbstract
             }
 
             if (!$objStatement->execute()) {
-                return false;
+                throw new QueryException('Could not execute query', $strQuery, $arrParams);
             }
 
             //should remain here due to the bug http://bugs.php.net/bug.php?id=47928
@@ -197,7 +182,7 @@ class MysqliDriver extends DriverAbstract
 
             $objStatement->free_result();
         } else {
-            return false;
+            throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
         }
 
         return $arrReturn;
@@ -227,10 +212,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Returns the last error reported by the database.
-     * Is being called after unsuccessful queries
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getError()
     {
@@ -241,9 +223,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Returns ALL tables in the database currently connected to
-     *
-     * @return mixed
+     * @inheritDoc
      */
     public function getTables()
     {
@@ -255,10 +235,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Fetches the full table information as retrieved from the rdbms
-     *
-     * @param $tableName
-     * @return Table
+     * @inheritDoc
      */
     public function getTableInformation(string $tableName): Table
     {
@@ -330,11 +307,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Returns the db-specific datatype for the kajona internal datatype.
-     *
-     * @param string $strType
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getDatatype($strType)
     {
@@ -368,28 +341,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = array(string datatype, boolean isNull [, default (only if not null)])
-     * whereas datatype is one of the following:
-     *         int
-     *      long
-     *         double
-     *         char10
-     *         char20
-     *         char100
-     *         char254
-     *      char500
-     *         text
-     *      longtext
-     *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function createTable($strName, $arrFields, $arrKeys)
     {
@@ -456,9 +408,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Starts a transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionBegin()
     {
@@ -470,9 +420,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Ends a successful operation by Commiting the transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionCommit()
     {
@@ -483,9 +431,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Ends a non-successful transaction by using a rollback
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionRollback()
     {
@@ -496,7 +442,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * @return array|mixed
+     * @inheritDoc
      */
     public function getDbInfo()
     {
@@ -512,12 +458,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Allows the db-driver to add database-specific surrounding to column-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strColumn
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseColumnName($strColumn)
     {
@@ -525,11 +466,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Allows the db-driver to add database-specific surrounding to table-names.
-     *
-     * @param string $strTable
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseTableName($strTable)
     {
@@ -540,12 +477,7 @@ class MysqliDriver extends DriverAbstract
     //--- DUMP & RESTORE ------------------------------------------------------------------------------------
 
     /**
-     * Dumps the current db
-     *
-     * @param string $strFilename
-     * @param array $arrTables
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbExport(&$strFilename, $arrTables)
     {
@@ -575,11 +507,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Imports the given db-dump to the database
-     *
-     * @param string $strFilename
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbImport($strFilename)
     {
@@ -631,7 +559,7 @@ class MysqliDriver extends DriverAbstract
      *
      * @param string $strQuery
      *
-     * @return mysqli_stmt
+     * @return \mysqli_stmt|false
      */
     private function getPreparedStatement($strQuery)
     {
@@ -642,7 +570,7 @@ class MysqliDriver extends DriverAbstract
         }
 
         if (count($this->arrStatementsCache) > 300) {
-            /** @var mysqli_stmt $objOneEntry */
+            /** @var \mysqli_stmt $objOneEntry */
             foreach ($this->arrStatementsCache as $objOneEntry) {
                 $objOneEntry->close();
             }
@@ -662,9 +590,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * @param string $strValue
-     *
-     * @return mixed
+     * @inheritDoc
      */
     public function escape($strValue)
     {

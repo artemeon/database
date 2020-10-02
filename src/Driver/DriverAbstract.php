@@ -46,11 +46,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Default implementation to detect if a driver handles compression.
-     * By default, db-drivers us a piped gzip / gunzip command when creating / restoring dumps on unix.
-     * If running on windows, the Database class handles the compression / decompression.
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function handlesDumpCompression()
     {
@@ -58,13 +54,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Renames a table
-     *
-     * @param $strOldName
-     * @param $strNewName
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function renameTable($strOldName, $strNewName)
     {
@@ -72,15 +62,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Renames a single column of the table
-     *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
@@ -88,14 +70,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Adds a column to a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     * @param $strDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
     {
@@ -137,15 +112,8 @@ abstract class DriverAbstract implements DriverInterface
         return $this->createIndex($table, $index->getName(), explode(",", $index->getDescription()));
     }
 
-
     /**
-     * Removes a column from a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function removeColumn($strTable, $strColumn)
     {
@@ -153,43 +121,28 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Creates a single query in order to insert multiple rows at one time.
-     * For most databases, this will create s.th. like
-     * INSERT INTO $tableName ($columns) VALUES (?, ?), (?, ?)...
-     * Please note that this method is used to create the query itself, based on the Kajona-internal syntax.
-     * The query is fired to the database by Database
-     *
-     * @param string $tableName
-     * @param string[] $columns
-     * @param array $valueSets
-     * @param ConnectionInterface $Db
-     * @param array|null $escapes
-     * @return bool
+     * @inheritDoc
      */
-    public function triggerMultiInsert($tableName, $columns, $valueSets, ConnectionInterface $Db, ?array $escapes): bool
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
     {
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
+        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $placeholderSets = [];
         $params = [];
         $escapeValues = [];
-        foreach ($valueSets as $singleSet) {
+        foreach ($arrValueSets as $singleSet) {
             $placeholderSets[] = $paramsPlaceholder;
             $params[] = array_values($singleSet);
-            if ($escapes !== null) {
-                $escapeValues[] = $escapes;
+            if ($arrEscapes !== null) {
+                $escapeValues[] = $arrEscapes;
             }
         }
-        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($tableName) . ' (' . implode(',', $safeColumns) . ') VALUES ' . implode(',', $placeholderSets);
+        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($strTable) . ' (' . implode(',', $safeColumns) . ') VALUES ' . implode(',', $placeholderSets);
 
-        return $Db->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
     }
 
     /**
-     * Dummy implementation, using a select & insert combination. This is not threadsafe, so the
-     * make sure to implement it in each driver specifically.
-     * Nevertheless, this may be used as a fallback.
-     *
      * @inheritDoc
      */
     public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
@@ -243,18 +196,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Returns just a part of a recordset, defined by the start- and the end-rows,
-     * defined by the params. Makes use of prepared statements.
-     * <b>Note:</b> Use array-like counters, so the first row is startRow 0 whereas
-     * the n-th row is the (n-1)th key!!!
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int $intStart
-     * @param int $intEnd
-     *
-     * @return array
-     * @since 3.4
+     * @inheritDoc
      */
     public function getPArraySection($strQuery, $arrParams, $intStart, $intEnd)
     {
@@ -262,12 +204,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Allows the db-driver to add database-specific surrounding to column-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strColumn
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseColumnName($strColumn)
     {
@@ -275,11 +212,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * Allows the db-driver to add database-specific surrounding to table-names.
-     *
-     * @param string $strTable
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseTableName($strTable)
     {
@@ -287,12 +220,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * A method triggered in special cases in order to
-     * have even the caches stored at the db-driver being flushed.
-     * This could get important in case of schema updates since precompiled queries may get invalid due
-     * to updated table definitions.
-     *
-     * @return void
+     * @inheritDoc
      */
     public function flushQueryCache()
     {
@@ -300,9 +228,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @param string $strValue
-     *
-     * @return string
+     * @inheritDoc
      */
     public function escape($strValue)
     {

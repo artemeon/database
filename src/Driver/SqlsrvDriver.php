@@ -15,6 +15,7 @@ namespace Artemeon\Database\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
@@ -66,12 +67,12 @@ class SqlsrvDriver extends DriverAbstract
         if ($this->linkDB === false) {
             throw new ConnectionException("Error connecting to database: ".$this->getError());
         }
+
+        return true;
     }
 
     /**
-     * Closes the connection to the database
-     *
-     * @return void
+     * @inheritDoc
      */
     public function dbclose()
     {
@@ -97,14 +98,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Sends a prepared statement to the database. All params must be represented by the ? char.
-     * The params themself are stored using the second params using the matching order.
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @return bool
-     * @since 3.4
+     * @inheritDoc
      */
     public function _pQuery($strQuery, $arrParams)
     {
@@ -128,14 +122,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * This method is used to retrieve an array of resultsets from the database using
-     * a prepared statement
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @since 3.4
-     * @return array
+     * @inheritDoc
      */
     public function getPArray($strQuery, $arrParams)
     {
@@ -145,7 +132,7 @@ class SqlsrvDriver extends DriverAbstract
         $objStatement = sqlsrv_query($this->linkDB, $strQuery, $this->convertParamsArray($arrParams));
 
         if ($objStatement === false) {
-            return false;
+            throw new QueryException('Could not execute query', $strQuery, $arrParams);
         }
 
         while ($arrRow = sqlsrv_fetch_array($objStatement, SQLSRV_FETCH_ASSOC)) {
@@ -159,10 +146,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Returns the last error reported by the database.
-     * Is being called after unsuccessful queries
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getError()
     {
@@ -171,9 +155,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Returns ALL tables in the database currently connected to
-     *
-     * @return mixed
+     * @inheritDoc
      */
     public function getTables()
     {
@@ -186,9 +168,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Fetches the full table information as retrieved from the rdbms
-     * @param $tableName
-     * @return Table
+     * @inheritDoc
      */
     public function getTableInformation(string $tableName): Table
     {
@@ -283,24 +263,8 @@ class SqlsrvDriver extends DriverAbstract
         return null;
     }
 
-
     /**
-     * Returns the db-specific datatype for the kajona internal datatype.
-     * Currently, this are
-     *      int
-     *      long
-     *      double
-     *      char10
-     *      char20
-     *      char100
-     *      char254
-     *      char500
-     *      text
-     *      longtext
-     *
-     * @param string $strType
-     *
-     * @return string
+     * @inheritDoc
      */
     public function getDatatype($strType)
     {
@@ -342,15 +306,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Renames a single column of the table
-     *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
@@ -364,14 +320,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Adds a column to a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     * @param $strDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * @inheritDoc
      */
     public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
     {
@@ -389,28 +338,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = array(string datatype, boolean isNull [, default (only if not null)])
-     * whereas datatype is one of the following:
-     *         int
-     *         long
-     *         double
-     *         char10
-     *         char20
-     *         char100
-     *         char254
-     *      char500
-     *         text
-     *      longtext
-     *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function createTable($strName, $arrFields, $arrKeys)
     {
@@ -519,9 +447,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Starts a transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionBegin()
     {
@@ -529,9 +455,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Ends a successful operation by committing the transaction
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionCommit()
     {
@@ -539,9 +463,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Ends a non-successful transaction by using a rollback
-     *
-     * @return void
+     * @inheritDoc
      */
     public function transactionRollback()
     {
@@ -549,7 +471,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * @return array|mixed
+     * @inheritDoc
      */
     public function getDbInfo()
     {
@@ -569,12 +491,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Dumps the current db
-     *
-     * @param string $strFilename
-     * @param array $arrTables
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbExport(&$strFilename, $arrTables)
     {
@@ -583,11 +500,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Imports the given db-dump to the database
-     *
-     * @param string $strFilename
-     *
-     * @return bool
+     * @inheritDoc
      */
     public function dbImport($strFilename)
     {
@@ -662,12 +575,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Allows the db-driver to add database-specific surrounding to column-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strColumn
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseColumnName($strColumn)
     {
@@ -675,11 +583,7 @@ class SqlsrvDriver extends DriverAbstract
     }
 
     /**
-     * Allows the db-driver to add database-specific surrounding to table-names.
-     *
-     * @param string $strTable
-     *
-     * @return string
+     * @inheritDoc
      */
     public function encloseTableName($strTable)
     {
