@@ -71,7 +71,10 @@ class PostgresDriver extends DriverAbstract
      */
     public function dbclose()
     {
-        @pg_close($this->linkDB);
+        if ($this->linkDB !== null && is_resource($this->linkDB)) {
+            @pg_close($this->linkDB);
+            $this->linkDB = null;
+        }
     }
 
     /**

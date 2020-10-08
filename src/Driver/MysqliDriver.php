@@ -87,7 +87,10 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbclose()
     {
-        $this->linkDB->close();
+        if ($this->linkDB !== null) {
+            $this->linkDB->close();
+            $this->linkDB = null;
+        }
     }
 
     /**
