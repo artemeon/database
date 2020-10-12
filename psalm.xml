@@ -12,4 +12,10 @@
             <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
+    <issueHandlers>
+        <TypeDoesNotContainType errorLevel="suppress"/>
+    </issueHandlers>
+    <stubs>
+        <file name="tests/stubs.php" />
+    </stubs>
 </psalm>
