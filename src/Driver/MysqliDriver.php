@@ -149,8 +149,7 @@ class MysqliDriver extends DriverAbstract
             }
 
             if (count($arrParams) > 0) {
-                $arrParams = array_merge(array($strTypes), $arrParams);
-                call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
+                $objStatement->bind_param($strTypes, ...$arrParams);
             }
 
             if (!$objStatement->execute()) {
@@ -160,27 +159,10 @@ class MysqliDriver extends DriverAbstract
             //should remain here due to the bug http://bugs.php.net/bug.php?id=47928
             $objStatement->store_result();
 
-            $objMetadata = $objStatement->result_metadata();
-            $arrParams = array();
-            $arrRow = array();
+            $result = $objStatement->get_result();
 
-            if ($objMetadata === false) {
-                $objStatement->free_result();
-                return [];
-            }
-
-            while ($objMetadata && $objField = $objMetadata->fetch_field()) {
-                $arrParams[] = &$arrRow[$objField->name];
-            }
-
-            call_user_func_array(array($objStatement, 'bind_result'), $arrParams);
-
-            while ($objStatement->fetch()) {
-                $arrSingleRow = array();
-                foreach ($arrRow as $key => $val) {
-                    $arrSingleRow[$key] = $val;
-                }
-                $arrReturn[] = $arrSingleRow;
+            while ($row = $result->fetch_assoc()) {
+                $arrReturn[] = $row;
             }
 
             $objStatement->free_result();
