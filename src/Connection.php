@@ -120,7 +120,7 @@ class Connection implements ConnectionInterface
      * Destructor.
      * Handles the closing of remaining tx and closes the db-connection
      */
-    public function __destruct()
+    public function close()
     {
         if ($this->intNumberOfOpenTransactions != 0) {
             //something bad happened. rollback, plz
