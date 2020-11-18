@@ -31,6 +31,8 @@ use mysqli;
  */
 class MysqliDriver extends DriverAbstract
 {
+    private $connected = false;
+
     /**  @var mysqli */
     private $linkDB; //DB-Link
 
@@ -51,6 +53,10 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbconnect(ConnectionParameters $objParams)
     {
+        if ($this->connected) {
+            return true;
+        }
+
         $port = $objParams->getPort();
         if (empty($port)) {
             $port = 3306;
@@ -79,6 +85,7 @@ class MysqliDriver extends DriverAbstract
         $this->_pQuery("SET character_set_database ='utf8'", array());
         $this->_pQuery("SET character_set_server ='utf8'", array());
 
+        $this->connected = true;
         return true;
     }
 
@@ -87,10 +94,13 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbclose()
     {
-        if ($this->linkDB !== null) {
-            $this->linkDB->close();
-            $this->linkDB = null;
+        if (!$this->connected) {
+            return;
         }
+
+        $this->linkDB->close();
+        $this->linkDB = null;
+        $this->connected = false;
     }
 
     /**
