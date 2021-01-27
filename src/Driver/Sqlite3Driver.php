@@ -283,7 +283,7 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         $this->intAffectedRows = $this->linkDB->changes();
-
+        $objStmt->close();
         return true;
     }
 
@@ -325,6 +325,7 @@ class Sqlite3Driver extends DriverAbstract
             $arrResult[] = $arrTemp;
         }
 
+        $objStmt->close();
         return $arrResult;
     }
 

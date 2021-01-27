@@ -140,6 +140,7 @@ class MysqliDriver extends DriverAbstract
             }
 
             $this->intAffectedRows = $objStatement->affected_rows;
+            $objStatement->close();
         }
 
         return $bitReturn;
@@ -194,6 +195,7 @@ class MysqliDriver extends DriverAbstract
             }
 
             $objStatement->free_result();
+            $objStatement->close();
         } else {
             throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
         }
