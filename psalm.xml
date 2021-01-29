@@ -14,6 +14,7 @@
     </projectFiles>
     <issueHandlers>
         <TypeDoesNotContainType errorLevel="suppress"/>
+        <EmptyArrayAccess errorLevel="suppress"/>
     </issueHandlers>
     <stubs>
         <file name="tests/stubs.php" />
