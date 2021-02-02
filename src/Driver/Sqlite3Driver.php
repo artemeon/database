@@ -471,13 +471,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * returns an array with infos about the current database
-     * The array returned should have tho following structure:
-     * ["dbserver"]
-     * ["dbclient"]
-     * ["dbconnection"]
-     *
-     * @return mixed
+     * @inheritDoc
      */
     public function getDbInfo()
     {

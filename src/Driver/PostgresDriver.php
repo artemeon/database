@@ -72,7 +72,7 @@ class PostgresDriver extends DriverAbstract
     public function dbclose()
     {
         if ($this->linkDB !== null && is_resource($this->linkDB)) {
-            @pg_close($this->linkDB);
+            pg_close($this->linkDB);
             $this->linkDB = null;
         }
     }
@@ -179,7 +179,7 @@ class PostgresDriver extends DriverAbstract
      */
     public function getError()
     {
-        $strError = @pg_last_error($this->linkDB);
+        $strError = pg_last_error($this->linkDB);
         return $strError;
     }
 
@@ -402,7 +402,7 @@ class PostgresDriver extends DriverAbstract
      */
     public function getDbInfo()
     {
-        return @pg_version($this->linkDB);
+        return pg_version($this->linkDB);
     }
 
 
