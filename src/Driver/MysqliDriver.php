@@ -195,7 +195,7 @@ class MysqliDriver extends DriverAbstract
 
             $objStatement->free_result();
         } else {
-            throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
+            throw new QueryException('Could not prepare statement: ' . $this->strErrorMessage, $strQuery, $arrParams);
         }
 
         return $arrReturn;
