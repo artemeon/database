@@ -79,11 +79,11 @@ class Oci8Driver extends DriverAbstract
         //try to set the NLS_LANG env attribute
         putenv("NLS_LANG=American_America.UTF8");
 
-        $this->linkDB = @oci_pconnect($this->objCfg->getUsername(), $this->objCfg->getPassword(), $this->objCfg->getHost().":".$port."/".$this->objCfg->getDatabase(), "AL32UTF8");
+        $this->linkDB = oci_pconnect($this->objCfg->getUsername(), $this->objCfg->getPassword(), $this->objCfg->getHost().":".$port."/".$this->objCfg->getDatabase(), "AL32UTF8");
 
         if ($this->linkDB !== false) {
-            @oci_set_client_info($this->linkDB, "ARTEMEON AGP");
-            @oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
+            oci_set_client_info($this->linkDB, "ARTEMEON AGP");
+            oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
             $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS='.,'", []);
 
             if ($this->useBinaryCI) {
@@ -101,7 +101,7 @@ class Oci8Driver extends DriverAbstract
     public function dbclose()
     {
         //do n.th. to keep the persistent connection
-        //@oci_close($this->linkDB);
+        //oci_close($this->linkDB);
     }
 
     /**
@@ -225,8 +225,9 @@ class Oci8Driver extends DriverAbstract
             throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
         }
 
+        $index = 0;
         foreach ($arrParams as $intPos => $strValue) {
-            oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos]);
+            oci_bind_by_name($objStatement, ":".(++$index), $arrParams[$intPos]);
         }
 
         $bitAddon = OCI_COMMIT_ON_SUCCESS;
@@ -235,7 +236,7 @@ class Oci8Driver extends DriverAbstract
         }
 
         oci_set_prefetch($objStatement, 300);
-        $resultSet = @oci_execute($objStatement, $bitAddon);
+        $resultSet = oci_execute($objStatement, $bitAddon);
 
         if (!$resultSet) {
             $this->objErrorStmt = $objStatement;
@@ -248,7 +249,7 @@ class Oci8Driver extends DriverAbstract
             $arrRow = $this->parseResultRow($arrRow);
             $arrReturn[$intCounter++] = $arrRow;
         }
-        @oci_free_statement($objStatement);
+        oci_free_statement($objStatement);
 
         if ($this->bitResetOrder) {
             $this->setCaseSensitiveSort();
