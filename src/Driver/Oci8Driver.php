@@ -606,7 +606,7 @@ class Oci8Driver extends DriverAbstract
         if (!$this->useBinaryCI && $params !== null && stripos($strQuery, " like ") !== false) {
 
             foreach ($params as $param) {
-                if (substr($param, -1) === '%' || substr($param, 0, 1) === '%') {
+                if (is_string($param) && (substr($param, -1) === '%' || substr($param, 0, 1) === '%')) {
                     if (strpos($param, '%,') === false) {
                         $this->setCaseInsensitiveSort();
                         $this->bitResetOrder = true;
