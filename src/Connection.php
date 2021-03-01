@@ -327,13 +327,9 @@ class Connection implements ConnectionInterface
             trigger_error("The intNr parameter is deprecated", E_USER_DEPRECATED);
         }
 
-        $arrTemp = $this->getPArray($strQuery, $arrParams, null, null, $bitCache, $arrEscapes);
-
-        if (isset($arrTemp[$intNr])) {
-            return $arrTemp[$intNr];
-        } else {
-            return [];
-        }
+        $resultRow = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache, $arrEscapes);
+        $value = current($resultRow);
+        return $value !== false ? $value : [];
     }
 
     /**
