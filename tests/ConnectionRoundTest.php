@@ -23,5 +23,14 @@ class ConnectionRoundTest extends ConnectionTestCase
         $this->assertEquals('0.33333333', (string) $row['val']);
         $this->assertEqualsWithDelta(round(1 / 3, 8), (float) $row['val'], 0.0001);
     }
+
+    public function testRoundUp()
+    {
+        $query = 'SELECT ROUND(0.16666666666666, 8) AS val FROM ' . self::TEST_TABLE_NAME;
+        $row = $this->getConnection()->getPRow($query);
+
+        $this->assertEquals('0.16666667', (string) $row['val']);
+        $this->assertEqualsWithDelta(round(1 / 6, 8), (float) $row['val'], 0.0001);
+    }
 }
 
