@@ -892,19 +892,11 @@ class Connection implements ConnectionInterface
 
         $strQuery = trim($strQuery);
         $arrSearch = array(
-            "\r\n",
-            "\n",
-            "\r",
-            "\t",
             "    ",
             "   ",
             "  "
         );
         $arrReplace = array(
-            "",
-            "",
-            "",
-            " ",
             " ",
             " ",
             " "
