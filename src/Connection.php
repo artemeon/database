@@ -145,6 +145,7 @@ class Connection implements ConnectionInterface
      * This method connects with the database
      *
      * @return void
+     * @throws ConnectionException
      */
     protected function dbconnect()
     {

@@ -261,6 +261,7 @@ interface ConnectionInterface
      * Drops a table from the database. Checks also whether the table already exists
      *
      * @param string $tableName
+     * @throws QueryException
      */
     public function dropTable(string $tableName): void;
 

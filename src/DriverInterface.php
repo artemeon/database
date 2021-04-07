@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
@@ -31,6 +32,7 @@ interface DriverInterface
      *
      * @param ConnectionParameters $objParams
      * @return bool
+     * @throws ConnectionException
      */
     public function dbconnect(ConnectionParameters $objParams);
 
