@@ -414,6 +414,23 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    public function removeColumn($strTable, $strColumn)
+    {
+        // drop all constraints for the column before dropping the column
+        $result = $this->getPArray($this->getColumnConstraintSQL($strTable, $strColumn), []);
+        foreach ($result as $row) {
+            $this->_pQuery(
+                sprintf('ALTER TABLE %s DROP CONSTRAINT %s', $strTable, $row['Name']),
+                []
+            );
+        }
+
+        return parent::removeColumn($strTable, $strColumn);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
     {
         $arrPlaceholder = array();
@@ -596,6 +613,22 @@ class SqlsrvDriver extends DriverAbstract
     public function getLeastExpression(array $parts): string
     {
         return '(SELECT MIN(x) FROM (VALUES (' . implode('),(', $parts) . ')) AS value(x))';
+    }
+
+    /**
+     * Returns the SQL to retrieve the constraints for a given column.
+     *
+     * @see https://github.com/doctrine/dbal/blob/4.0.x/src/Schema/SQLServerSchemaManager.php#L286
+     */
+    private function getColumnConstraintSQL(string $table, string $column): string
+    {
+        return "SELECT sysobjects.[Name]
+            FROM sysobjects INNER JOIN (SELECT [Name],[ID] FROM sysobjects WHERE XType = 'U') AS Tab
+            ON Tab.[ID] = sysobjects.[Parent_Obj]
+            INNER JOIN sys.default_constraints DefCons ON DefCons.[object_id] = sysobjects.[ID]
+            INNER JOIN syscolumns Col ON Col.[ColID] = DefCons.[parent_column_id] AND Col.[ID] = Tab.[ID]
+            WHERE Col.[Name] = " . $this->encloseColumnName($column) . ' AND Tab.[Name] = ' . $this->encloseTableName($table) . '
+            ORDER BY Col.[Name]';
     }
 }
 
