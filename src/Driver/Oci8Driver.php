@@ -47,16 +47,6 @@ class Oci8Driver extends DriverAbstract
     private $objErrorStmt = null;
 
     /**
-     * En-/Disables the usage of fast, binary case-insensitive collations, available since ORA 12.2.
-     *
-     * @var bool
-     * @see https://dbaclass.com/article/max_string_size-parameter-oracle-12c/
-     * @see https://oracle-base.com/articles/12c/column-level-collation-and-case-insensitive-database-12cr2
-     * @see https://docs.oracle.com/database/121/REFRN/GUID-D424D23B-0933-425F-BC69-9C0E6724693C.htm#REFRN10321
-     */
-    private $useBinaryCI = false;
-
-    /**
      * Flag whether the sring comparison method (case sensitive / insensitive) should be reset back to default after the current query
      *
      * @var bool
@@ -74,8 +64,6 @@ class Oci8Driver extends DriverAbstract
         }
         $this->objCfg = $objParams;
 
-        $this->useBinaryCI = $objParams->getAttribute(ConnectionParameters::OCI8_MAX_STRING_SIZE_EXTENDED);
-
         //try to set the NLS_LANG env attribute
         putenv("NLS_LANG=American_America.UTF8");
 
@@ -85,10 +73,7 @@ class Oci8Driver extends DriverAbstract
             oci_set_client_info($this->linkDB, "ARTEMEON AGP");
             oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
             $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS='.,'", []);
-
-            if ($this->useBinaryCI) {
-                $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI;", []);
-            }
+            $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI;", []);
             return true;
         }
 
@@ -398,11 +383,7 @@ class Oci8Driver extends DriverAbstract
         } elseif ($strType == DataType::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR2( 500 ) ";
         } elseif ($strType == DataType::STR_TYPE_TEXT) {
-            if ($this->useBinaryCI) {
-                $strReturn .= " VARCHAR2( 32767 ) ";
-            } else {
-                $strReturn .= " VARCHAR2( 4000 ) ";
-            }
+            $strReturn .= " VARCHAR2( 32767 ) ";
         } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
             $strReturn .= " CLOB ";
         } else {
@@ -479,9 +460,7 @@ class Oci8Driver extends DriverAbstract
         //primary keys
         $strQuery .= " CONSTRAINT pk_".uniqid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
-        if ($this->useBinaryCI) {
-            $strQuery .= "DEFAULT COLLATION BINARY_CI ";
-        }
+        $strQuery .= "DEFAULT COLLATION BINARY_CI ";
 
         return $this->_pQuery($strQuery, array());
     }
@@ -602,20 +581,6 @@ class Oci8Driver extends DriverAbstract
             $i++;
             return ':' . $i;
         }, $strQuery);
-
-        if (!$this->useBinaryCI && $params !== null && stripos($strQuery, " like ") !== false) {
-
-            foreach ($params as $param) {
-                if (is_string($param) && (substr($param, -1) === '%' || substr($param, 0, 1) === '%')) {
-                    if (strpos($param, '%,') === false) {
-                        $this->setCaseInsensitiveSort();
-                        $this->bitResetOrder = true;
-                        break;
-                    }
-                }
-            }
-
-        }
 
         return $strQuery;
     }
