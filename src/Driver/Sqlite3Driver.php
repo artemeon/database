@@ -621,4 +621,14 @@ class Sqlite3Driver extends DriverAbstract
     {
         return 'MIN(' . implode(', ', $parts) . ')';
     }
+
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string
+    {
+        $parameters = [$value, $offset];
+        if (isset($length)) {
+            $parameters[] = $length;
+        }
+
+        return 'SUBSTR(' . implode(', ', $parameters) . ')';
+    }
 }

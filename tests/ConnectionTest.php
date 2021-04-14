@@ -680,5 +680,32 @@ class ConnectionTest extends ConnectionTestCase
 
         $connection->_pQuery('DROP TABLE ' . $tableName, []);
     }
+
+    public function testAllowsRetrievalOfSubstringsIndependentOfPlatform(): void
+    {
+        $connection = $this->getConnection();
+
+        $this->createTable();
+        $connection->_pQuery('INSERT INTO agp_temp_autotest (temp_id, temp_char100) VALUES (?, ?)', [$this->generateSystemid(), 'foobarbazquux']);
+
+        $testCases = [
+            [1, 3, 'foo'],
+            [1, 6, 'foobar'],
+            [1, null, 'foobarbazquux'],
+            [4, 3, 'bar'],
+            [4, null, 'barbazquux'],
+            [7, 3, 'baz'],
+            [7, null, 'bazquux'],
+            [10, 4, 'quux'],
+            [10, null, 'quux'],
+            [1, null, 'foobarbazquux'],
+        ];
+
+        foreach ($testCases as [$offset, $length, $expectedValue]) {
+            $substringExpression = $connection->getSubstringExpression('temp_char100', $offset, $length);
+            ['value' => $actualValue] = $connection->getPRow('SELECT ' . $substringExpression . ' AS value FROM agp_temp_autotest', []);
+            self::assertEquals($expectedValue, $actualValue);
+        }
+    }
 }
 
