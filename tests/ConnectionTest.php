@@ -705,7 +705,7 @@ class ConnectionTest extends ConnectionTestCase
 
         foreach ($testCases as [$offset, $length, $expectedValue]) {
             $substringExpression = $connection->getSubstringExpression('temp_char100', $offset, $length);
-            ['value' => $actualValue] = $connection->getPRow('SELECT ' . $substringExpression . ' AS value FROM agp_temp_autotest', []);
+            ['value' => $actualValue] = $connection->getPRow('SELECT ' . $substringExpression . ' AS value FROM ' . self::TEST_TABLE_NAME);
             self::assertEquals($expectedValue, $actualValue);
         }
     }
