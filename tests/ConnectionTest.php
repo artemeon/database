@@ -685,8 +685,10 @@ class ConnectionTest extends ConnectionTestCase
     {
         $connection = $this->getConnection();
 
-        $this->createTable();
-        $connection->_pQuery('INSERT INTO agp_temp_autotest (temp_id, temp_char100) VALUES (?, ?)', [$this->generateSystemid(), 'foobarbazquux']);
+        $connection->_pQuery(
+            'INSERT INTO ' . self::TEST_TABLE_NAME . ' (temp_id, temp_char100) VALUES (?, ?)',
+            [$this->generateSystemid(), 'foobarbazquux']
+        );
 
         $testCases = [
             [1, 3, 'foo'],
