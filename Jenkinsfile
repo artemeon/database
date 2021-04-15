@@ -106,7 +106,7 @@ pipeline {
                     steps {
                         sh 'docker-compose -f docker-compose-mssql-2017.yaml down'
                         sh 'docker-compose -f docker-compose-mssql-2017.yaml build'
-                        sh 'docker-compose -f docker-compose-mssql-2017.yaml run php /usr/bin/run_tests.sh'
+                        sh 'docker-compose -f docker-compose-mssql-2017.yaml run php /usr/bin/run_tests.sh skip-wait'
                         sh 'docker-compose -f docker-compose-mssql-2017.yaml down'
                     }
                 }
@@ -114,7 +114,7 @@ pipeline {
                     steps {
                         sh 'docker-compose -f docker-compose-oracle-12c.yaml down'
                         sh 'docker-compose -f docker-compose-oracle-12c.yaml build'
-                        sh 'docker-compose -f docker-compose-oracle-12c.yaml run php /usr/bin/run_tests.sh'
+                        sh 'docker-compose -f docker-compose-oracle-12c.yaml run php /usr/bin/run_tests.sh skip-wait'
                         sh 'docker-compose -f docker-compose-oracle-12c.yaml down'
                     }
                 }
@@ -122,7 +122,7 @@ pipeline {
                     steps {
                         sh 'docker-compose -f docker-compose-oracle-19c.yaml down'
                         sh 'docker-compose -f docker-compose-oracle-19c.yaml build'
-                        sh 'docker-compose -f docker-compose-oracle-19c.yaml run php /usr/bin/run_tests.sh'
+                        sh 'docker-compose -f docker-compose-oracle-19c.yaml run php /usr/bin/run_tests.sh skip-wait'
                         sh 'docker-compose -f docker-compose-oracle-19c.yaml down'
                     }
                 }
