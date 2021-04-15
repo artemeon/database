@@ -685,6 +685,7 @@ class ConnectionTest extends ConnectionTestCase
     {
         $connection = $this->getConnection();
 
+        $connection->_pQuery('TRUNCATE TABLE ' . self::TEST_TABLE_NAME);
         $connection->_pQuery(
             'INSERT INTO ' . self::TEST_TABLE_NAME . ' (temp_id, temp_char100) VALUES (?, ?)',
             [$this->generateSystemid(), 'foobarbazquux']
