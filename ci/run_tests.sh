@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-if [ $1 -ne 'skip-wait' ]
+if [[ $1 != 'skip-wait' ]]
 then
   wait-for-it.sh ${DB_HOST}:${DB_PORT} -t 240
 fi
