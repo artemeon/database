@@ -7,8 +7,8 @@ RUN apt-get update \
   && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Oracle instantclient
-RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip -o /tmp/instantclient-basic.zip
-RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/instantclient-sdk-linux.x64-19.6.0.0.0dbru.zip -o /tmp/instantclient-sdk.zip
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip -O /tmp/instantclient-basic.zip
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/instantclient-sdk-linux.x64-19.6.0.0.0dbru.zip -O /tmp/instantclient-sdk.zip
 RUN unzip /tmp/instantclient-basic.zip -d /usr/local/
 RUN unzip /tmp/instantclient-sdk.zip -d /usr/local/
 RUN mv /usr/local/instantclient_19_6 /usr/local/instantclient
