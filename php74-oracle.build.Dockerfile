@@ -2,11 +2,9 @@
 FROM php:7.4
 
 RUN apt-get update \
-  && apt-get install -y git libldap2-dev libxslt-dev zlib1g-dev libzip-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libpq-dev zip unzip \
+  && apt-get install -y git libldap2-dev libxslt-dev zlib1g-dev libzip-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libpq-dev zip unzip libaio1 \
   && docker-php-ext-install exif gd opcache sockets xsl zip intl mysqli pgsql \
   && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-RUN apt-get install -y libaio1
 
 # Oracle instantclient
 RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip -o /tmp/instantclient-basic.zip
