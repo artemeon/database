@@ -110,7 +110,7 @@ abstract class ConnectionTestCase extends TestCase
                 'temp_int' => 123456 + $i,
                 'temp_bigint' => 20200508095300 + $i,
                 'temp_float' => 23.45,
-                'temp_char10' => 'char10-' . $i,
+                'temp_char10' => substr('char10-' . $i, 0, 10),
                 'temp_char20' => 'char20-' . $i,
                 'temp_char100' => 'char100-' . $i,
                 'temp_char254' => 'char254-' . $i,
