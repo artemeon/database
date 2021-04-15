@@ -9,13 +9,13 @@ RUN apt-get update \
 RUN apt-get install -y libaio1
 
 # Oracle instantclient
-ADD instantclient-basic-linux.x64-11.2.0.4.0.zip /tmp/
-ADD instantclient-sdk-linux.x64-11.2.0.4.0.zip /tmp/
-RUN unzip /tmp/instantclient-basic-linux.x64-11.2.0.4.0.zip -d /usr/local/
-RUN unzip /tmp/instantclient-sdk-linux.x64-11.2.0.4.0.zip -d /usr/local/
-RUN mv /usr/local/instantclient_11_2 /usr/local/instantclient
-RUN ln -s /usr/local/instantclient/libclntsh.so.11.1 /usr/local/instantclient/libclntsh.so
-RUN ln -s /usr/local/instantclient/libocci.so.11.1 /usr/local/instantclient/libocci.so
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip -o /tmp/instantclient-basic.zip
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/instantclient-sdk-linux.x64-19.6.0.0.0dbru.zip -o /tmp/instantclient-sdk.zip
+RUN unzip /tmp/instantclient-basic.zip -d /usr/local/
+RUN unzip /tmp/instantclient-sdk.zip -d /usr/local/
+RUN mv /usr/local/instantclient_19_6 /usr/local/instantclient
+RUN ln -s /usr/local/instantclient/libclntsh.so.12.1 /usr/local/instantclient/libclntsh.so
+RUN ln -s /usr/local/instantclient/libocci.so.12.1 /usr/local/instantclient/libocci.so
 
 ENV LD_LIBRARY_PATH=/usr/local/instantclient
 RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8
