@@ -579,7 +579,7 @@ class SqlsrvDriver extends DriverAbstract
      */
     public function encloseColumnName($strColumn)
     {
-        return '"'.$strColumn.'"';
+        return '['.$strColumn.']';
     }
 
     /**
@@ -587,7 +587,7 @@ class SqlsrvDriver extends DriverAbstract
      */
     public function encloseTableName($strTable)
     {
-        return '"'.$strTable.'"';
+        return '['.$strTable.']';
     }
 
     /**
