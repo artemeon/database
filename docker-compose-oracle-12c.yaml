@@ -11,7 +11,5 @@ services:
       DB_PWD: agp
       DB_SCHEMA: ora12
       DB_DRIVER: oci8
-    depends_on:
-      - db
     volumes:
       - ./:/scripts/

@@ -11,7 +11,5 @@ services:
       DB_PWD: kajonabuild
       DB_SCHEMA: kajonabuild
       DB_DRIVER: sqlsrv
-    depends_on:
-      - db
     volumes:
       - ./:/scripts/
