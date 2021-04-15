@@ -72,20 +72,9 @@ abstract class ConnectionTestCase extends TestCase
         $this->getConnection()->dropTable(self::TEST_TABLE_NAME);
         $this->getConnection()->createTable(self::TEST_TABLE_NAME, $this->getTestTableColumns(), ['temp_id']);
 
-        for ($i = 1; $i <= 50; $i++) {
-            $this->getConnection()->insert(self::TEST_TABLE_NAME, [
-                'temp_id' => $this->generateSystemid(),
-                'temp_int' => 123456 + $i,
-                'temp_bigint' => 20200508095300 + $i,
-                'temp_float' => 23.45,
-                'temp_char10' => 'char10-' . $i,
-                'temp_char20' => 'char20-' . $i,
-                'temp_char100' => 'char100-' . $i,
-                'temp_char254' => 'char254-' . $i,
-                'temp_char500' => 'char500-' . $i,
-                'temp_text' => 'text-' . $i,
-                'temp_longtext' => 'longtext-' . $i,
-            ]);
+        $rows = $this->getRows(50);
+        foreach ($rows as $row) {
+            $this->getConnection()->insert(self::TEST_TABLE_NAME, $row);
         }
     }
 
@@ -111,4 +100,46 @@ abstract class ConnectionTestCase extends TestCase
     {
         return substr(sha1(uniqid()), 0, 20);
     }
+
+    protected function getRows(int $count, bool $assoc = true): array
+    {
+        $rows = [];
+        for ($i = 1; $i <= $count; $i++) {
+            $row = [
+                'temp_id' => $this->generateSystemid(),
+                'temp_int' => 123456 + $i,
+                'temp_bigint' => 20200508095300 + $i,
+                'temp_float' => 23.45,
+                'temp_char10' => 'char10-' . $i,
+                'temp_char20' => 'char20-' . $i,
+                'temp_char100' => 'char100-' . $i,
+                'temp_char254' => 'char254-' . $i,
+                'temp_char500' => 'char500-' . $i,
+                'temp_text' => 'text-' . $i,
+                'temp_longtext' => 'longtext-' . $i,
+            ];
+
+            $rows[] = $assoc ? $row : array_values($row);
+        }
+
+        return $rows;
+    }
+
+    protected function getColumnNames(): array
+    {
+        return [
+            'temp_id',
+            'temp_int',
+            'temp_bigint',
+            'temp_float',
+            'temp_char10',
+            'temp_char20',
+            'temp_char100',
+            'temp_char254',
+            'temp_char500',
+            'temp_text',
+            'temp_longtext',
+        ];
+    }
+
 }
