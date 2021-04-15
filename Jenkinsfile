@@ -30,6 +30,22 @@ pipeline {
             }
         }
 
+        stage ('php 8.0 docker') {
+            agent {
+                dockerfile {
+                    filename 'php80.build.Dockerfile'
+                    label 'dockerhost'
+                }
+            }
+            environment {
+                HOME = '.'
+            }
+            steps {
+                sh 'composer install'
+                sh './vendor/bin/phpunit'
+            }
+        }
+
         stage('Databases') {
             agent {
                 label 'dockerhost'
