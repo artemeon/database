@@ -15,37 +15,76 @@ namespace Artemeon\Database\Tests;
 
 class ConnectionMultiInsertTest extends ConnectionTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->getConnection()->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE 1=1', []);
+        $this->getConnection()->flushQueryCache();
+    }
+
     public function testInserts()
     {
-        $objDB = $this->getConnection();
+        $values = $this->getRows(50);
+        $connection = $this->getConnection();
 
-        $arrFields = array();
-        $arrFields["temp_id"] = array("char20", false);
-        $arrFields["temp_int"] = array("int", true);
-        $arrFields["temp_long"] = array("long", true);
-        $arrFields["temp_double"] = array("double", true);
-        $arrFields["temp_char10"] = array("char10", true);
-        $arrFields["temp_char20"] = array("char20", true);
-        $arrFields["temp_char100"] = array("char100", true);
-        $arrFields["temp_char254"] = array("char254", true);
-        $arrFields["temp_char500"] = array("char500", true);
-        $arrFields["temp_text"] = array("text", true);
-        $arrFields["temp_longtext"] = array("longtext", true);
-        $arrFields["temp_json"] = array("longtext", true);
+        $return = $connection->multiInsert(self::TEST_TABLE_NAME, $this->getColumnNames(), $values);
+        $this->assertTrue($return);
 
-        $escapeValues = array_fill(0, count($arrFields), false);
+        $row = $connection->getPRow("SELECT COUNT(*) AS cnt FROM " . self::TEST_TABLE_NAME, []);
+        $this->assertEquals($row['cnt'], 50);
 
-        $this->assertEquals(count($arrFields), count($escapeValues));
-        $this->assertTrue($objDB->createTable("agp_temp_autotest", $arrFields, array("temp_id")), "testDataBase createTable");
+        for ($i = 1; $i <= 50; $i++) {
+            $row = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", ["id" . $i]);
 
-        $strQuery = "DELETE FROM agp_temp_autotest";
-        $this->assertTrue($objDB->_pQuery($strQuery, array()), "testDataBase truncateTable");
-        $objDB->flushQueryCache();
+            $this->assertEquals(10, $row["temp_int"]);
+            $this->assertEquals(13, $row["temp_bigint"]);
+            $this->assertEquals(13.37, round($row["temp_float"], 2));
+            $this->assertEquals("char10", $row["temp_char10"]);
+            $this->assertEquals("char20", $row["temp_char20"]);
+            $this->assertEquals("char100", $row["temp_char100"]);
+            $this->assertEquals("char254", $row["temp_char254"]);
+            $this->assertEquals("char500", $row["temp_char500"]);
+            $this->assertEquals("text", $row["temp_text"]);
+            $this->assertEquals("longtext", $row["temp_longtext"]);
+        }
+    }
 
-        $arrValues = array();
-        for ($intI = 1; $intI <= 50; $intI++) {
-            $arrValues[] = array(
-                "id" . $intI,
+    public function testInsertsLimit()
+    {
+        $values = $this->getRows(1000);
+        $connection = $this->getConnection();
+
+        $return = $connection->multiInsert(self::TEST_TABLE_NAME, $this->getColumnNames(), $values);
+        $this->assertTrue($return);
+
+        $arrRow = $connection->getPRow("SELECT COUNT(*) AS cnt FROM " . self::TEST_TABLE_NAME, []);
+        $this->assertEquals($arrRow["cnt"], 1000);
+    }
+
+    protected function getColumnNames(): array
+    {
+        return [
+            'temp_id',
+            'temp_int',
+            'temp_bigint',
+            'temp_float',
+            'temp_char10',
+            'temp_char20',
+            'temp_char100',
+            'temp_char254',
+            'temp_char500',
+            'temp_text',
+            'temp_longtext',
+        ];
+    }
+
+    protected function getRows(int $count): array
+    {
+        $rows = [];
+        for ($i = 1; $i <= $count; $i++) {
+            $rows[] = [
+                "id" . $i,
                 10,
                 13,
                 13.37,
@@ -56,54 +95,9 @@ class ConnectionMultiInsertTest extends ConnectionTestCase
                 "char500",
                 "text",
                 "longtext",
-                '{"structure":"json","valid":"escaping"}'
-            );
+            ];
         }
 
-        $this->assertTrue($objDB->multiInsert("agp_temp_autotest", array_keys($arrFields), $arrValues, $escapeValues));
-
-        $arrRow = $objDB->getPRow("SELECT COUNT(*) AS cnt FROM agp_temp_autotest", array());
-        $this->assertEquals($arrRow["cnt"], 50);
-
-        for ($intI = 1; $intI <= 50; $intI++) {
-            $arrRow = $objDB->getPRow("SELECT * FROM agp_temp_autotest WHERE temp_id = ?", array("id" . $intI));
-
-            $this->assertEquals(10, $arrRow["temp_int"]);
-            $this->assertEquals(13, $arrRow["temp_long"]);
-            $this->assertEquals(13.37, round($arrRow["temp_double"], 2));
-            $this->assertEquals("char10", $arrRow["temp_char10"]);
-            $this->assertEquals("char20", $arrRow["temp_char20"]);
-            $this->assertEquals("char100", $arrRow["temp_char100"]);
-            $this->assertEquals("char254", $arrRow["temp_char254"]);
-            $this->assertEquals("char500", $arrRow["temp_char500"]);
-            $this->assertEquals("text", $arrRow["temp_text"]);
-            $this->assertEquals("longtext", $arrRow["temp_longtext"]);
-            $this->assertEquals('{"structure":"json","valid":"escaping"}', $arrRow["temp_json"]);
-        }
-
-        $strQuery = "DELETE FROM agp_temp_autotest";
-        $this->assertTrue($objDB->_pQuery($strQuery, array()), "testDataBase truncateTable");
-        $objDB->flushQueryCache();
-
-        $strQuery = "SELECT COUNT(*) AS cnt FROM agp_temp_autotest";
-        $this->assertEquals(0, $objDB->getPRow($strQuery, array())["cnt"], "testDataBase countLimitReach");
-
-        $objDB->flushQueryCache();
-
-        $arrValues = array();
-        for ($intI = 1; $intI <= 1200; $intI++) {
-            $arrValues[] = array($this->generateSystemid(), "text long " . $intI, "text " . $intI);
-        }
-        $this->assertTrue($objDB->multiInsert("agp_temp_autotest", array("temp_id", "temp_char254", "temp_char100"), $arrValues));
-        $strQuery = "SELECT COUNT(*) AS cnt FROM agp_temp_autotest";
-        $this->assertEquals(1200, $objDB->getPRow($strQuery, array())["cnt"], "testDataBase countLimitReach");
-
-
-        $strQuery = "DROP TABLE agp_temp_autotest";
-        $this->assertTrue($objDB->_pQuery($strQuery, array()), "testDataBase dropTable");
-
+        return $rows;
     }
-
-
 }
-
