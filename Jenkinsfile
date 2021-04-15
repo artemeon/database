@@ -70,6 +70,22 @@ pipeline {
                         sh 'docker-compose -f docker-compose-postgres-11.yaml down'
                     }
                 }
+                stage ('php 7.4 docker-postgres-12') {
+                    steps {
+                        sh 'docker-compose -f docker-compose-postgres-12.yaml down'
+                        sh 'docker-compose -f docker-compose-postgres-12.yaml build'
+                        sh 'docker-compose -f docker-compose-postgres-12.yaml run php /usr/bin/run_tests.sh'
+                        sh 'docker-compose -f docker-compose-postgres-12.yaml down'
+                    }
+                }
+                stage ('php 7.4 docker-postgres-13') {
+                    steps {
+                        sh 'docker-compose -f docker-compose-postgres-13.yaml down'
+                        sh 'docker-compose -f docker-compose-postgres-13.yaml build'
+                        sh 'docker-compose -f docker-compose-postgres-13.yaml run php /usr/bin/run_tests.sh'
+                        sh 'docker-compose -f docker-compose-postgres-13.yaml down'
+                    }
+                }
                 stage ('php 7.4 docker-mssql-2017') {
                     steps {
                         sh 'docker-compose -f docker-compose-mssql-2017.yaml down'
