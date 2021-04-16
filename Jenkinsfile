@@ -47,14 +47,14 @@ pipeline {
         }
 
         stage('Databases') {
-            agent {
-                label 'dockerhost'
-            }
             environment {
                 HOME = '.'
             }
             parallel {
                 stage ('php 7.4 docker-mysql-8') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-mysql-8.yaml down'
                         sh 'docker-compose -f docker-compose-mysql-8.yaml build'
@@ -63,6 +63,9 @@ pipeline {
                     }
                 }
                 stage ('php 7.4 docker-mysql-5-7') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-mysql-5-7.yaml down'
                         sh 'docker-compose -f docker-compose-mysql-5-7.yaml build'
@@ -71,6 +74,9 @@ pipeline {
                     }
                 }
                 stage ('php 7.4 docker-postgres-10') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-postgres-10.yaml down'
                         sh 'docker-compose -f docker-compose-postgres-10.yaml build'
@@ -79,6 +85,9 @@ pipeline {
                     }
                 }
                 stage ('php 7.4 docker-postgres-11') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-postgres-11.yaml down'
                         sh 'docker-compose -f docker-compose-postgres-11.yaml build'
@@ -87,6 +96,9 @@ pipeline {
                     }
                 }
                 stage ('php 7.4 docker-postgres-12') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-postgres-12.yaml down'
                         sh 'docker-compose -f docker-compose-postgres-12.yaml build'
@@ -95,6 +107,9 @@ pipeline {
                     }
                 }
                 stage ('php 7.4 docker-postgres-13') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-postgres-13.yaml down'
                         sh 'docker-compose -f docker-compose-postgres-13.yaml build'
@@ -103,6 +118,9 @@ pipeline {
                     }
                 }
                 stage ('php 7.4 docker-mssql-2017') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-mssql-2017.yaml down'
                         sh 'docker-compose -f docker-compose-mssql-2017.yaml build'
@@ -112,6 +130,9 @@ pipeline {
                 }
                 /*
                 stage ('php 7.4 docker-oracle-12c') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-oracle-12c.yaml down'
                         sh 'docker-compose -f docker-compose-oracle-12c.yaml build'
@@ -120,6 +141,9 @@ pipeline {
                     }
                 }
                 stage ('php 7.4 docker-oracle-19c') {
+                    agent {
+                        label 'dockerhost'
+                    }
                     steps {
                         sh 'docker-compose -f docker-compose-oracle-19c.yaml down'
                         sh 'docker-compose -f docker-compose-oracle-19c.yaml build'
