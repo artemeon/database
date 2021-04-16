@@ -120,7 +120,6 @@ pipeline {
                             sh 'docker-compose -f docker-compose-oracle-12c.yaml down'
                         }
                     }
-                    */
                     stage ('php 7.4 docker-oracle-19c') {
                         steps {
                             sh 'docker-compose -f docker-compose-oracle-19c.yaml down'
@@ -129,6 +128,7 @@ pipeline {
                             sh 'docker-compose -f docker-compose-oracle-19c.yaml down'
                         }
                     }
+                    */
                 }
             }
         }
