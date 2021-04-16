@@ -105,14 +105,13 @@ class SqlsrvDriver extends DriverAbstract
         $convertParamsArray = $this->convertParamsArray($arrParams);
         $objStatement = sqlsrv_prepare($this->linkDB, $strQuery, $convertParamsArray);
         if ($objStatement === false) {
-            return false;
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
 
         $bitResult = sqlsrv_execute($objStatement);
-
         if (!$bitResult) {
-            return false;
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $this->intAffectedRows = sqlsrv_rows_affected($objStatement);
@@ -130,9 +129,8 @@ class SqlsrvDriver extends DriverAbstract
         $intCounter = 0;
 
         $objStatement = sqlsrv_query($this->linkDB, $strQuery, $this->convertParamsArray($arrParams));
-
         if ($objStatement === false) {
-            throw new QueryException('Could not execute query', $strQuery, $arrParams);
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         while ($arrRow = sqlsrv_fetch_array($objStatement, SQLSRV_FETCH_ASSOC)) {
