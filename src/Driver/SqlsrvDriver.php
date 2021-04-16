@@ -302,7 +302,7 @@ class SqlsrvDriver extends DriverAbstract
      */
     public function renameTable($strOldName, $strNewName)
     {
-        return $this->_pQuery("EXEC sp_rename '{$strOldName}', '{$strNewName}'", array());
+        return $this->_pQuery("EXEC sp_rename " . $this->encloseTableName($strOldName) . ", " . $this->encloseTableName($strNewName), []);
     }
 
     /**
