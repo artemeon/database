@@ -715,5 +715,15 @@ class Oci8Driver extends DriverAbstract
         $this->_pQuery("alter session set nls_sort=binary", array());
         $this->_pQuery("alter session set nls_comp=ANSI", array());
     }
+
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string
+    {
+        $parameters = [$value, $offset];
+        if (isset($length)) {
+            $parameters[] = $length;
+        }
+
+        return 'SUBSTR(' . implode(', ', $parameters) . ')';
+    }
 }
 

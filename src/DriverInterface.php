@@ -414,6 +414,14 @@ interface DriverInterface
      */
     public function getLeastExpression(array $parts): string;
 
+    /**
+     * Builds a query expression to retrieve a substring of the given column name or value.
+     *
+     * The offset of the substring inside of the value must be given as 1-based index. If a length is given, only up to
+     * this number of characters are extracted; if no length is given, everything to the end of the value is extracted.
+     * *Note*: Negative offsets or lengths are not guaranteed to work across different database drivers.
+     */
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string;
 }
 
 

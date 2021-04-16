@@ -685,5 +685,35 @@ class ConnectionTest extends ConnectionTestCase
 
         $connection->_pQuery('DROP TABLE ' . $tableName, []);
     }
+
+    public function testAllowsRetrievalOfSubstringsIndependentOfPlatform(): void
+    {
+        $connection = $this->getConnection();
+
+        $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
+        $connection->_pQuery(
+            'INSERT INTO ' . self::TEST_TABLE_NAME . ' (temp_id, temp_char100) VALUES (?, ?)',
+            [$this->generateSystemid(), 'foobarbazquux']
+        );
+
+        $testCases = [
+            [1, 3, 'foo'],
+            [1, 6, 'foobar'],
+            [1, null, 'foobarbazquux'],
+            [4, 3, 'bar'],
+            [4, null, 'barbazquux'],
+            [7, 3, 'baz'],
+            [7, null, 'bazquux'],
+            [10, 4, 'quux'],
+            [10, null, 'quux'],
+            [1, null, 'foobarbazquux'],
+        ];
+
+        foreach ($testCases as [$offset, $length, $expectedValue]) {
+            $substringExpression = $connection->getSubstringExpression('temp_char100', $offset, $length);
+            ['value' => $actualValue] = $connection->getPRow('SELECT ' . $substringExpression . ' AS value FROM ' . self::TEST_TABLE_NAME);
+            self::assertEquals($expectedValue, $actualValue);
+        }
+    }
 }
 
