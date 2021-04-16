@@ -25,10 +25,6 @@ class ConnectionTest extends ConnectionTestCase
         $connection = $this->getConnection();
         $newName = self::TEST_TABLE_NAME . '_new';
 
-        if ($connection->hasDriver(SqlsrvDriver::class)) {
-            $this->markTestSkipped('Currently not supported on sqlsrv');
-        }
-
         $this->assertTrue($connection->hasTable(self::TEST_TABLE_NAME));
         $this->assertFalse($connection->hasTable($newName));
 
