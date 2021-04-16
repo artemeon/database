@@ -16,7 +16,7 @@ RUN mv /usr/local/instantclient_19_6 /usr/local/instantclient
 #RUN ln -s /usr/local/instantclient/libocci.so.12.1 /usr/local/instantclient/libocci.so
 
 ENV LD_LIBRARY_PATH=/usr/local/instantclient
-RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8
+RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8-2.2.0
 
 RUN docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/usr/local/instantclient
 RUN docker-php-ext-install pdo_oci
