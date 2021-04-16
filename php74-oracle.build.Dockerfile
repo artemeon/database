@@ -12,8 +12,8 @@ RUN wget https://download.oracle.com/otn_software/linux/instantclient/19600/inst
 RUN unzip /tmp/instantclient-basic.zip -d /usr/local/
 RUN unzip /tmp/instantclient-sdk.zip -d /usr/local/
 RUN mv /usr/local/instantclient_19_6 /usr/local/instantclient
-RUN ln -s /usr/local/instantclient/libclntsh.so.12.1 /usr/local/instantclient/libclntsh.so
-RUN ln -s /usr/local/instantclient/libocci.so.12.1 /usr/local/instantclient/libocci.so
+#RUN ln -s /usr/local/instantclient/libclntsh.so.12.1 /usr/local/instantclient/libclntsh.so
+#RUN ln -s /usr/local/instantclient/libocci.so.12.1 /usr/local/instantclient/libocci.so
 
 ENV LD_LIBRARY_PATH=/usr/local/instantclient
 RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8
