@@ -18,9 +18,7 @@ RUN mv /usr/local/instantclient_19_6 /usr/local/instantclient
 ENV LD_LIBRARY_PATH=/usr/local/instantclient
 RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8-2.2.0
 
-RUN docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/usr/local/instantclient
-RUN docker-php-ext-install pdo_oci
-RUN docker-php-ext-enable oci8
+RUN docker-php-ext-enable oci8-2.2.0
 
 RUN composer --version \
  && php -v \
