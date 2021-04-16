@@ -595,5 +595,17 @@ class SqlsrvDriver extends DriverAbstract
     {
         return '(SELECT MIN(x) FROM (VALUES (' . implode('),(', $parts) . ')) AS value(x))';
     }
+
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string
+    {
+        $parameters = [$value, $offset];
+        if (isset($length)) {
+            $parameters[] = $length;
+        } else {
+            $parameters[] = 'LEN(' . $value . ') - ' . $offset;
+        }
+
+        return 'SUBSTRING(' . implode(', ', $parameters) . ')';
+    }
 }
 
