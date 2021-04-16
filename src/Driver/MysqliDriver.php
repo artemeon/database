@@ -431,11 +431,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function transactionBegin()
     {
-        //Autocommit 0 setzten
-        $strQuery = "SET AUTOCOMMIT = 0";
-        $strQuery2 = "BEGIN";
-        $this->_pQuery($strQuery, array());
-        $this->_pQuery($strQuery2, array());
+        $this->linkDB->begin_transaction();
     }
 
     /**
@@ -443,10 +439,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function transactionCommit()
     {
-        $str_pQuery = "COMMIT";
-        $str_pQuery2 = "SET AUTOCOMMIT = 1";
-        $this->_pQuery($str_pQuery, array());
-        $this->_pQuery($str_pQuery2, array());
+        $this->linkDB->commit();
     }
 
     /**
@@ -454,10 +447,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function transactionRollback()
     {
-        $strQuery = "ROLLBACK";
-        $strQuery2 = "SET AUTOCOMMIT = 1";
-        $this->_pQuery($strQuery, array());
-        $this->_pQuery($strQuery2, array());
+        $this->linkDB->rollback();
     }
 
     /**
