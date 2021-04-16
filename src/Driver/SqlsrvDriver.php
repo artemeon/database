@@ -602,7 +602,7 @@ class SqlsrvDriver extends DriverAbstract
         if (isset($length)) {
             $parameters[] = $length;
         } else {
-            $parameters[] = 'LEN(' . $value . ') - ' . $offset;
+            $parameters[] = 'LEN(' . $value . ') - ' . ($offset - 1);
         }
 
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
