@@ -1180,4 +1180,9 @@ class Connection implements ConnectionInterface
     {
         return $this->objDbDriver->getLeastExpression($parts);
     }
+
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string
+    {
+        return $this->objDbDriver->getSubstringExpression($value, $offset, $length);
+    }
 }

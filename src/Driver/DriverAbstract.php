@@ -291,4 +291,13 @@ abstract class DriverAbstract implements DriverInterface
         return 'LEAST(' . implode(', ', $parts) . ')';
     }
 
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string
+    {
+        $parameters = [$value, $offset];
+        if (isset($length)) {
+            $parameters[] = $length;
+        }
+
+        return 'SUBSTRING(' . implode(', ', $parameters) . ')';
+    }
 }
