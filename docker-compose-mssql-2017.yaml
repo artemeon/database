@@ -1,0 +1,15 @@
+version: '3'
+services:
+  php:
+    build:
+      context: .
+      dockerfile: php74-mssql.build.Dockerfile
+    container_name: php
+    environment:
+      DB_HOST: 192.168.60.220
+      DB_USER: kajonabuild
+      DB_PWD: kajonabuild
+      DB_SCHEMA: kajonabuild
+      DB_DRIVER: sqlsrv
+    volumes:
+      - ./:/scripts/

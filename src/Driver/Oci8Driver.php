@@ -121,7 +121,7 @@ class Oci8Driver extends DriverAbstract
         $strQuery = $this->processQuery($strQuery);
         $objStatement = $this->getParsedStatement($strQuery);
         if ($objStatement === false) {
-            return false;
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         foreach ($arrParams as $intPos => $strValue) {
@@ -139,7 +139,7 @@ class Oci8Driver extends DriverAbstract
 
         if (!$bitResult) {
             $this->objErrorStmt = $objStatement;
-            return false;
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $this->intAffectedRows = oci_num_rows($objStatement);
@@ -207,7 +207,7 @@ class Oci8Driver extends DriverAbstract
         $objStatement = $this->getParsedStatement($strQuery);
 
         if ($objStatement === false) {
-            throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $index = 0;
@@ -225,7 +225,7 @@ class Oci8Driver extends DriverAbstract
 
         if (!$resultSet) {
             $this->objErrorStmt = $objStatement;
-            throw new QueryException('Could not execute query', $strQuery, $arrParams);
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         //this was the old way, we're now no longer loading LOBS by default

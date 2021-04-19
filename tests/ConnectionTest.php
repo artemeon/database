@@ -15,6 +15,7 @@ namespace Artemeon\Database\Tests;
 
 use Artemeon\Database\Driver\Oci8Driver;
 use Artemeon\Database\Driver\PostgresDriver;
+use Artemeon\Database\Driver\SqlsrvDriver;
 use Artemeon\Database\Schema\DataType;
 
 class ConnectionTest extends ConnectionTestCase
@@ -23,6 +24,10 @@ class ConnectionTest extends ConnectionTestCase
     {
         $connection = $this->getConnection();
         $newName = self::TEST_TABLE_NAME . '_new';
+
+        if ($connection->hasTable($newName)) {
+            $connection->dropTable($newName);
+        }
 
         $this->assertTrue($connection->hasTable(self::TEST_TABLE_NAME));
         $this->assertFalse($connection->hasTable($newName));

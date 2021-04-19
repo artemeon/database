@@ -82,8 +82,8 @@ class MysqliDriver extends DriverAbstract
         $this->_pQuery("SET NAMES 'utf8'", array());
         $this->_pQuery("SET CHARACTER SET utf8", array());
         $this->_pQuery("SET character_set_connection ='utf8'", array());
-        $this->_pQuery("SET character_set_database ='utf8'", array());
-        $this->_pQuery("SET character_set_server ='utf8'", array());
+        //$this->_pQuery("SET character_set_database ='utf8'", array());
+        //$this->_pQuery("SET character_set_server ='utf8'", array());
 
         $this->connected = true;
         return true;
@@ -109,38 +109,44 @@ class MysqliDriver extends DriverAbstract
     public function _pQuery($strQuery, $arrParams)
     {
         $objStatement = $this->getPreparedStatement($strQuery);
-        $bitReturn = false;
-        if ($objStatement !== false) {
-            $strTypes = "";
-            foreach ($arrParams as $strOneParam) {
-                if (is_float($strOneParam)) {
-                    $strTypes .= "d";
-                } elseif (is_int($strOneParam)) {
-                    $strTypes .= "i";
-                } else {
-                    $strTypes .= "s";
-                }
-            }
-
-            if (count($arrParams) > 0) {
-                $arrParams = array_merge(array($strTypes), $arrParams);
-                call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
-            }
-
-            $intCount = 0;
-            while ($intCount < 3) {
-                $bitReturn = $objStatement->execute();
-                if ($bitReturn === false && $objStatement->errno == 1213) {
-                    // in case we have a dead lock wait a bit and retry the query
-                    $intCount++;
-                    sleep(2);
-                } else {
-                    break;
-                }
-            }
-
-            $this->intAffectedRows = $objStatement->affected_rows;
+        if ($objStatement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
+
+        $bitReturn = false;
+        $strTypes = "";
+        foreach ($arrParams as $strOneParam) {
+            if (is_float($strOneParam)) {
+                $strTypes .= "d";
+            } elseif (is_int($strOneParam)) {
+                $strTypes .= "i";
+            } else {
+                $strTypes .= "s";
+            }
+        }
+
+        if (count($arrParams) > 0) {
+            $arrParams = array_merge(array($strTypes), $arrParams);
+            call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
+        }
+
+        $intCount = 0;
+        while ($intCount < 3) {
+            $bitReturn = $objStatement->execute();
+            if ($bitReturn === false && $objStatement->errno == 1213) {
+                // in case we have a dead lock wait a bit and retry the query
+                $intCount++;
+                sleep(2);
+            } else {
+                break;
+            }
+        }
+
+        if ($bitReturn === false) {
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
+        }
+
+        $this->intAffectedRows = $objStatement->affected_rows;
 
         return $bitReturn;
     }
@@ -151,52 +157,52 @@ class MysqliDriver extends DriverAbstract
     public function getPArray($strQuery, $arrParams)
     {
         $objStatement = $this->getPreparedStatement($strQuery);
-        $arrReturn = array();
-        if ($objStatement !== false) {
-            $strTypes = "";
-            foreach ($arrParams as $strOneParam) {
-                $strTypes .= "s";
-            }
-
-            if (count($arrParams) > 0) {
-                $arrParams = array_merge(array($strTypes), $arrParams);
-                call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
-            }
-
-            if (!$objStatement->execute()) {
-                throw new QueryException('Could not execute query', $strQuery, $arrParams);
-            }
-
-            //should remain here due to the bug http://bugs.php.net/bug.php?id=47928
-            $objStatement->store_result();
-
-            $objMetadata = $objStatement->result_metadata();
-            $arrParams = array();
-            $arrRow = array();
-
-            if ($objMetadata === false) {
-                $objStatement->free_result();
-                return [];
-            }
-
-            while ($objMetadata && $objField = $objMetadata->fetch_field()) {
-                $arrParams[] = &$arrRow[$objField->name];
-            }
-
-            call_user_func_array(array($objStatement, 'bind_result'), $arrParams);
-
-            while ($objStatement->fetch()) {
-                $arrSingleRow = array();
-                foreach ($arrRow as $key => $val) {
-                    $arrSingleRow[$key] = $val;
-                }
-                $arrReturn[] = $arrSingleRow;
-            }
-
-            $objStatement->free_result();
-        } else {
-            throw new QueryException('Could not prepare statement: ' . $this->strErrorMessage, $strQuery, $arrParams);
+        if ($objStatement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
+
+        $arrReturn = array();
+        $strTypes = "";
+        foreach ($arrParams as $strOneParam) {
+            $strTypes .= "s";
+        }
+
+        if (count($arrParams) > 0) {
+            $arrParams = array_merge(array($strTypes), $arrParams);
+            call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
+        }
+
+        if (!$objStatement->execute()) {
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
+        }
+
+        //should remain here due to the bug http://bugs.php.net/bug.php?id=47928
+        $objStatement->store_result();
+
+        $objMetadata = $objStatement->result_metadata();
+        $arrParams = array();
+        $arrRow = array();
+
+        if ($objMetadata === false) {
+            $objStatement->free_result();
+            return [];
+        }
+
+        while ($objMetadata && $objField = $objMetadata->fetch_field()) {
+            $arrParams[] = &$arrRow[$objField->name];
+        }
+
+        call_user_func_array(array($objStatement, 'bind_result'), $arrParams);
+
+        while ($objStatement->fetch()) {
+            $arrSingleRow = array();
+            foreach ($arrRow as $key => $val) {
+                $arrSingleRow[$key] = $val;
+            }
+            $arrReturn[] = $arrSingleRow;
+        }
+
+        $objStatement->free_result();
 
         return $arrReturn;
     }
@@ -425,11 +431,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function transactionBegin()
     {
-        //Autocommit 0 setzten
-        $strQuery = "SET AUTOCOMMIT = 0";
-        $strQuery2 = "BEGIN";
-        $this->_pQuery($strQuery, array());
-        $this->_pQuery($strQuery2, array());
+        $this->linkDB->begin_transaction();
     }
 
     /**
@@ -437,10 +439,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function transactionCommit()
     {
-        $str_pQuery = "COMMIT";
-        $str_pQuery2 = "SET AUTOCOMMIT = 1";
-        $this->_pQuery($str_pQuery, array());
-        $this->_pQuery($str_pQuery2, array());
+        $this->linkDB->commit();
     }
 
     /**
@@ -448,10 +447,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function transactionRollback()
     {
-        $strQuery = "ROLLBACK";
-        $strQuery2 = "SET AUTOCOMMIT = 1";
-        $this->_pQuery($strQuery, array());
-        $this->_pQuery($strQuery2, array());
+        $this->linkDB->rollback();
     }
 
     /**

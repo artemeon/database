@@ -262,7 +262,7 @@ class Sqlite3Driver extends DriverAbstract
 
         $objStmt = $this->getPreparedStatement($strQuery);
         if ($objStmt === false) {
-            return false;
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
         $intCount = 1;
         foreach ($arrParams as $strOneParam) {
@@ -279,7 +279,7 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         if ($objStmt->execute() === false) {
-            return false;
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $this->intAffectedRows = $this->linkDB->changes();
@@ -297,7 +297,7 @@ class Sqlite3Driver extends DriverAbstract
 
         $objStmt = $this->getPreparedStatement($strQuery);
         if ($objStmt === false) {
-            throw new QueryException('Could not execute query', $strQuery, $arrParams);
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $intCount = 1;
@@ -318,7 +318,7 @@ class Sqlite3Driver extends DriverAbstract
         $objResult = $objStmt->execute();
 
         if ($objResult === false) {
-            throw new QueryException('Could not execute query', $strQuery, $arrParams);
+            throw new QueryException('Could not execute statement', $strQuery, $arrParams);
         }
 
         while ($arrTemp = $objResult->fetchArray(SQLITE3_ASSOC)) {
@@ -581,7 +581,7 @@ class Sqlite3Driver extends DriverAbstract
      *
      * @param string $strQuery
      *
-     * @return \SQLite3Stmt
+     * @return \SQLite3Stmt|false
      */
     private function getPreparedStatement($strQuery)
     {
