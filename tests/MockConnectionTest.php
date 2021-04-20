@@ -26,10 +26,7 @@ class MockConnectionTest extends ConnectionTestCase
         $this->assertEquals([['title' => 'foo'], ['title' => 'bar']], $connection->getPArray('', []));
         $this->assertEquals(['title' => 'foo'], $connection->getPRow('', []));
         $this->assertEquals(['title' => 'foo'], $connection->selectRow('', [], []));
-        $generator = $connection->getGenerator('', []);
-        if ($generator instanceof \Traversable) {
-            $this->assertEquals([['title' => 'foo'], ['title' => 'bar']], iterator_to_array($generator));
-        }
+        $this->assertEquals([['title' => 'foo'], ['title' => 'bar']], iterator_to_array($connection->getGenerator('', [])));
     }
 }
 

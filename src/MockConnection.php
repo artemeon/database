@@ -66,7 +66,7 @@ class MockConnection implements ConnectionInterface
         return current($this->rows);
     }
 
-    public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true): iterable
+    public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
     {
         yield from $this->rows;
     }
@@ -143,8 +143,9 @@ class MockConnection implements ConnectionInterface
         return DataType::STR_TYPE_TEXT;
     }
 
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = []): void
+    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array())
     {
+        return true;
     }
 
     public function dropTable(string $tableName): void
@@ -155,8 +156,9 @@ class MockConnection implements ConnectionInterface
     {
     }
 
-    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false): void
+    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
     {
+        return true;
     }
 
     public function deleteIndex(string $table, string $index): bool
@@ -164,8 +166,9 @@ class MockConnection implements ConnectionInterface
         return true;
     }
 
-    public function addIndex(string $table, TableIndex $index): void
+    public function addIndex(string $table, TableIndex $index)
     {
+        return true;
     }
 
     public function hasIndex($strTable, $strName): bool
@@ -173,20 +176,24 @@ class MockConnection implements ConnectionInterface
         return true;
     }
 
-    public function renameTable($strOldName, $strNewName): void
+    public function renameTable($strOldName, $strNewName)
     {
+        return true;
     }
 
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype): void
+    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
     {
+        return true;
     }
 
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null): void
+    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
     {
+        return true;
     }
 
-    public function removeColumn($strTable, $strColumn): void
+    public function removeColumn($strTable, $strColumn)
     {
+        return true;
     }
 
     public function hasColumn($strTable, $strColumn): bool
