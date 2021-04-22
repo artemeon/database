@@ -21,7 +21,6 @@ namespace Artemeon\Database;
  */
 class ConnectionParameters
 {
-    public const OCI8_MAX_STRING_SIZE_EXTENDED = 'oci8_max_string_size_extended';
     public const SQLITE3_BASE_PATH = 'sqlite3_base_path';
 
     /**

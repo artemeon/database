@@ -105,14 +105,13 @@ class SqlsrvDriver extends DriverAbstract
         $convertParamsArray = $this->convertParamsArray($arrParams);
         $objStatement = sqlsrv_prepare($this->linkDB, $strQuery, $convertParamsArray);
         if ($objStatement === false) {
-            return false;
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
 
         $bitResult = sqlsrv_execute($objStatement);
-
         if (!$bitResult) {
-            return false;
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $this->intAffectedRows = sqlsrv_rows_affected($objStatement);
@@ -130,9 +129,8 @@ class SqlsrvDriver extends DriverAbstract
         $intCounter = 0;
 
         $objStatement = sqlsrv_query($this->linkDB, $strQuery, $this->convertParamsArray($arrParams));
-
         if ($objStatement === false) {
-            throw new QueryException('Could not execute query', $strQuery, $arrParams);
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         while ($arrRow = sqlsrv_fetch_array($objStatement, SQLSRV_FETCH_ASSOC)) {
@@ -302,7 +300,7 @@ class SqlsrvDriver extends DriverAbstract
      */
     public function renameTable($strOldName, $strNewName)
     {
-        return $this->_pQuery("EXEC sp_rename '{$strOldName}', '{$strNewName}'", array());
+        return $this->_pQuery("EXEC sp_rename " . $this->encloseTableName($strOldName) . ", " . $this->encloseTableName($strNewName), []);
     }
 
     /**
@@ -596,7 +594,7 @@ class SqlsrvDriver extends DriverAbstract
      */
     public function encloseColumnName($strColumn)
     {
-        return '"'.$strColumn.'"';
+        return '['.$strColumn.']';
     }
 
     /**
@@ -604,7 +602,7 @@ class SqlsrvDriver extends DriverAbstract
      */
     public function encloseTableName($strTable)
     {
-        return '"'.$strTable.'"';
+        return '['.$strTable.']';
     }
 
     /**
@@ -613,6 +611,18 @@ class SqlsrvDriver extends DriverAbstract
     public function getLeastExpression(array $parts): string
     {
         return '(SELECT MIN(x) FROM (VALUES (' . implode('),(', $parts) . ')) AS value(x))';
+    }
+
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string
+    {
+        $parameters = [$value, $offset];
+        if (isset($length)) {
+            $parameters[] = $length;
+        } else {
+            $parameters[] = 'LEN(' . $value . ') - ' . ($offset - 1);
+        }
+
+        return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
 
     /**

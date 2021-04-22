@@ -83,20 +83,20 @@ class PostgresDriver extends DriverAbstract
     public function _pQuery($strQuery, $arrParams)
     {
         $strQuery = $this->processQuery($strQuery);
+
         $strName = $this->getPreparedStatementName($strQuery);
         if ($strName === false) {
-            return false;
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $objResult = pg_execute($this->linkDB, $strName, $arrParams);
-
-        if ($objResult !== false) {
-            $this->intAffectedRows = pg_affected_rows($objResult);
-
-            return true;
-        } else {
-            return false;
+        if ($objResult === false) {
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
+
+        $this->intAffectedRows = pg_affected_rows($objResult);
+
+        return true;
     }
 
     /**
@@ -110,13 +110,13 @@ class PostgresDriver extends DriverAbstract
         $strQuery = $this->processQuery($strQuery);
         $strName = $this->getPreparedStatementName($strQuery);
         if ($strName === false) {
-            throw new QueryException('Could not prepare statement', $strQuery, $arrParams);
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         $resultSet = pg_execute($this->linkDB, $strName, $arrParams);
 
         if ($resultSet === false) {
-            throw new QueryException('Could not execute query', $strQuery, $arrParams);
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
         while ($arrRow = pg_fetch_array($resultSet, null, PGSQL_ASSOC)) {
