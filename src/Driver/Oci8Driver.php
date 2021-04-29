@@ -73,7 +73,6 @@ class Oci8Driver extends DriverAbstract
             oci_set_client_info($this->linkDB, "ARTEMEON AGP");
             oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
             $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS='.,'", []);
-            $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI", []);
             return true;
         }
 
@@ -460,7 +459,6 @@ class Oci8Driver extends DriverAbstract
         //primary keys
         $strQuery .= " CONSTRAINT pk_".uniqid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
         $strQuery .= ") ";
-        $strQuery .= "DEFAULT COLLATION BINARY_CI ";
 
         return $this->_pQuery($strQuery, array());
     }
