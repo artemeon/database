@@ -22,6 +22,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -543,13 +544,14 @@ class Oci8Driver extends DriverAbstract
     {
         $strTables = implode(",", $arrTables);
 
-        $strCommand = $this->strDumpBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
+        $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
+        $strCommand = $dumpBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
 
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
-        $process->run();
+        $process->mustRun();
 
-        return $process->isSuccessful();
+        return true;
     }
 
     /**
@@ -557,13 +559,14 @@ class Oci8Driver extends DriverAbstract
      */
     public function dbImport($strFilename)
     {
-        $strCommand = $this->strRestoreBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." FILE='".$strFilename."'";
+        $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
+        $strCommand = $restoreBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." FILE='".$strFilename."'";
 
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
-        $process->run();
+        $process->mustRun();
 
-        return $process->isSuccessful();
+        return true;
     }
 
     /**
