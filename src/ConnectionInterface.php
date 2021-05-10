@@ -20,6 +20,7 @@ use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use Doctrine\DBAL\Query\QueryBuilder;
 
 /**
  * @since 7.3
@@ -66,6 +67,7 @@ interface ConnectionInterface
      * @param array|null $escapes which parameters to escape (described in {@see dbsafeParams})
      * @return array|null
      * @throws QueryException
+     * @deprecated - use the query builder
      */
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array;
 
@@ -337,6 +339,7 @@ interface ConnectionInterface
      * @param $strNewDatatype
      * @return bool
      * @throws ChangeColumnException
+     * @deprecated
      */
     public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
 
@@ -381,6 +384,11 @@ interface ConnectionInterface
      * @throws QueryException
      */
     public function hasTable($strTable);
+
+    /**
+     * @return \Doctrine\DBAL\Query\QueryBuilder
+     */
+    public function createQueryBuilder(): QueryBuilder;
 
     /**
      * Allows the db-driver to add database-specific surroundings to column-names.
@@ -442,12 +450,20 @@ interface ConnectionInterface
     public function getSubstringExpression(string $value, int $offset, ?int $length): string;
 
     /**
-     * Method which converts a PHP value to a value which can be inserted into a table. I.e. it truncates the value to
-     * the fitting length for the provided datatype
+     * Method which converts a PHP value to a value which can be inserted into a table
      *
      * @param mixed $value
      * @param string $type
      * @return mixed
      */
     public function convertToDatabaseValue($value, string $type);
+
+    /**
+     * Method which converts a database value to a PHP value
+     *
+     * @param mixed $value
+     * @param string $type
+     * @return mixed
+     */
+    public function convertToPHPValue($value, string $type);
 }

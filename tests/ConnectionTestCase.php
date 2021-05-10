@@ -55,9 +55,8 @@ abstract class ConnectionTestCase extends TestCase
         $driver = getenv('DB_DRIVER') ?: 'sqlite3';
 
         $params = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
-        $factory = new DriverFactory();
 
-        return self::$connection = new Connection($params, $factory);
+        return self::$connection = new Connection($params);
     }
 
     protected function flushDBCache()

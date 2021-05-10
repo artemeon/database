@@ -54,7 +54,7 @@ class ConnectionTableInformationTest extends ConnectionTestCase
             return $key->getName();
         }, $info->getPrimaryKeys());
 
-        $this->assertTrue(in_array("temp_int", $arrKeyNames));
+        $this->assertTrue(in_array("primary", $arrKeyNames));
 
         $arrIndexNames = array_map(function (TableIndex $index) {
             return $index->getName();

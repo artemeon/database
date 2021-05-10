@@ -98,40 +98,6 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals("1000.8", round($arrRow["temp_float"], 1));
     }
 
-    public function testChangeColumn()
-    {
-        $connection = $this->getConnection();
-
-        $connection->insert(self::TEST_TABLE_NAME, array('temp_id' => 'aaa', 'temp_int' => 111));
-        $connection->insert(self::TEST_TABLE_NAME, array('temp_id' => 'bbb', 'temp_int' => 222));
-
-        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_id'));
-        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_int'));
-        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint'));
-
-        $this->assertTrue($connection->changeColumn(self::TEST_TABLE_NAME, "temp_int", "temp_bigint_new", DataType::STR_TYPE_BIGINT));
-
-        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_id'));
-        $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_int'));
-        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint_new'));
-
-        $row = $connection->getPRow("SELECT temp_id, temp_bigint_new FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", ['aaa']);
-        $this->assertEquals($row["temp_id"], "aaa");
-        $this->assertEquals($row["temp_bigint_new"], 111);
-
-        $row = $connection->getPRow("SELECT temp_id, temp_bigint_new FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", ['bbb']);
-        $this->assertEquals($row["temp_id"], "bbb");
-        $this->assertEquals($row["temp_bigint_new"], 222);
-    }
-
-    public function testChangeColumnType()
-    {
-        $connection = $this->getConnection();
-
-        // test changing a column type with the same column name
-        $this->assertTrue($connection->changeColumn(self::TEST_TABLE_NAME, "temp_char500", "temp_char500", DataType::STR_TYPE_CHAR10));
-    }
-
     public function testAddColumn()
     {
         $connection = $this->getConnection();
@@ -567,76 +533,6 @@ class ConnectionTest extends ConnectionTestCase
         $row = $connection->getPRow($query, ["%{$systemId}%"]);
 
         $this->assertEquals($systemId, $row["val"]);
-    }
-
-    /**
-     * @dataProvider databaseValueProvider
-     */
-    public function testConvertToDatabaseValue($value, string $type)
-    {
-        $connection = $this->getConnection();
-        $systemId = $this->generateSystemid();
-
-        if ($type === DataType::STR_TYPE_FLOAT) {
-            $column = 'temp_float';
-        } elseif ($type === DataType::STR_TYPE_BIGINT) {
-            $column = 'temp_bigint';
-        } else {
-            $column = 'temp_' . $type;
-        }
-
-        $connection->insert(self::TEST_TABLE_NAME, [
-            'temp_id' => $systemId,
-            $column => $connection->convertToDatabaseValue($value, $type),
-        ]);
-
-        // check whether the data was correctly inserted into the table
-        $row = $connection->getPRow('SELECT ' . $column . ' AS val FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$systemId]);
-        $actual = $row['val'];
-        $expect = $value;
-
-        if ($type === DataType::STR_TYPE_CHAR10) {
-            $expect = substr($expect, 0, 10);
-        } elseif ($type === DataType::STR_TYPE_CHAR20) {
-            $expect = substr($expect, 0, 20);
-        } elseif ($type === DataType::STR_TYPE_CHAR100) {
-            $expect = substr($expect, 0, 100);
-        } elseif ($type === DataType::STR_TYPE_CHAR254) {
-            $expect = substr($expect, 0, 254);
-        } elseif ($type === DataType::STR_TYPE_CHAR500) {
-            $expect = substr($expect, 0, 500);
-        } elseif ($type === DataType::STR_TYPE_TEXT) {
-            if ($connection->hasDriver(Oci8Driver::class)) {
-                // for oracle the text column is max 4000 chars
-                $expect = substr($expect, 0, 4000);
-            }
-        } elseif ($type === DataType::STR_TYPE_DOUBLE) {
-            $actual = round($actual, 1);
-        }
-
-        $this->assertEquals($expect, $actual);
-    }
-
-    public function databaseValueProvider()
-    {
-        return [
-            [PHP_INT_MAX, DataType::STR_TYPE_LONG],
-            [4, DataType::STR_TYPE_INT],
-            [4.8, DataType::STR_TYPE_DOUBLE],
-            ['aaa', DataType::STR_TYPE_CHAR10],
-            [str_repeat('a', 50), DataType::STR_TYPE_CHAR10],
-            ['aaa', DataType::STR_TYPE_CHAR20],
-            [str_repeat('a', 50), DataType::STR_TYPE_CHAR20],
-            ['aaa', DataType::STR_TYPE_CHAR100],
-            [str_repeat('a', 150), DataType::STR_TYPE_CHAR100],
-            ['aaa', DataType::STR_TYPE_CHAR254],
-            [str_repeat('a', 300), DataType::STR_TYPE_CHAR254],
-            ['aaa', DataType::STR_TYPE_CHAR500],
-            [str_repeat('a', 600), DataType::STR_TYPE_CHAR500],
-            ['aaa', DataType::STR_TYPE_TEXT],
-            [str_repeat('a', 4010), DataType::STR_TYPE_TEXT],
-            ['aaa', DataType::STR_TYPE_LONGTEXT],
-        ];
     }
 
     /**

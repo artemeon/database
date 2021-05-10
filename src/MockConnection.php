@@ -18,6 +18,8 @@ use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 
+use Doctrine\DBAL\Query\QueryBuilder;
+
 use function current;
 
 /**
@@ -262,5 +264,13 @@ class MockConnection implements ConnectionInterface
     public function convertToDatabaseValue($value, string $type): string
     {
         return (string) $value;
+    }
+
+    public function createQueryBuilder(): QueryBuilder
+    {
+    }
+
+    public function convertToPHPValue($value, string $type)
+    {
     }
 }
