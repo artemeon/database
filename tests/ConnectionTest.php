@@ -16,6 +16,7 @@ namespace Artemeon\Database\Tests;
 use Artemeon\Database\Driver\Oci8Driver;
 use Artemeon\Database\Driver\PostgresDriver;
 use Artemeon\Database\Driver\SqlsrvDriver;
+use Artemeon\Database\Exception\TableNotFoundException;
 use Artemeon\Database\Schema\DataType;
 
 class ConnectionTest extends ConnectionTestCase
@@ -266,7 +267,6 @@ class ConnectionTest extends ConnectionTestCase
         $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", array(), 0, 0);
         $this->assertEquals(1, count($result));
         $this->assertEquals(20200508095301, $result[0]["temp_bigint"]);
-
         $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", array(), 0, 7);
         $this->assertEquals(8, count($result));
         for ($intI = 0; $intI < 8; $intI++) {
@@ -713,6 +713,21 @@ class ConnectionTest extends ConnectionTestCase
             $substringExpression = $connection->getSubstringExpression('temp_char100', $offset, $length);
             ['value' => $actualValue] = $connection->getPRow('SELECT ' . $substringExpression . ' AS value FROM ' . self::TEST_TABLE_NAME);
             self::assertEquals($expectedValue, $actualValue);
+        }
+    }
+
+    /**
+     * @throws \Artemeon\Database\Exception\QueryException
+     * @throws TableNotFoundException
+     */
+    public function testHasTable(){
+        $tableName = self::TEST_TABLE_NAME;
+        $connection = $this->getConnection();
+        $this->assertTrue($connection->hasTable($tableName));
+
+        $this->expectException(TableNotFoundException::class);
+        if(!$connection->hasTable('table_does_not_exist')) {
+            throw new TableNotFoundException('Table not found: ',self::TEST_TABLE_NAME);
         }
     }
 }

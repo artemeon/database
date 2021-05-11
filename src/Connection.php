@@ -608,7 +608,9 @@ class Connection implements ConnectionInterface
      */
     public function getColumnsOfTable($strTableName)
     {
-        $this->hasTable($strTableName);
+        if(!$this->hasTable($strTableName)) {
+            throw new TableNotFoundException('Table not found: ', $strTableName);
+        }
 
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -632,7 +634,10 @@ class Connection implements ConnectionInterface
      */
     public function getTableInformation($tableName): Table
     {
-        $this->hasTable($tableName);
+
+        if(!$this->hasTable($tableName)) {
+            throw new TableNotFoundException('Table not found: ', $tableName);
+        }
 
         if (!$this->bitConnected) {
             $this->dbconnect();
