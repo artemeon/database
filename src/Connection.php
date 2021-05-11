@@ -19,6 +19,7 @@ use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\DriverNotFoundException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Exception\RemoveColumnException;
+use Artemeon\Database\Exception\TableNotFoundException;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use Psr\Log\LoggerInterface;
@@ -607,6 +608,8 @@ class Connection implements ConnectionInterface
      */
     public function getColumnsOfTable($strTableName)
     {
+        $this->hasTable($strTableName);
+
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
@@ -629,6 +632,8 @@ class Connection implements ConnectionInterface
      */
     public function getTableInformation($tableName): Table
     {
+        $this->hasTable($tableName);
+
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
@@ -875,10 +880,17 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws TableNotFoundException
      */
     public function hasTable($strTable)
     {
-        return in_array($strTable, $this->getTables());
+
+        $tableFound =  in_array($strTable, $this->getTables());
+        if(!$tableFound) {
+            throw new TableNotFoundException('Table not found: ',$strTable);
+        }
+
+        return $tableFound;
     }
 
     /**
