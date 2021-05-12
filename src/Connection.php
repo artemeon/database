@@ -634,10 +634,7 @@ class Connection implements ConnectionInterface
      */
     public function getTableInformation($tableName): Table
     {
-
-        if(!$this->hasTable($tableName)) {
-            throw new TableNotFoundException('Table not found: ', $tableName);
-        }
+        $this->hasTable($tableName);
 
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -885,17 +882,10 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
-     * @throws TableNotFoundException
      */
     public function hasTable($strTable)
     {
-
-        $tableFound =  in_array($strTable, $this->getTables());
-        if(!$tableFound) {
-            throw new TableNotFoundException('Table not found: ',$strTable);
-        }
-
-        return $tableFound;
+        return in_array($strTable, $this->getTables());
     }
 
     /**
