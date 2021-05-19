@@ -543,7 +543,7 @@ class Connection implements ConnectionInterface
                 } else {
                     $this->objDbDriver->transactionRollback();
                     $this->bitCurrentTxIsDirty = false;
-                    throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction');
+                    throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction, because of this we have have executed a rollback on the complete outer transaction which may result in data loss');
                 }
             } else {
                 $this->intNumberOfOpenTransactions--;
