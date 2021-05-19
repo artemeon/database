@@ -21,6 +21,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -424,18 +425,20 @@ class PostgresDriver extends DriverAbstract
             }
         }
 
+        $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
+
         if ($this->handlesDumpCompression()) {
             $strFilename .= ".gz";
-            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." | gzip > \"".$strFilename."\"";
+            $strCommand .= $dumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." | gzip > \"".$strFilename."\"";
         } else {
-            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
+            $strCommand .= $dumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
         }
 
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
-        $process->run();
+        $process->mustRun();
 
-        return $process->isSuccessful();
+        return true;
     }
 
     /**
@@ -452,18 +455,19 @@ class PostgresDriver extends DriverAbstract
             }
         }
 
+        $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
 
         if ($this->handlesDumpCompression() && pathinfo($strFilename, PATHINFO_EXTENSION) === 'gz') {
-            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()."";
+            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$restoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()."";
         } else {
-            $strCommand .= $this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
+            $strCommand .= $restoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
         }
 
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
-        $process->run();
+        $process->mustRun();
 
-        return $process->isSuccessful();
+        return true;
     }
 
     public function encloseTableName($strTable)

@@ -21,6 +21,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use mysqli;
 
@@ -497,22 +498,24 @@ class MysqliDriver extends DriverAbstract
             $strParamPass = " -p\"" . $this->objCfg->getPassword() . "\"";
         }
 
+        $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
+
         if ($this->handlesDumpCompression()) {
             $strFilename .= ".gz";
-            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getHost(
+            $strCommand = $dumpBin . " -h" . $this->objCfg->getHost(
                 ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
                 ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " | gzip > \"" . $strFilename . "\"";
         } else {
-            $strCommand = $this->strDumpBin . " -h" . $this->objCfg->getHost(
+            $strCommand = $dumpBin . " -h" . $this->objCfg->getHost(
                 ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
                 ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " > \"" . $strFilename . "\"";
         }
 
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
-        $process->run();
+        $process->mustRun();
 
-        return $process->isSuccessful();
+        return true;
     }
 
     /**
@@ -526,21 +529,23 @@ class MysqliDriver extends DriverAbstract
             $strParamPass = " -p\"" . $this->objCfg->getPassword() . "\"";
         }
 
+        $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
+
         if ($this->handlesDumpCompression() && pathinfo($strFilename, PATHINFO_EXTENSION) === 'gz') {
-            $strCommand = " gunzip -c \"" . $strFilename . "\" | " . $this->strRestoreBin . " -h" . $this->objCfg->getHost(
+            $strCommand = " gunzip -c \"" . $strFilename . "\" | " . $restoreBin . " -h" . $this->objCfg->getHost(
                 ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
                 ) . " " . $this->objCfg->getDatabase() . "";
         } else {
-            $strCommand = $this->strRestoreBin . " -h" . $this->objCfg->getHost(
+            $strCommand = $restoreBin . " -h" . $this->objCfg->getHost(
                 ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
                 ) . " " . $this->objCfg->getDatabase() . " < \"" . $strFilename . "\"";
         }
 
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
-        $process->run();
+        $process->mustRun();
 
-        return $process->isSuccessful();
+        return true;
     }
 
     /**

@@ -20,6 +20,7 @@ use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\DriverNotFoundException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Exception\RemoveColumnException;
+use Artemeon\Database\Exception\TableNotFoundException;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use Psr\Log\LoggerInterface;
@@ -108,8 +109,12 @@ class Connection implements ConnectionInterface
      * @param int|null $debugLevel
      * @throws Exception\DriverNotFoundException
      */
-    public function __construct(ConnectionParameters $connectionParams, DriverFactory $driverFactory, ?LoggerInterface $logger = null, ?int $debugLevel = null)
-    {
+    public function __construct(
+        ConnectionParameters $connectionParams,
+        DriverFactory $driverFactory,
+        ?LoggerInterface $logger = null,
+        ?int $debugLevel = null
+    ) {
         $this->connectionParams = $connectionParams;
         $this->driverFactory = $driverFactory;
         $this->logger = $logger;
@@ -139,7 +144,6 @@ class Connection implements ConnectionInterface
 
             $this->objDbDriver->dbclose();
         }
-
     }
 
     /**
@@ -164,10 +168,16 @@ class Connection implements ConnectionInterface
 
         //chunk columns down to less then 1000 params, could lead to errors on oracle and sqlite otherwise
         $bitReturn = true;
-        $intSetsPerInsert = (int) floor(970 / count($arrColumns));
+        $intSetsPerInsert = (int)floor(970 / count($arrColumns));
 
         foreach (array_chunk($arrValueSets, $intSetsPerInsert) as $arrSingleValueSet) {
-            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert($strTable, $arrColumns, $arrSingleValueSet, $this, $arrEscapes);
+            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert(
+                    $strTable,
+                    $arrColumns,
+                    $arrSingleValueSet,
+                    $this,
+                    $arrEscapes
+                );
         }
 
         return $bitReturn;
@@ -184,16 +194,24 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array
-    {
+    public function selectRow(
+        string $tableName,
+        array $columns,
+        array $identifiers,
+        bool $cached = true,
+        ?array $escapes = []
+    ): ?array {
         $query = \sprintf(
             'SELECT %s FROM %s WHERE %s',
-            \implode(', ', \array_map(
-                function ($columnName): string {
-                    return $this->encloseColumnName((string) $columnName);
-                },
-                $columns
-            )),
+            \implode(
+                ', ',
+                \array_map(
+                    function ($columnName): string {
+                        return $this->encloseColumnName((string)$columnName);
+                    },
+                    $columns
+                )
+            ),
             $this->encloseTableName($tableName),
             \implode(
                 ' AND ',
@@ -291,7 +309,7 @@ class Connection implements ConnectionInterface
         $queryId = '';
         if ($this->logger !== null) {
             $queryId = uniqid();
-            $this->logger->info($queryId." ".$this->prettifyQuery($strQuery, $arrParams));
+            $this->logger->info($queryId . " " . $this->prettifyQuery($strQuery, $arrParams));
         }
 
         //Increasing the counter
@@ -306,7 +324,7 @@ class Connection implements ConnectionInterface
         }
 
         if ($this->logger !== null) {
-            $this->logger->info($queryId." "."Query finished");
+            $this->logger->info($queryId . " " . "Query finished");
         }
 
         return $bitReturn;
@@ -337,8 +355,14 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = [])
-    {
+    public function getPArray(
+        $strQuery,
+        $arrParams = [],
+        $intStart = null,
+        $intEnd = null,
+        $bitCache = true,
+        array $arrEscapes = []
+    ) {
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
@@ -359,7 +383,7 @@ class Connection implements ConnectionInterface
 
         $strQueryMd5 = null;
         if ($bitCache) {
-            $strQueryMd5 = md5($strQuery.implode(",", $arrParams).$intStart.$intEnd);
+            $strQueryMd5 = md5($strQuery . implode(",", $arrParams) . $intStart . $intEnd);
             if (isset($this->arrQueryCache[$strQueryMd5])) {
                 //Increasing Cache counter
                 $this->intNumberCache++;
@@ -372,18 +396,23 @@ class Connection implements ConnectionInterface
         $queryId = '';
         if ($this->logger !== null) {
             $queryId = uniqid();
-            $this->logger->info($queryId." ".$this->prettifyQuery($strQuery, $arrParams));
+            $this->logger->info($queryId . " " . $this->prettifyQuery($strQuery, $arrParams));
         }
 
         if ($this->objDbDriver != null) {
             if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
-                $arrReturn = $this->objDbDriver->getPArraySection($strQuery, $this->dbsafeParams($arrParams, $arrEscapes), $intStart, $intEnd);
+                $arrReturn = $this->objDbDriver->getPArraySection(
+                    $strQuery,
+                    $this->dbsafeParams($arrParams, $arrEscapes),
+                    $intStart,
+                    $intEnd
+                );
             } else {
                 $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
             }
 
             if ($this->logger !== null) {
-                $this->logger->info($queryId." "."Query finished");
+                $this->logger->info($queryId . " " . "Query finished");
             }
 
             if ($arrReturn === false) {
@@ -425,8 +454,8 @@ class Connection implements ConnectionInterface
      * Writes the last DB-Error to the screen
      *
      * @param string $strQuery
-     * @throws QueryException
      * @return void
+     * @throws QueryException
      */
     private function getError($strQuery, $arrParams)
     {
@@ -451,17 +480,17 @@ class Connection implements ConnectionInterface
         $strErrorCode = "";
         $strErrorCode .= "Error in query\n\n";
         $strErrorCode .= "Error:\n";
-        $strErrorCode .= $strError."\n\n";
+        $strErrorCode .= $strError . "\n\n";
         $strErrorCode .= "Query:\n";
-        $strErrorCode .= $strQuery."\n";
+        $strErrorCode .= $strQuery . "\n";
         $strErrorCode .= "\n\n";
-        $strErrorCode .= "Params: ".implode(", ", $arrParams)."\n";
+        $strErrorCode .= "Params: " . implode(", ", $arrParams) . "\n";
         $strErrorCode .= "Callstack:\n";
         if (function_exists("debug_backtrace")) {
             $arrStack = debug_backtrace();
 
             foreach ($arrStack as $intPos => $arrValue) {
-                $strErrorCode .= (isset($arrValue["file"]) ? $arrValue["file"] : "n.a.")."\n\t Row ".(isset($arrValue["line"]) ? $arrValue["line"] : "n.a.").", function ".$arrStack[$intPos]["function"]."\n";
+                $strErrorCode .= (isset($arrValue["file"]) ? $arrValue["file"] : "n.a.") . "\n\t Row " . (isset($arrValue["line"]) ? $arrValue["line"] : "n.a.") . ", function " . $arrStack[$intPos]["function"] . "\n";
             }
         }
 
@@ -490,7 +519,6 @@ class Connection implements ConnectionInterface
 
             //increase tx-counter
             $this->intNumberOfOpenTransactions++;
-
         }
     }
 
@@ -520,7 +548,6 @@ class Connection implements ConnectionInterface
             } else {
                 $this->intNumberOfOpenTransactions--;
             }
-
         }
     }
 
@@ -546,7 +573,6 @@ class Connection implements ConnectionInterface
                 //decrement the number of open tx
                 $this->intNumberOfOpenTransactions--;
             }
-
         }
     }
 
@@ -603,12 +629,16 @@ class Connection implements ConnectionInterface
      * array ("columnName", "columnType")
      *
      * @param string $strTableName
+     * @return array
      * @deprecated
      *
-     * @return array
      */
     public function getColumnsOfTable($strTableName)
     {
+        if (!$this->hasTable($strTableName)) {
+            throw new TableNotFoundException($strTableName);
+        }
+
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
@@ -631,6 +661,10 @@ class Connection implements ConnectionInterface
      */
     public function getTableInformation($tableName): Table
     {
+        if (!$this->hasTable($tableName)) {
+            throw new TableNotFoundException($tableName);
+        }
+
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
@@ -673,9 +707,9 @@ class Connection implements ConnectionInterface
         if ($bitReturn && count($arrIndices) > 0) {
             foreach ($arrIndices as $strOneIndex) {
                 if (is_array($strOneIndex)) {
-                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".uniqid(), $strOneIndex);
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_" . uniqid(), $strOneIndex);
                 } else {
-                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_".uniqid(), [$strOneIndex]);
+                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_" . uniqid(), [$strOneIndex]);
                 }
             }
         }
@@ -806,7 +840,13 @@ class Connection implements ConnectionInterface
 
         if (!$return) {
             $error = $this->objDbDriver->getError();
-            throw new ChangeColumnException('Could not change column: ' . $error, $strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+            throw new ChangeColumnException(
+                'Could not change column: ' . $error,
+                $strTable,
+                $strOldColumnName,
+                $strNewColumnName,
+                $strNewDatatype
+            );
         }
 
         $this->flushTablesCache();
@@ -831,7 +871,14 @@ class Connection implements ConnectionInterface
 
         if (!$return) {
             $error = $this->objDbDriver->getError();
-            throw new AddColumnException('Could not add column: ' . $error, $strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
+            throw new AddColumnException(
+                'Could not add column: ' . $error,
+                $strTable,
+                $strColumn,
+                $strDatatype,
+                $bitNull,
+                $strDefault
+            );
         }
 
         $this->flushTablesCache();
@@ -892,7 +939,6 @@ class Connection implements ConnectionInterface
      */
     private function processQuery($strQuery)
     {
-
         $strQuery = trim($strQuery);
         $arrSearch = array(
             "    ",
@@ -976,7 +1022,6 @@ class Connection implements ConnectionInterface
     {
         $replace = [];
         foreach ($arrParams as $intKey => $strParam) {
-
             if ($strParam instanceof EscapeableParameterInterface && !$strParam->isEscape()) {
                 $replace[$intKey] = $strParam->getValue();
                 continue;
@@ -1007,8 +1052,10 @@ class Connection implements ConnectionInterface
         //skip for numeric values to avoid php type juggling/autoboxing
         if (is_float($strString) || is_int($strString)) {
             return $strString;
-        } else if (is_bool($strString)) {
-            return (int) $strString;
+        } else {
+            if (is_bool($strString)) {
+                return (int)$strString;
+            }
         }
 
         if ($strString === null) {
@@ -1021,7 +1068,7 @@ class Connection implements ConnectionInterface
 
         //escape special chars
         if ($bitHtmlSpecialChars) {
-            $strString = html_entity_decode((string) $strString, ENT_COMPAT, "UTF-8");
+            $strString = html_entity_decode((string)$strString, ENT_COMPAT, "UTF-8");
             $strString = htmlspecialchars($strString, ENT_COMPAT, "UTF-8");
         }
 

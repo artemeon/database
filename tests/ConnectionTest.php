@@ -266,7 +266,6 @@ class ConnectionTest extends ConnectionTestCase
         $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", array(), 0, 0);
         $this->assertEquals(1, count($result));
         $this->assertEquals(20200508095301, $result[0]["temp_bigint"]);
-
         $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", array(), 0, 7);
         $this->assertEquals(8, count($result));
         for ($intI = 0; $intI < 8; $intI++) {
@@ -714,6 +713,13 @@ class ConnectionTest extends ConnectionTestCase
             ['value' => $actualValue] = $connection->getPRow('SELECT ' . $substringExpression . ' AS value FROM ' . self::TEST_TABLE_NAME);
             self::assertEquals($expectedValue, $actualValue);
         }
+    }
+
+    public function testHasTable(){
+        $tableName = self::TEST_TABLE_NAME;
+        $connection = $this->getConnection();
+        $this->assertTrue($connection->hasTable($tableName));
+        $this->assertFalse($connection->hasTable('table_does_not_exist'));
     }
 }
 
