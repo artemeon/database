@@ -1013,16 +1013,12 @@ class Connection implements ConnectionInterface
         //skip for numeric values to avoid php type juggling/autoboxing
         if (is_float($strString) || is_int($strString)) {
             return $strString;
+        } elseif (is_bool($strString)) {
+            return (int) $strString;
+        } elseif ($strString === null) {
+            return null;
         } else {
-            if (is_bool($strString)) {
-                return (int)$strString;
-            } else {
-                if ($strString === null) {
-                    return null;
-                } else {
-                    return $strString;
-                }
-            }
+            return $strString;
         }
     }
 
