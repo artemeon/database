@@ -1027,9 +1027,17 @@ class Connection implements ConnectionInterface
 
             if (isset($arrEscapes[$intKey])) {
                 $strParam = $this->dbsafeString($strParam, $arrEscapes[$intKey], false);
-            } else {
-                $strParam = $this->dbsafeString($strParam, true, false);
+                $replace[$intKey] = $strParam;
+                continue;
             }
+
+            if ($strParam instanceof EscapeableParameterInterface) {
+                $strParam = $this->dbsafeString($strParam->getValue(), true, $strParam->isJsonValue(), $strParam->isJsonValue());
+                $replace[$intKey] = $strParam;
+                continue;
+            }
+
+            $strParam = $this->dbsafeString($strParam, true, false);
             $replace[$intKey] = $strParam;
         }
         return $replace;
@@ -1041,11 +1049,12 @@ class Connection implements ConnectionInterface
      * @param string $strString
      * @param bool $bitHtmlSpecialChars
      * @param bool $bitAddSlashes
+     * @param bool $jsonEncoding
      *
      * @return int|null|string
      * @deprecated we need to get rid of this
      */
-    public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)
+    public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true, $jsonEncoding = false)
     {
         //skip for numeric values to avoid php type juggling/autoboxing
         if (is_float($strString) || is_int($strString)) {
@@ -1062,6 +1071,10 @@ class Connection implements ConnectionInterface
 
         if (!self::$bitDbSafeStringEnabled) {
             return $strString;
+        }
+
+        if ($jsonEncoding) {
+            $strString = trim(json_encode($strString), '" ');
         }
 
         //escape special chars
