@@ -15,6 +15,7 @@ namespace Artemeon\Database;
 
 /**
  * @since 7.3
+ * @deprecated
  */
 interface EscapeableParameterInterface
 {

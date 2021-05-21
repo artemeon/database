@@ -35,12 +35,11 @@ interface ConnectionInterface
      * @param int|null $intStart
      * @param int|null $intEnd
      * @param bool $bitCache
-     * @param array $arrEscapes
      * @return array
      * @throws QueryException
      * @since 3.4
      */
-    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = []);
+    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true);
 
     /**
      * Returns one row from a result-set.
@@ -50,11 +49,10 @@ interface ConnectionInterface
      * @param array $arrParams
      * @param int $intNr
      * @param bool $bitCache
-     * @param array $arrEscapes
      * @return array
      * @throws QueryException
      */
-    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = []);
+    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true);
 
     /**
      * Retrieves a single row of the referenced table, returning the requested columns and filtering by the given identifier(s).
@@ -63,11 +61,10 @@ interface ConnectionInterface
      * @param array $columns a flat list of column names to select
      * @param array $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
      * @param bool $cached whether a previously selected result can be reused
-     * @param array|null $escapes which parameters to escape (described in {@see dbsafeParams})
      * @return array|null
      * @throws QueryException
      */
-    public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array;
+    public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true): ?array;
 
     /**
      * Returns a generator which can be used to iterate over a section of the query without loading the complete data
@@ -94,13 +91,11 @@ interface ConnectionInterface
      *
      * @param string $strQuery
      * @param array $arrParams
-     * @param array $arrEscapes An array of booleans for each param, used to block the escaping of html-special chars.
-     *                          If not passed, all params will be cleaned.
      * @return bool
      * @throws QueryException
      * @since 3.4
      */
-    public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []);
+    public function _pQuery($strQuery, $arrParams = []);
 
     /**
      * Returns the number of affected rows from the last _pQuery call
@@ -115,11 +110,10 @@ interface ConnectionInterface
      *
      * @param string $tableName
      * @param array $values
-     * @param array $escapes
      * @return bool
      * @throws QueryException
      */
-    public function insert(string $tableName, array $values, ?array $escapes = null);
+    public function insert(string $tableName, array $values);
 
     /**
      * Creates a single query in order to insert multiple rows at one time.
@@ -129,11 +123,10 @@ interface ConnectionInterface
      * @param string $strTable
      * @param string[] $arrColumns
      * @param array $arrValueSets
-     * @param array|null $arrEscapes
      * @return bool
      * @throws QueryException
      */
-    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null);
+    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets);
 
     /**
      * Fires an insert or update of a single record. it's up to the database (driver)
@@ -156,11 +149,10 @@ interface ConnectionInterface
      * @param string $tableName
      * @param array $values
      * @param array $identifier
-     * @param array|null $escapes
      * @return bool
      * @throws QueryException
      */
-    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool;
+    public function update(string $tableName, array $values, array $identifier): bool;
 
     /**
      * Deletes a row on the provided table by the identifier columns
