@@ -434,9 +434,11 @@ class PostgresDriver extends DriverAbstract
             $strCommand .= $dumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
         }
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $exitCode = null;
+        system($strCommand, $exitCode);
+        if ($exitCode !== 0) {
+            throw new \RuntimeException('Could not generate dump');
+        }
 
         return true;
     }

@@ -511,9 +511,11 @@ class MysqliDriver extends DriverAbstract
                 ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " > \"" . $strFilename . "\"";
         }
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $exitCode = null;
+        system($strCommand, $exitCode);
+        if ($exitCode !== 0) {
+            throw new \RuntimeException('Could not generate dump');
+        }
 
         return true;
     }
