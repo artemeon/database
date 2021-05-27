@@ -300,4 +300,13 @@ abstract class DriverAbstract implements DriverInterface
 
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
+
+    protected function runCommand(string $command)
+    {
+        $exitCode = null;
+        system($command, $exitCode);
+        if ($exitCode !== 0) {
+            throw new \RuntimeException('Command returned a non-successful exit code: ' . $exitCode . ' through the command: ' . $command);
+        }
+    }
 }
