@@ -212,27 +212,23 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb): bool
     {
         $sqliteVersion = SQLite3::version();
         if (version_compare('3.7.11', $sqliteVersion['versionString'], '<=')) {
-            return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb, $arrEscapes);
+            return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb);
         }
         //legacy code
         $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
         $params = [];
-        $escapeValues = [];
         $insertStatement = 'INSERT INTO ' . $this->encloseTableName($strTable) . '  (' . implode(',', $safeColumns) . ') ';
         foreach ($arrValueSets as $key => $valueSet) {
             $selectStatement = $key === 0 ? ' SELECT ' : ' UNION SELECT ';
             $insertStatement .= $selectStatement . implode(', ', array_map(function ($column) { return ' ? AS ' . $column; }, $safeColumns));
             $params[] = array_values($valueSet);
-            if ($arrEscapes !== null) {
-                $escapeValues[] = $arrEscapes;
-            }
         }
 
-        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $objDb->_pQuery($insertStatement, array_merge(...$params));
     }
 
     /**

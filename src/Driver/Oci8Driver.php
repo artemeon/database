@@ -93,25 +93,21 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb): bool
     {
         $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $columnNames = ' (' . implode(',', $safeColumns) . ') ';
 
         $params = [];
-        $escapeValues = [];
         $insertStatement = 'INSERT ALL ';
         foreach ($arrValueSets as $valueSet) {
             $params[] = array_values($valueSet);
-            if ($arrEscapes !== null) {
-                $escapeValues[] = $arrEscapes;
-            }
             $insertStatement .= ' INTO ' . $this->encloseTableName($strTable) . ' ' . $columnNames . ' VALUES ' . $paramsPlaceholder . ' ';
         }
         $insertStatement .= ' SELECT * FROM dual';
 
-        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $objDb->_pQuery($insertStatement, array_merge(...$params));
     }
 
     /**

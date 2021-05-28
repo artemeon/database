@@ -123,23 +123,19 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
+    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb): bool
     {
         $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $placeholderSets = [];
         $params = [];
-        $escapeValues = [];
         foreach ($arrValueSets as $singleSet) {
             $placeholderSets[] = $paramsPlaceholder;
             $params[] = array_values($singleSet);
-            if ($arrEscapes !== null) {
-                $escapeValues[] = $arrEscapes;
-            }
         }
         $insertStatement = 'INSERT INTO ' . $this->encloseTableName($strTable) . ' (' . implode(',', $safeColumns) . ') VALUES ' . implode(',', $placeholderSets);
 
-        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $objDb->_pQuery($insertStatement, array_merge(...$params));
     }
 
     /**

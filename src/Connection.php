@@ -109,12 +109,8 @@ class Connection implements ConnectionInterface
      * @param int|null $debugLevel
      * @throws Exception\DriverNotFoundException
      */
-    public function __construct(
-        ConnectionParameters $connectionParams,
-        DriverFactory $driverFactory,
-        ?LoggerInterface $logger = null,
-        ?int $debugLevel = null
-    ) {
+    public function __construct(ConnectionParameters $connectionParams, DriverFactory $driverFactory, ?LoggerInterface $logger = null, ?int $debugLevel = null)
+    {
         $this->connectionParams = $connectionParams;
         $this->driverFactory = $driverFactory;
         $this->logger = $logger;
@@ -160,7 +156,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null)
+    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets)
     {
         if (count($arrValueSets) == 0) {
             return true;
@@ -175,8 +171,7 @@ class Connection implements ConnectionInterface
                     $strTable,
                     $arrColumns,
                     $arrSingleValueSet,
-                    $this,
-                    $arrEscapes
+                    $this
                 );
         }
 
@@ -186,21 +181,16 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function insert(string $tableName, array $values, ?array $escapes = null)
+    public function insert(string $tableName, array $values)
     {
-        return $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
+        return $this->multiInsert($tableName, array_keys($values), [array_values($values)]);
     }
 
     /**
      * @inheritDoc
      */
-    public function selectRow(
-        string $tableName,
-        array $columns,
-        array $identifiers,
-        bool $cached = true,
-        ?array $escapes = []
-    ): ?array {
+    public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true): ?array
+    {
         $query = \sprintf(
             'SELECT %s FROM %s WHERE %s',
             \implode(
@@ -224,7 +214,7 @@ class Connection implements ConnectionInterface
             )
         );
 
-        $row = $this->getPRow($query, \array_values($identifiers), 0, $cached, $escapes);
+        $row = $this->getPRow($query, \array_values($identifiers), 0, $cached);
         if ($row === []) {
             return null;
         }
@@ -235,7 +225,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool
+    public function update(string $tableName, array $values, array $identifier): bool
     {
         if (empty($identifier)) {
             throw new \InvalidArgumentException('Empty identifier for update statement');
@@ -256,7 +246,7 @@ class Connection implements ConnectionInterface
 
         $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
 
-        return $this->_pQuery($query, $params, $escapes ?? []);
+        return $this->_pQuery($query, $params);
     }
 
     /**
@@ -296,7 +286,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = [])
+    public function _pQuery($strQuery, $arrParams = [])
     {
         if (!$this->bitConnected) {
             $this->dbconnect();
@@ -316,7 +306,7 @@ class Connection implements ConnectionInterface
         $this->intNumber++;
 
         if ($this->objDbDriver != null) {
-            $bitReturn = $this->objDbDriver->_pQuery($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
+            $bitReturn = $this->objDbDriver->_pQuery($strQuery, $this->dbsafeParams($arrParams));
         }
 
         if (!$bitReturn) {
@@ -341,13 +331,13 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = [])
+    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true)
     {
         if ($intNr !== 0) {
             trigger_error("The intNr parameter is deprecated", E_USER_DEPRECATED);
         }
 
-        $resultRow = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache, $arrEscapes);
+        $resultRow = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache);
         $value = current($resultRow);
         return $value !== false ? $value : [];
     }
@@ -355,14 +345,8 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function getPArray(
-        $strQuery,
-        $arrParams = [],
-        $intStart = null,
-        $intEnd = null,
-        $bitCache = true,
-        array $arrEscapes = []
-    ) {
+    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true)
+    {
         if (!$this->bitConnected) {
             $this->dbconnect();
         }
@@ -401,14 +385,9 @@ class Connection implements ConnectionInterface
 
         if ($this->objDbDriver != null) {
             if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
-                $arrReturn = $this->objDbDriver->getPArraySection(
-                    $strQuery,
-                    $this->dbsafeParams($arrParams, $arrEscapes),
-                    $intStart,
-                    $intEnd
-                );
+                $arrReturn = $this->objDbDriver->getPArraySection($strQuery, $this->dbsafeParams($arrParams), $intStart, $intEnd);
             } else {
-                $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
+                $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams));
             }
 
             if ($this->logger !== null) {
@@ -1011,28 +990,15 @@ class Connection implements ConnectionInterface
      * as used by prepared statements.
      *
      * @param array $arrParams
-     * @param array $arrEscapes An array of boolean for each param, used to block the escaping of html-special chars.
-     *                          If not passed, all params will be cleaned.
-     *
      * @return array
      * @since 3.4
-     * @see Db::dbsafeString($strString, $bitHtmlSpecialChars = true)
+     * @see dbsafeString
      */
-    private function dbsafeParams($arrParams, $arrEscapes = array())
+    private function dbsafeParams($arrParams)
     {
         $replace = [];
         foreach ($arrParams as $intKey => $strParam) {
-            if ($strParam instanceof EscapeableParameterInterface && !$strParam->isEscape()) {
-                $replace[$intKey] = $strParam->getValue();
-                continue;
-            }
-
-            if (isset($arrEscapes[$intKey])) {
-                $strParam = $this->dbsafeString($strParam, $arrEscapes[$intKey], false);
-            } else {
-                $strParam = $this->dbsafeString($strParam, true, false);
-            }
-            $replace[$intKey] = $strParam;
+            $replace[$intKey] = $this->dbsafeString($strParam);
         }
         return $replace;
     }
@@ -1041,42 +1007,21 @@ class Connection implements ConnectionInterface
      * Makes a string db-safe
      *
      * @param string $strString
-     * @param bool $bitHtmlSpecialChars
-     * @param bool $bitAddSlashes
-     *
      * @return int|null|string
      * @deprecated we need to get rid of this
      */
-    public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)
+    public function dbsafeString($strString)
     {
         //skip for numeric values to avoid php type juggling/autoboxing
         if (is_float($strString) || is_int($strString)) {
             return $strString;
-        } else {
-            if (is_bool($strString)) {
-                return (int)$strString;
-            }
-        }
-
-        if ($strString === null) {
+        } elseif (is_bool($strString)) {
+            return (int) $strString;
+        } elseif ($strString === null) {
             return null;
-        }
-
-        if (!self::$bitDbSafeStringEnabled) {
+        } else {
             return $strString;
         }
-
-        //escape special chars
-        if ($bitHtmlSpecialChars) {
-            $strString = html_entity_decode((string)$strString, ENT_COMPAT, "UTF-8");
-            $strString = htmlspecialchars($strString, ENT_COMPAT, "UTF-8");
-        }
-
-        if ($bitAddSlashes) {
-            $strString = addslashes($strString);
-        }
-
-        return $strString;
     }
 
     /**
