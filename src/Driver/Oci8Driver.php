@@ -547,9 +547,7 @@ class Oci8Driver extends DriverAbstract
         $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
         $strCommand = $dumpBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
@@ -562,9 +560,7 @@ class Oci8Driver extends DriverAbstract
         $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
         $strCommand = $restoreBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." FILE='".$strFilename."'";
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
