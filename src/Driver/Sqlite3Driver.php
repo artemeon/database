@@ -637,6 +637,6 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function escape($strValue)
     {
-        return str_replace('\\\\', '\\', $strValue);
+        return SQLite3::escapeString($strValue);
     }
 }
