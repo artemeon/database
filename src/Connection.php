@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Driver\Sqlite3Driver;
 use Artemeon\Database\Exception\AddColumnException;
 use Artemeon\Database\Exception\ChangeColumnException;
 use Artemeon\Database\Exception\ConnectionException;
@@ -1032,7 +1033,10 @@ class Connection implements ConnectionInterface
             }
 
             if ($strParam instanceof EscapeableParameterInterface) {
-                $strParam = $this->dbsafeString($strParam->getValue(), true, $strParam->isJsonValue(), $strParam->isJsonValue());
+                // SQLight does not need the addslashes Parameter to function
+                $addSlashes = $strParam->isJsonValue() && !($this->objDbDriver instanceof Sqlite3Driver);
+
+                $strParam = $this->dbsafeString($strParam->getValue(), true, $addSlashes, $strParam->isJsonValue());
                 $replace[$intKey] = $strParam;
                 continue;
             }
@@ -1044,9 +1048,9 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * Makes a string db-safe
+     * Makes a input parameter db-safe
      *
-     * @param string $strString
+     * @param mixed $inputParameter
      * @param bool $bitHtmlSpecialChars
      * @param bool $bitAddSlashes
      * @param bool $jsonEncoding
@@ -1054,40 +1058,39 @@ class Connection implements ConnectionInterface
      * @return int|null|string
      * @deprecated we need to get rid of this
      */
-    public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true, $jsonEncoding = false)
+    public function dbsafeString($inputParameter, $bitHtmlSpecialChars = true, $bitAddSlashes = true, $jsonEncoding = false)
     {
         //skip for numeric values to avoid php type juggling/autoboxing
-        if (is_float($strString) || is_int($strString)) {
-            return $strString;
+        if (is_float($inputParameter) || is_int($inputParameter)) {
+            return $inputParameter;
         } else {
-            if (is_bool($strString)) {
-                return (int)$strString;
+            if (is_bool($inputParameter)) {
+                return (int)$inputParameter;
             }
         }
 
-        if ($strString === null) {
+        if ($inputParameter === null) {
             return null;
         }
-
         if (!self::$bitDbSafeStringEnabled) {
-            return $strString;
+            return $inputParameter;
         }
 
         if ($jsonEncoding) {
-            $strString = trim(json_encode($strString), '" ');
+            $inputParameter = trim(json_encode((string)$inputParameter), '" ');
         }
 
         //escape special chars
         if ($bitHtmlSpecialChars) {
-            $strString = html_entity_decode((string)$strString, ENT_COMPAT, "UTF-8");
-            $strString = htmlspecialchars($strString, ENT_COMPAT, "UTF-8");
+            $inputParameter = html_entity_decode((string)$inputParameter, ENT_COMPAT, "UTF-8");
+            $inputParameter = htmlspecialchars($inputParameter, ENT_COMPAT, "UTF-8");
         }
 
         if ($bitAddSlashes) {
-            $strString = addslashes($strString);
+            $inputParameter = addslashes($inputParameter);
         }
 
-        return $strString;
+        return $inputParameter;
     }
 
     /**
