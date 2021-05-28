@@ -1033,10 +1033,7 @@ class Connection implements ConnectionInterface
             }
 
             if ($strParam instanceof EscapeableParameterInterface) {
-                // SQLight does not need the addslashes Parameter to function
-                $addSlashes = $strParam->isJsonValue() && !($this->objDbDriver instanceof Sqlite3Driver);
-
-                $strParam = $this->dbsafeString($strParam->getValue(), true, $addSlashes, $strParam->isJsonValue());
+                $strParam = $this->dbsafeString($strParam->getValue(), true, $strParam->isEscape(), $strParam->isJsonValue());
                 $replace[$intKey] = $strParam;
                 continue;
             }
@@ -1058,7 +1055,7 @@ class Connection implements ConnectionInterface
      * @return int|null|string
      * @deprecated we need to get rid of this
      */
-    public function dbsafeString($inputParameter, $bitHtmlSpecialChars = true, $bitAddSlashes = true, $jsonEncoding = false)
+    public function dbsafeString($inputParameter, $bitHtmlSpecialChars = true, $escape = true, $jsonEncoding = false)
     {
         //skip for numeric values to avoid php type juggling/autoboxing
         if (is_float($inputParameter) || is_int($inputParameter)) {
@@ -1086,8 +1083,8 @@ class Connection implements ConnectionInterface
             $inputParameter = htmlspecialchars($inputParameter, ENT_COMPAT, "UTF-8");
         }
 
-        if ($bitAddSlashes) {
-            $inputParameter = addslashes($inputParameter);
+        if ($escape) {
+            $inputParameter = $this->escape($inputParameter);
         }
 
         return $inputParameter;

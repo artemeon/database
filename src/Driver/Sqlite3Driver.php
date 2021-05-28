@@ -631,4 +631,12 @@ class Sqlite3Driver extends DriverAbstract
 
         return 'SUBSTR(' . implode(', ', $parameters) . ')';
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function escape($strValue)
+    {
+        return str_replace('\\\\', '\\', $strValue);
+    }
 }
