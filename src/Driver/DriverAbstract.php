@@ -198,14 +198,6 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
-    public function getPArraySection($strQuery, $arrParams, $intStart, $intEnd)
-    {
-        return $this->getPArray($this->appendLimitExpression($strQuery, $intStart, $intEnd), $arrParams);
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function encloseColumnName($strColumn)
     {
         return $strColumn;

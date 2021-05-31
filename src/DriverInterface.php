@@ -97,26 +97,10 @@ interface DriverInterface
      * @param array $arrParams
      *
      * @since 3.4
-     * @return array
+     * @return \Generator
      * @throws QueryException
      */
-    public function getPArray($strQuery, $arrParams);
-
-    /**
-     * Returns just a part of a recodset, defined by the start- and the end-rows,
-     * defined by the params. Makes use of prepared statements.
-     * <b>Note:</b> Use array-like counters, so the first row is startRow 0 whereas
-     * the n-th row is the (n-1)th key!!!
-     *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int $intStart
-     * @param int $intEnd
-     *
-     * @return array
-     * @since 3.4
-     */
-    public function getPArraySection($strQuery, $arrParams, $intStart, $intEnd);
+    public function getPArray($strQuery, $arrParams): \Generator;
 
     /**
      * Returns the last error reported by the database.

@@ -199,11 +199,8 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
-        $arrReturn = array();
-        $intCounter = 0;
-
         $strQuery = $this->processQuery($strQuery, $arrParams);
         $objStatement = $this->getParsedStatement($strQuery);
 
@@ -233,16 +230,15 @@ class Oci8Driver extends DriverAbstract
         //while ($arrRow = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
         while ($arrRow = oci_fetch_assoc($objStatement)) {
             $arrRow = $this->parseResultRow($arrRow);
-            $arrReturn[$intCounter++] = $arrRow;
+            yield $arrRow;
         }
+
         oci_free_statement($objStatement);
 
         if ($this->bitResetOrder) {
             $this->setCaseSensitiveSort();
             $this->bitResetOrder = false;
         }
-
-        return $arrReturn;
     }
 
     /**

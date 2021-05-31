@@ -27,6 +27,8 @@ use Artemeon\Database\Schema\TableIndex;
 interface ConnectionInterface
 {
     /**
+     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
+     *
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
      *
@@ -39,10 +41,13 @@ interface ConnectionInterface
      * @return array
      * @throws QueryException
      * @since 3.4
+     * @see fetchAllAssociative
      */
     public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = []);
 
     /**
+     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
+     *
      * Returns one row from a result-set.
      * Makes use of prepared statements.
      *
@@ -53,6 +58,7 @@ interface ConnectionInterface
      * @param array $arrEscapes
      * @return array
      * @throws QueryException
+     * @see fetchAssociative
      */
     public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = []);
 
@@ -70,6 +76,8 @@ interface ConnectionInterface
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array;
 
     /**
+     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
+     *
      * Returns a generator which can be used to iterate over a section of the query without loading the complete data
      * into the memory. This can be used to query big result sets i.e. on installation update.
      * Make sure to have an ORDER BY in the statement, otherwise the chunks may use duplicate entries depending on the RDBMS.
@@ -86,10 +94,48 @@ interface ConnectionInterface
      * @param bool $paging
      * @return \Generator
      * @throws QueryException
+     * @see iterateAssociative
      */
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true);
 
     /**
+     * @param string $query
+     * @param array $params
+     * @return array
+     */
+    public function fetchAllAssociative(string $query, array $params = []): array;
+
+    /**
+     * @param string $query
+     * @param array $params
+     * @return array|false
+     */
+    public function fetchAssociative(string $query, array $params = []);
+
+    /**
+     * @param string $query
+     * @param array $params
+     * @return mixed
+     */
+    public function fetchOne(string $query, array $params = []);
+
+    /**
+     * @param string $query
+     * @param array $params
+     * @return \Generator
+     */
+    public function iterateAssociative(string $query, array $params = []): \Generator;
+
+    /**
+     * @param string $query
+     * @param array $params
+     * @return \Generator
+     */
+    public function iterateColumn(string $query, array $params = []): \Generator;
+
+    /**
+     * Legacy method to execute a query please use executeStatement
+     *
      * Sending a prepared statement to the database
      *
      * @param string $strQuery
@@ -99,8 +145,16 @@ interface ConnectionInterface
      * @return bool
      * @throws QueryException
      * @since 3.4
+     * @see executeStatement
      */
     public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []);
+
+    /**
+     * @param string $query
+     * @param array $params
+     * @return int
+     */
+    public function executeStatement(string $query, array $params = []);
 
     /**
      * Returns the number of affected rows from the last _pQuery call

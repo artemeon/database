@@ -290,7 +290,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
         $strQuery = $this->fixQuoting($strQuery);
         $strQuery = $this->processQuery($strQuery);
@@ -314,7 +314,6 @@ class Sqlite3Driver extends DriverAbstract
             }
         }
 
-        $arrResult = array();
         $objResult = $objStmt->execute();
 
         if ($objResult === false) {
@@ -322,10 +321,8 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         while ($arrTemp = $objResult->fetchArray(SQLITE3_ASSOC)) {
-            $arrResult[] = $arrTemp;
+            yield $arrTemp;
         }
-
-        return $arrResult;
     }
 
     /**
@@ -441,7 +438,7 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function hasIndex($strTable, $strName): bool
     {
-        $arrIndex = $this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]);
+        $arrIndex = iterator_to_array($this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]), false);
         return count($arrIndex) > 0;
     }
 

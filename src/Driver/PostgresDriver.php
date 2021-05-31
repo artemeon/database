@@ -103,11 +103,8 @@ class PostgresDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
-        $arrReturn = array();
-        $intCounter = 0;
-
         $strQuery = $this->processQuery($strQuery);
         $strName = $this->getPreparedStatementName($strQuery);
         if ($strName === false) {
@@ -127,12 +124,10 @@ class PostgresDriver extends DriverAbstract
                 $arrRow["COUNT(*)"] = $arrRow["count"];
             }
 
-            $arrReturn[$intCounter++] = $arrRow;
+            yield $arrRow;
         }
 
         pg_free_result($resultSet);
-
-        return $arrReturn;
     }
 
     /**

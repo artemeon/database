@@ -123,11 +123,8 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
-        $arrReturn = array();
-        $intCounter = 0;
-
         $objStatement = sqlsrv_query($this->linkDB, $strQuery, $this->convertParamsArray($arrParams));
         if ($objStatement === false) {
             throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
@@ -135,12 +132,10 @@ class SqlsrvDriver extends DriverAbstract
 
         while ($arrRow = sqlsrv_fetch_array($objStatement, SQLSRV_FETCH_ASSOC)) {
             $arrRow = $this->parseResultRow($arrRow);
-            $arrReturn[$intCounter++] = $arrRow;
+            yield $arrRow;
         }
 
         sqlsrv_free_stmt($objStatement);
-
-        return $arrReturn;
     }
 
     /**
