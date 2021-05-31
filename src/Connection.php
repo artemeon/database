@@ -476,7 +476,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function fetchOne(string $query, array $params = [])
+    public function fetchFirstColumn(string $query, array $params = [])
     {
         $row = $this->fetchAssociative($query, $params);
         if ($row === false) {

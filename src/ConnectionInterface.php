@@ -99,6 +99,8 @@ interface ConnectionInterface
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true);
 
     /**
+     * Prepares and executes an SQL query and returns the result as an array of associative arrays.
+     *
      * @param string $query
      * @param array $params
      * @return array
@@ -106,6 +108,9 @@ interface ConnectionInterface
     public function fetchAllAssociative(string $query, array $params = []): array;
 
     /**
+     * Prepares and executes an SQL query and returns the first row of the result
+     * as an associative array.
+     *
      * @param string $query
      * @param array $params
      * @return array|false
@@ -113,13 +118,18 @@ interface ConnectionInterface
     public function fetchAssociative(string $query, array $params = []);
 
     /**
+     * Prepares and executes an SQL query and returns the result as an array of the first column values.
+     *
      * @param string $query
      * @param array $params
      * @return mixed
      */
-    public function fetchOne(string $query, array $params = []);
+    public function fetchFirstColumn(string $query, array $params = []);
 
     /**
+     * Prepares and executes an SQL query and returns the result as an iterator over rows represented
+     * as associative arrays.
+     *
      * @param string $query
      * @param array $params
      * @return \Generator
@@ -127,6 +137,8 @@ interface ConnectionInterface
     public function iterateAssociative(string $query, array $params = []): \Generator;
 
     /**
+     * Prepares and executes an SQL query and returns the result as an iterator over the first column values.
+     *
      * @param string $query
      * @param array $params
      * @return \Generator
@@ -150,6 +162,15 @@ interface ConnectionInterface
     public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []);
 
     /**
+     * Executes an SQL statement with the given parameters and returns the number of affected rows.
+     *
+     * Could be used for:
+     *  - DML statements: INSERT, UPDATE, DELETE, etc.
+     *  - DDL statements: CREATE, DROP, ALTER, etc.
+     *  - DCL statements: GRANT, REVOKE, etc.
+     *  - Session control statements: ALTER SESSION, SET, DECLARE, etc.
+     *  - Other statements that don't yield a row set.
+     *
      * @param string $query
      * @param array $params
      * @return int
