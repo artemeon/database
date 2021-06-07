@@ -511,9 +511,7 @@ class MysqliDriver extends DriverAbstract
                 ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " > \"" . $strFilename . "\"";
         }
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
@@ -541,9 +539,7 @@ class MysqliDriver extends DriverAbstract
                 ) . " " . $this->objCfg->getDatabase() . " < \"" . $strFilename . "\"";
         }
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
