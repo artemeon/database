@@ -1051,7 +1051,7 @@ class Connection implements ConnectionInterface
      *
      * @param mixed $inputParameter
      * @param bool $bitHtmlSpecialChars
-     * @param bool $bitAddSlashes
+     * @param bool $escape
      * @param bool $jsonEncoding
      *
      * @return int|null|string
