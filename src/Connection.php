@@ -1059,30 +1059,33 @@ class Connection implements ConnectionInterface
      */
     public function dbsafeString($inputParameter, $bitHtmlSpecialChars = true, $escape = true, $jsonEncoding = false)
     {
-        //skip for numeric values to avoid php type juggling/autoboxing
-        if (is_float($inputParameter) || is_int($inputParameter)) {
-            return $inputParameter;
-        } else {
-            if (is_bool($inputParameter)) {
-                return (int)$inputParameter;
-            }
-        }
-
         if ($inputParameter === null) {
             return null;
         }
-        if (!self::$bitDbSafeStringEnabled) {
+
+        //skip for numeric values to avoid php type juggling/autoboxing
+        if (is_float($inputParameter) || is_int($inputParameter)) {
+            return $inputParameter;
+        }
+
+        if (is_bool($inputParameter)) {
+            return (int)$inputParameter;
+        }
+
+        $inputParameter = (string)$inputParameter;
+
+        if (!static::$bitDbSafeStringEnabled) {
             return $inputParameter;
         }
 
         if ($jsonEncoding) {
-            $inputParameter = trim(json_encode((string)$inputParameter), '" ');
+            $inputParameter = trim(json_encode($inputParameter), '" ');
         }
 
         //escape special chars
         if ($bitHtmlSpecialChars) {
-            $inputParameter = html_entity_decode((string)$inputParameter, ENT_COMPAT, "UTF-8");
-            $inputParameter = htmlspecialchars($inputParameter, ENT_COMPAT, "UTF-8");
+            $inputParameter = html_entity_decode($inputParameter, ENT_COMPAT, 'UTF-8');
+            $inputParameter = htmlspecialchars($inputParameter, ENT_COMPAT);
         }
 
         if ($escape) {
