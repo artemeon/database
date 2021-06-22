@@ -22,9 +22,15 @@ interface EscapeableParameterInterface
      * @return bool
      */
     public function isEscape(): bool;
+    
+    /**
+     * @return bool
+     */
+    public function isJsonValue(): bool;
 
     /**
-     * @return mixed
+     * @return string|null
      */
-    public function getValue();
+    public function getValue(): ?string;
+
 }

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Driver\Sqlite3Driver;
 use Artemeon\Database\Exception\AddColumnException;
 use Artemeon\Database\Exception\ChangeColumnException;
 use Artemeon\Database\Exception\CommitException;
@@ -1029,54 +1030,69 @@ class Connection implements ConnectionInterface
 
             if (isset($arrEscapes[$intKey])) {
                 $strParam = $this->dbsafeString($strParam, $arrEscapes[$intKey], false);
-            } else {
-                $strParam = $this->dbsafeString($strParam, true, false);
+                $replace[$intKey] = $strParam;
+                continue;
             }
+
+            if ($strParam instanceof EscapeableParameterInterface) {
+                $strParam = $this->dbsafeString($strParam->getValue(), true, $strParam->isEscape(), $strParam->isJsonValue());
+                $replace[$intKey] = $strParam;
+                continue;
+            }
+
+            $strParam = $this->dbsafeString($strParam, true, false);
             $replace[$intKey] = $strParam;
         }
         return $replace;
     }
 
     /**
-     * Makes a string db-safe
+     * Makes a input parameter db-safe
      *
-     * @param string $strString
+     * @param mixed $inputParameter
      * @param bool $bitHtmlSpecialChars
-     * @param bool $bitAddSlashes
+     * @param bool $escape
+     * @param bool $jsonEncoding
      *
-     * @return int|null|string
+     * @return int|float|null|string
      * @deprecated we need to get rid of this
      */
-    public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)
+    public function dbsafeString($inputParameter, $bitHtmlSpecialChars = true, $escape = true, $jsonEncoding = false)
     {
-        //skip for numeric values to avoid php type juggling/autoboxing
-        if (is_float($strString) || is_int($strString)) {
-            return $strString;
-        } else {
-            if (is_bool($strString)) {
-                return (int)$strString;
-            }
-        }
-
-        if ($strString === null) {
+        if ($inputParameter === null) {
             return null;
         }
 
-        if (!self::$bitDbSafeStringEnabled) {
-            return $strString;
+        //skip for numeric values to avoid php type juggling/autoboxing
+        if (is_float($inputParameter) || is_int($inputParameter)) {
+            return $inputParameter;
+        }
+
+        if (is_bool($inputParameter)) {
+            return (int)$inputParameter;
+        }
+
+        $inputParameter = (string)$inputParameter;
+
+        if (!static::$bitDbSafeStringEnabled) {
+            return $inputParameter;
+        }
+
+        if ($jsonEncoding) {
+            $inputParameter = trim(json_encode($inputParameter), '" ');
         }
 
         //escape special chars
         if ($bitHtmlSpecialChars) {
-            $strString = html_entity_decode((string)$strString, ENT_COMPAT, "UTF-8");
-            $strString = htmlspecialchars($strString, ENT_COMPAT, "UTF-8");
+            $inputParameter = html_entity_decode($inputParameter, ENT_COMPAT, 'UTF-8');
+            $inputParameter = htmlspecialchars($inputParameter, ENT_COMPAT);
         }
 
-        if ($bitAddSlashes) {
-            $strString = addslashes($strString);
+        if ($escape) {
+            $inputParameter = $this->escape($inputParameter);
         }
 
-        return $strString;
+        return $inputParameter;
     }
 
     /**

@@ -15,7 +15,7 @@ namespace Artemeon\Database\Tests;
 
 use Artemeon\Database\Driver\Oci8Driver;
 use Artemeon\Database\Driver\PostgresDriver;
-use Artemeon\Database\Driver\SqlsrvDriver;
+use Artemeon\Database\EscapeableParameterInterface;
 use Artemeon\Database\Schema\DataType;
 
 class ConnectionTest extends ConnectionTestCase
@@ -508,6 +508,46 @@ class ConnectionTest extends ConnectionTestCase
         $row = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", [$systemId], 0, false);
 
         $this->assertEmpty($row);
+    }
+
+    public function testSelect()
+    {
+        $connection = $this->getConnection();
+        $systemId = $this->generateSystemid();
+
+        $connection->insert(
+            self::TEST_TABLE_NAME,
+            [
+                'temp_id' => $systemId,
+                'temp_text' => json_encode(
+                    [
+                        'de' => 'äpfel',
+                        'en' => 'apples',
+                    ]
+                ),
+            ]
+        );
+
+        $escapable = $this->prophesize(EscapeableParameterInterface::class);
+        $escapable->isJsonValue()->willReturn(false);
+        $escapable->isEscape()->willReturn(true);
+        $escapable->getValue()->willReturn('%äpfel%');
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_text LIKE ?', [$escapable->reveal()], 0, false);
+        $this->assertEmpty($row, 'Test the faulty case if you search a special string without json encoding');
+
+        $escapable = $this->prophesize(EscapeableParameterInterface::class);
+        $escapable->isJsonValue()->willReturn(false);
+        $escapable->isEscape()->willReturn(true);
+        $escapable->getValue()->willReturn('%apples%');
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_text LIKE ?', [$escapable->reveal()], 0, false);
+        $this->assertNotEmpty($row['temp_text'], 'Test a normal value without Json encoded Chars');
+
+        $escapable = $this->prophesize(EscapeableParameterInterface::class);
+        $escapable->isJsonValue()->willReturn(true);
+        $escapable->isEscape()->willReturn(true);
+        $escapable->getValue()->willReturn('%äpfel%');
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_text LIKE ?', [$escapable->reveal()], 0, false);
+        $this->assertNotEmpty($row['temp_text'], 'Test the normal case if you search a String in a Json Encoded Row Value');
     }
 
     /**
