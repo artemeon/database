@@ -1054,7 +1054,7 @@ class Connection implements ConnectionInterface
      * @param bool $escape
      * @param bool $jsonEncoding
      *
-     * @return int|null|string
+     * @return int|float|null|string
      * @deprecated we need to get rid of this
      */
     public function dbsafeString($inputParameter, $bitHtmlSpecialChars = true, $escape = true, $jsonEncoding = false)
