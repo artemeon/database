@@ -175,7 +175,7 @@ abstract class DriverAbstract implements DriverInterface
             }
         }
 
-        $arrRow = $this->getPArraySection("SELECT COUNT(*) AS cnt FROM ".$this->encloseTableName($strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares), $arrPrimaryValues, 0, 1);
+        $arrRow = $this->getPArray("SELECT COUNT(*) AS cnt FROM ".$this->encloseTableName($strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares), $arrPrimaryValues)->current();
 
         if ($arrRow === false) {
             return false;

@@ -152,12 +152,13 @@ class SqlsrvDriver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
-
-        foreach ($arrTemp as $intKey => $strValue) {
-            $arrTemp[$intKey]["name"] = strtolower($strValue["table_name"]);
+        $generator = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
+        $result = [];
+        $index = 0;
+        foreach ($generator as $row) {
+            $result[$index++]["name"] = strtolower($row["table_name"]);
         }
-        return $arrTemp;
+        return $result;
     }
 
     /**
@@ -400,7 +401,7 @@ class SqlsrvDriver extends DriverAbstract
     {
         $strQuery = "SELECT name FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)";
 
-        $arrIndex = $this->getPArray($strQuery, [$strName, $strTable]);
+        $arrIndex = iterator_to_array($this->getPArray($strQuery, [$strName, $strTable]), false);
         return count($arrIndex) > 0;
     }
 

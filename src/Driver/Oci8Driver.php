@@ -256,12 +256,13 @@ class Oci8Driver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES", array());
-
-        foreach ($arrTemp as $intKey => $strValue) {
-            $arrTemp[$intKey]["name"] = strtolower($strValue["name"]);
+        $generator = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES", array());
+        $result = [];
+        $index = 0;
+        foreach ($generator as $row) {
+            $result[$index++]["name"] = strtolower($row["name"]);
         }
-        return $arrTemp;
+        return $result;
     }
 
     /**

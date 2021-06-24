@@ -338,12 +338,13 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrReturn = array();
-        $resultSet = $this->linkDB->query("SELECT name FROM sqlite_master WHERE type='table'");
-        while ($arrRow = $resultSet->fetchArray(SQLITE3_ASSOC)) {
-            $arrReturn[] = array("name" => $arrRow["name"]);
+        $generator = $this->getPArray("SELECT name FROM sqlite_master WHERE type='table'", []);
+        $result = [];
+        $index = 0;
+        foreach ($generator as $row) {
+            $result[$index++]["name"] = strtolower($row["name"]);
         }
-        return $arrReturn;
+        return $result;
     }
 
     /**

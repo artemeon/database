@@ -245,11 +245,13 @@ class MysqliDriver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SHOW TABLE STATUS", array());
-        foreach ($arrTemp as $intKey => $arrOneTemp) {
-            $arrTemp[$intKey]["name"] = $arrTemp[$intKey]["Name"];
+        $generator = $this->getPArray("SHOW TABLE STATUS", array());
+        $result = [];
+        $index = 0;
+        foreach ($generator as $row) {
+            $result[$index++]["name"] = $row["Name"];
         }
-        return $arrTemp;
+        return $result;
     }
 
     /**

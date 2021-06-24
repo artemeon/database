@@ -96,10 +96,16 @@ class MockConnection implements ConnectionInterface
 
     public function iterateAssociative(string $query, array $params = []): \Generator
     {
+        foreach ($this->rows as $row) {
+            yield $row;
+        }
     }
 
     public function iterateColumn(string $query, array $params = []): \Generator
     {
+        foreach ($this->rows as $row) {
+            yield reset($row);
+        }
     }
 
     public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []): bool
@@ -109,7 +115,7 @@ class MockConnection implements ConnectionInterface
 
     public function executeStatement(string $query, array $params = [])
     {
-        return true;
+        return 1;
     }
 
     public function getIntAffectedRows(): int
