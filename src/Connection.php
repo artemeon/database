@@ -491,7 +491,7 @@ class Connection implements ConnectionInterface
      */
     public function iterateAssociative(string $query, array $params = []): \Generator
     {
-        return $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        yield from $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
     }
 
     /**
