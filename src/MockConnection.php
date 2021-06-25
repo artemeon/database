@@ -80,9 +80,43 @@ class MockConnection implements ConnectionInterface
         yield from $this->rows;
     }
 
+    public function fetchAllAssociative(string $query, array $params = []): array
+    {
+        return $this->rows;
+    }
+
+    public function fetchAssociative(string $query, array $params = [])
+    {
+        return reset($this->rows);
+    }
+
+    public function fetchFirstColumn(string $query, array $params = [])
+    {
+        return null;
+    }
+
+    public function iterateAssociative(string $query, array $params = []): \Generator
+    {
+        foreach ($this->rows as $row) {
+            yield $row;
+        }
+    }
+
+    public function iterateColumn(string $query, array $params = []): \Generator
+    {
+        foreach ($this->rows as $row) {
+            yield reset($row);
+        }
+    }
+
     public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []): bool
     {
         return true;
+    }
+
+    public function executeStatement(string $query, array $params = [])
+    {
+        return 1;
     }
 
     public function getIntAffectedRows(): int

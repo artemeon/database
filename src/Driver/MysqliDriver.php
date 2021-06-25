@@ -155,7 +155,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
         $objStatement = $this->getPreparedStatement($strQuery);
         if ($objStatement === false) {
@@ -200,12 +200,10 @@ class MysqliDriver extends DriverAbstract
             foreach ($arrRow as $key => $val) {
                 $arrSingleRow[$key] = $val;
             }
-            $arrReturn[] = $arrSingleRow;
+            yield $arrSingleRow;
         }
 
         $objStatement->free_result();
-
-        return $arrReturn;
     }
 
     /**
@@ -247,11 +245,13 @@ class MysqliDriver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SHOW TABLE STATUS", array());
-        foreach ($arrTemp as $intKey => $arrOneTemp) {
-            $arrTemp[$intKey]["name"] = $arrTemp[$intKey]["Name"];
+        $generator = $this->getPArray("SHOW TABLE STATUS", array());
+        $result = [];
+        $index = 0;
+        foreach ($generator as $row) {
+            $result[$index++]["name"] = $row["Name"];
         }
-        return $arrTemp;
+        return $result;
     }
 
     /**
@@ -415,7 +415,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function hasIndex($strTable, $strName): bool
     {
-        $arrIndex = $this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]);
+        $arrIndex = iterator_to_array($this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]), false);
         return count($arrIndex) > 0;
     }
 

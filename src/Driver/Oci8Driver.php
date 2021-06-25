@@ -199,11 +199,8 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
-        $arrReturn = array();
-        $intCounter = 0;
-
         $strQuery = $this->processQuery($strQuery, $arrParams);
         $objStatement = $this->getParsedStatement($strQuery);
 
@@ -233,16 +230,15 @@ class Oci8Driver extends DriverAbstract
         //while ($arrRow = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
         while ($arrRow = oci_fetch_assoc($objStatement)) {
             $arrRow = $this->parseResultRow($arrRow);
-            $arrReturn[$intCounter++] = $arrRow;
+            yield $arrRow;
         }
+
         oci_free_statement($objStatement);
 
         if ($this->bitResetOrder) {
             $this->setCaseSensitiveSort();
             $this->bitResetOrder = false;
         }
-
-        return $arrReturn;
     }
 
     /**
@@ -260,12 +256,13 @@ class Oci8Driver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES", array());
-
-        foreach ($arrTemp as $intKey => $strValue) {
-            $arrTemp[$intKey]["name"] = strtolower($strValue["name"]);
+        $generator = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES", array());
+        $result = [];
+        $index = 0;
+        foreach ($generator as $row) {
+            $result[$index++]["name"] = strtolower($row["name"]);
         }
-        return $arrTemp;
+        return $result;
     }
 
     /**
@@ -471,7 +468,7 @@ class Oci8Driver extends DriverAbstract
      */
     public function hasIndex($strTable, $strName): bool
     {
-        $arrIndex = $this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [strtoupper($strTable), strtoupper($strName)]);
+        $arrIndex = iterator_to_array($this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [strtoupper($strTable), strtoupper($strName)]), false);
         return count($arrIndex) > 0;
     }
 
@@ -506,12 +503,15 @@ class Oci8Driver extends DriverAbstract
      */
     public function getDbInfo()
     {
-        $arrReturn = array();
+        $contextSort = iterator_to_array($this->getPArray("select sys_context ('userenv', 'nls_sort') val1 from sys.dual", []), false);
+        $contextComp = iterator_to_array($this->getPArray("select sys_context ('userenv', 'nls_comp') val1 from sys.dual", []), false);
+
+        $arrReturn = [];
         $arrReturn["version"] = $this->getServerVersion();
         $arrReturn["dbserver"] = oci_server_version($this->linkDB);
         $arrReturn["dbclient"] = function_exists("oci_client_version") ? oci_client_version() : "";
-        $arrReturn["nls_sort"] = $this->getPArray("select sys_context ('userenv', 'nls_sort') val1 from sys.dual", array())[0]["val1"];
-        $arrReturn["nls_comp"] = $this->getPArray("select sys_context ('userenv', 'nls_comp') val1 from sys.dual", array())[0]["val1"];
+        $arrReturn["nls_sort"] = $contextSort[0]["val1"] ?? '-';
+        $arrReturn["nls_comp"] = $contextComp[0]["val1"] ?? '-';
         return $arrReturn;
     }
 

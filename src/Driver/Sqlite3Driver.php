@@ -290,7 +290,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
         $strQuery = $this->fixQuoting($strQuery);
         $strQuery = $this->processQuery($strQuery);
@@ -314,7 +314,6 @@ class Sqlite3Driver extends DriverAbstract
             }
         }
 
-        $arrResult = array();
         $objResult = $objStmt->execute();
 
         if ($objResult === false) {
@@ -322,10 +321,8 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         while ($arrTemp = $objResult->fetchArray(SQLITE3_ASSOC)) {
-            $arrResult[] = $arrTemp;
+            yield $arrTemp;
         }
-
-        return $arrResult;
     }
 
     /**
@@ -341,12 +338,13 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrReturn = array();
-        $resultSet = $this->linkDB->query("SELECT name FROM sqlite_master WHERE type='table'");
-        while ($arrRow = $resultSet->fetchArray(SQLITE3_ASSOC)) {
-            $arrReturn[] = array("name" => $arrRow["name"]);
+        $generator = $this->getPArray("SELECT name FROM sqlite_master WHERE type='table'", []);
+        $result = [];
+        $index = 0;
+        foreach ($generator as $row) {
+            $result[$index++]["name"] = strtolower($row["name"]);
         }
-        return $arrReturn;
+        return $result;
     }
 
     /**
@@ -441,7 +439,7 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function hasIndex($strTable, $strName): bool
     {
-        $arrIndex = $this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]);
+        $arrIndex = iterator_to_array($this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]), false);
         return count($arrIndex) > 0;
     }
 
@@ -474,12 +472,15 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function getDbInfo()
     {
+        $timeout = iterator_to_array($this->getPArray("PRAGMA busy_timeout", array()), false);
+        $encoding = iterator_to_array($this->getPArray("PRAGMA encoding", array()), false);
+
         $arrDB = $this->linkDB->version();
-        $arrReturn = array();
+        $arrReturn = [];
         $arrReturn["dbserver"] = "SQLite3 ".$arrDB["versionString"]." ".$arrDB["versionNumber"];
         $arrReturn["location"] = $this->strDbFile;
-        $arrReturn["busy timeout"] = $this->getPArray("PRAGMA busy_timeout", array())[0]["timeout"];
-        $arrReturn["encoding"] = $this->getPArray("PRAGMA encoding", array())[0]["encoding"];
+        $arrReturn["busy timeout"] = $timeout[0]["timeout"] ?? '-';
+        $arrReturn["encoding"] = $encoding[0]["encoding"] ?? '-';
         return $arrReturn;
     }
 
