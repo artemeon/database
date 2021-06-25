@@ -415,7 +415,7 @@ class MysqliDriver extends DriverAbstract
      */
     public function hasIndex($strTable, $strName): bool
     {
-        $arrIndex = $this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]);
+        $arrIndex = iterator_to_array($this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]), false);
         return count($arrIndex) > 0;
     }
 

@@ -92,6 +92,7 @@ class MockConnection implements ConnectionInterface
 
     public function fetchFirstColumn(string $query, array $params = [])
     {
+        return null;
     }
 
     public function iterateAssociative(string $query, array $params = []): \Generator

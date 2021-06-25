@@ -472,12 +472,15 @@ class Sqlite3Driver extends DriverAbstract
      */
     public function getDbInfo()
     {
+        $timeout = iterator_to_array($this->getPArray("PRAGMA busy_timeout", array()), false);
+        $encoding = iterator_to_array($this->getPArray("PRAGMA encoding", array()), false);
+
         $arrDB = $this->linkDB->version();
-        $arrReturn = array();
+        $arrReturn = [];
         $arrReturn["dbserver"] = "SQLite3 ".$arrDB["versionString"]." ".$arrDB["versionNumber"];
         $arrReturn["location"] = $this->strDbFile;
-        $arrReturn["busy timeout"] = $this->getPArray("PRAGMA busy_timeout", array())[0]["timeout"];
-        $arrReturn["encoding"] = $this->getPArray("PRAGMA encoding", array())[0]["encoding"];
+        $arrReturn["busy timeout"] = $timeout[0]["timeout"] ?? '-';
+        $arrReturn["encoding"] = $encoding[0]["encoding"] ?? '-';
         return $arrReturn;
     }
 
