@@ -59,7 +59,7 @@ class SqlsrvDriver extends DriverAbstract
             "Database" => $this->objCfg->getDatabase(),
             "CharacterSet" => "UTF-8",
             "ConnectionPooling" => "1",
-            "MultipleActiveResultSets"=> "0",
+            "MultipleActiveResultSets"=> "1",
             "APP" => "Artemeon Core",
             "TransactionIsolation" => SQLSRV_TXN_READ_UNCOMMITTED
         ]);
