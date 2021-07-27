@@ -7,7 +7,7 @@ services:
     container_name: php
     environment:
       DB_HOST: 192.168.60.190
-      DB_USER: agp_build
+      DB_USER: agp_build_bci
       DB_PWD: agp
       DB_SCHEMA: ora19
       DB_DRIVER: oci8
