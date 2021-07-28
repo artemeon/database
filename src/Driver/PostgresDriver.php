@@ -540,7 +540,12 @@ class PostgresDriver extends DriverAbstract
      */
     public function flushQueryCache()
     {
-        $this->_pQuery("DISCARD ALL", array());
+        try {
+            $this->_pQuery("DISCARD ALL", array());
+        } catch (QueryException $e) {
+            // inside a transaction we can not discard all
+        }
+
         parent::flushQueryCache();
     }
 }
