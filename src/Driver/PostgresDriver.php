@@ -542,7 +542,7 @@ class PostgresDriver extends DriverAbstract
     {
         try {
             $this->_pQuery("DISCARD ALL", array());
-        } catch (QueryException $e) {
+        } catch (\Throwable $e) {
             // inside a transaction we can not discard all
         }
 
