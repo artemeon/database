@@ -542,6 +542,7 @@ class PostgresDriver extends DriverAbstract
     public function flushQueryCache()
     {
         $this->_pQuery("DISCARD ALL", array());
+
         parent::flushQueryCache();
     }
 }
