@@ -53,6 +53,12 @@ abstract class DriverAbstract implements DriverInterface
         return !$this->isWinOs();
     }
 
+    public function hasColumn(string $tableName, string $columnName): bool
+    {
+        $table = $this->getTableInformation($tableName);
+        return in_array(strtolower($columnName), $table->getColumnNames());
+    }
+
     /**
      * @inheritDoc
      */
