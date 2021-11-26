@@ -43,7 +43,7 @@ class Table implements \JsonSerializable
     /**
      * @inheritDoc
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return [
             "name" => $this->getName(),

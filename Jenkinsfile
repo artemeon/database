@@ -46,6 +46,22 @@ pipeline {
             }
         }
 
+        stage ('php 8.1 docker') {
+            agent {
+                dockerfile {
+                    filename 'php81.build.Dockerfile'
+                    label 'dockerhost'
+                }
+            }
+            environment {
+                HOME = '.'
+            }
+            steps {
+                sh 'composer install'
+                sh './vendor/bin/phpunit'
+            }
+        }
+
         stage('Databases') {
             agent {
                 label 'dockerhost'
@@ -60,6 +76,14 @@ pipeline {
                         sh 'docker-compose -f docker-compose-mysql-8.yaml build'
                         sh 'docker-compose -f docker-compose-mysql-8.yaml run php /usr/bin/run_tests.sh'
                         sh 'docker-compose -f docker-compose-mysql-8.yaml down'
+                    }
+                }
+                stage ('php 8.1 docker-mysql-8') {
+                    steps {
+                        sh 'docker-compose -f docker-compose-mysql-8-1.yaml down'
+                        sh 'docker-compose -f docker-compose-mysql-8-1.yaml build'
+                        sh 'docker-compose -f docker-compose-mysql-8-1.yaml run php /usr/bin/run_tests.sh'
+                        sh 'docker-compose -f docker-compose-mysql-8-1.yaml down'
                     }
                 }
                 stage ('php 7.4 docker-mysql-5-7') {
