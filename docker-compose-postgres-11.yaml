@@ -9,7 +9,7 @@ services:
   php:
     build:
       context: .
-      dockerfile: php74.build.Dockerfile
+      dockerfile: php80.build.Dockerfile
     container_name: php
     environment:
       DB_HOST: db
