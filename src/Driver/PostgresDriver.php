@@ -424,11 +424,16 @@ class PostgresDriver extends DriverAbstract
             }
         }
 
+        $port = $this->objCfg->getPort();
+        if (empty($port)) {
+            $port = 5432;
+        }
+
         if ($this->handlesDumpCompression()) {
             $strFilename .= ".gz";
-            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." | gzip > \"".$strFilename."\"";
+            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$strTables." ".$this->objCfg->getDatabase()." | gzip > \"".$strFilename."\"";
         } else {
-            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
+            $strCommand .= $this->strDumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
         }
 
         $process = Process::fromShellCommandline($strCommand);
@@ -452,11 +457,16 @@ class PostgresDriver extends DriverAbstract
             }
         }
 
+        $port = $this->objCfg->getPort();
+        if (empty($port)) {
+            $port = 5432;
+        }
+
 
         if ($this->handlesDumpCompression() && pathinfo($strFilename, PATHINFO_EXTENSION) === 'gz') {
-            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()."";
+            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$this->objCfg->getDatabase()."";
         } else {
-            $strCommand .= $this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
+            $strCommand .= $this->strRestoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
         }
 
         $process = Process::fromShellCommandline($strCommand);
