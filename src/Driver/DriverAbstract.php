@@ -56,6 +56,15 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    public function hasColumn(string $tableName, string $columnName): bool
+    {
+        $table = $this->getTableInformation($tableName);
+        return in_array(strtolower($columnName), $table->getColumnNames());
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function renameTable($strOldName, $strNewName)
     {
         return $this->_pQuery("ALTER TABLE ".($this->encloseTableName($strOldName))." RENAME TO ".($this->encloseTableName($strNewName)), array());

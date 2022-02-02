@@ -191,6 +191,15 @@ interface DriverInterface
     public function hasIndex($strTable, $strName): bool;
 
     /**
+     * Returns whether a column exists on a table
+     *
+     * @param string $tableName
+     * @param string $columnName
+     * @return bool
+     */
+    public function hasColumn(string $tableName, string $columnName): bool;
+
+    /**
      * Renames a table
      *
      * @param $strOldName

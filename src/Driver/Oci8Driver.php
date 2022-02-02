@@ -473,6 +473,15 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
+     * @inheritdoc
+     */
+    public function hasColumn(string $tableName, string $columnName): bool
+    {
+        $columnInfo = $this->getPArray("SELECT column_name FROM user_tab_columns WHERE table_name = ? AND column_name = ?", [strtoupper($tableName), strtoupper($columnName)]);
+        return !empty($columnInfo);
+    }
+
+    /**
      * @inheritDoc
      */
     public function transactionBegin()

@@ -967,14 +967,7 @@ class Connection implements ConnectionInterface
      */
     public function hasColumn($strTable, $strColumn)
     {
-        $arrColumns = $this->getColumnsOfTable($strTable);
-        foreach ($arrColumns as $arrColumn) {
-            if (strtolower($arrColumn["columnName"]) == strtolower($strColumn)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->objDbDriver->hasColumn($strTable, $strColumn);
     }
 
     /**
