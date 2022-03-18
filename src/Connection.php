@@ -1132,6 +1132,9 @@ class Connection implements ConnectionInterface
             if ($strOneParam === null) {
                 $strOneParam = 'null';
             }
+            if (is_int($strOneParam)) {
+                $strOneParam = (string) $strOneParam;
+            }
 
             $intPos = strpos($strQuery, '?');
             if ($intPos !== false) {
