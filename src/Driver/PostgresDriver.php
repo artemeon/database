@@ -425,18 +425,21 @@ class PostgresDriver extends DriverAbstract
             }
         }
 
+        $port = $this->objCfg->getPort();
+        if (empty($port)) {
+            $port = 5432;
+        }
+
         $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
 
         if ($this->handlesDumpCompression()) {
             $strFilename .= ".gz";
-            $strCommand .= $dumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." | gzip > \"".$strFilename."\"";
+            $strCommand .= $dumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$strTables." ".$this->objCfg->getDatabase()." | gzip > \"".$strFilename."\"";
         } else {
-            $strCommand .= $dumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
+            $strCommand .= $dumpBin." --clean --no-owner -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$strTables." ".$this->objCfg->getDatabase()." > \"".$strFilename."\"";
         }
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
@@ -455,17 +458,20 @@ class PostgresDriver extends DriverAbstract
             }
         }
 
+        $port = $this->objCfg->getPort();
+        if (empty($port)) {
+            $port = 5432;
+        }
+
         $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
 
         if ($this->handlesDumpCompression() && pathinfo($strFilename, PATHINFO_EXTENSION) === 'gz') {
-            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$restoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()."";
+            $strCommand .= " gunzip -c \"".$strFilename."\" | ".$restoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$this->objCfg->getDatabase()."";
         } else {
-            $strCommand .= $restoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$this->objCfg->getPort()." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
+            $strCommand .= $restoreBin." -q -h".$this->objCfg->getHost().($this->objCfg->getUsername() != "" ? " -U".$this->objCfg->getUsername() : "")." -p".$port." ".$this->objCfg->getDatabase()." < \"".$strFilename."\"";
         }
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
@@ -545,6 +551,7 @@ class PostgresDriver extends DriverAbstract
     public function flushQueryCache()
     {
         $this->_pQuery("DISCARD ALL", array());
+
         parent::flushQueryCache();
     }
 }

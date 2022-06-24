@@ -15,6 +15,7 @@ namespace Artemeon\Database;
 
 use Artemeon\Database\Exception\AddColumnException;
 use Artemeon\Database\Exception\ChangeColumnException;
+use Artemeon\Database\Exception\CommitException;
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\DriverNotFoundException;
 use Artemeon\Database\Exception\QueryException;
@@ -512,16 +513,17 @@ class Connection implements ConnectionInterface
         if ($this->objDbDriver != null) {
             //check, if the current tx is allowed to be commited
             if ($this->intNumberOfOpenTransactions == 1) {
+                //decrement counter
+                $this->intNumberOfOpenTransactions--;
+
                 //so, this is the last remaining tx. Commit or rollback?
                 if (!$this->bitCurrentTxIsDirty) {
                     $this->objDbDriver->transactionCommit();
                 } else {
                     $this->objDbDriver->transactionRollback();
                     $this->bitCurrentTxIsDirty = false;
+                    throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction, because of this we have have executed a rollback on the complete outer transaction which may result in data loss');
                 }
-
-                //decrement counter
-                $this->intNumberOfOpenTransactions--;
             } else {
                 $this->intNumberOfOpenTransactions--;
             }
@@ -889,14 +891,7 @@ class Connection implements ConnectionInterface
      */
     public function hasColumn($strTable, $strColumn)
     {
-        $arrColumns = $this->getColumnsOfTable($strTable);
-        foreach ($arrColumns as $arrColumn) {
-            if (strtolower($arrColumn["columnName"]) == strtolower($strColumn)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->objDbDriver->hasColumn($strTable, $strColumn);
     }
 
     /**
@@ -1130,6 +1125,9 @@ class Connection implements ConnectionInterface
             }
             if ($strOneParam === null) {
                 $strOneParam = 'null';
+            }
+            if (is_int($strOneParam)) {
+                $strOneParam = (string) $strOneParam;
             }
 
             $intPos = strpos($strQuery, '?');

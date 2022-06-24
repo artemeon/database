@@ -56,6 +56,15 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    public function hasColumn(string $tableName, string $columnName): bool
+    {
+        $table = $this->getTableInformation($tableName);
+        return in_array(strtolower($columnName), $table->getColumnNames());
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function renameTable($strOldName, $strNewName)
     {
         return $this->_pQuery("ALTER TABLE ".($this->encloseTableName($strOldName))." RENAME TO ".($this->encloseTableName($strNewName)), array());
@@ -295,5 +304,14 @@ abstract class DriverAbstract implements DriverInterface
         }
 
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
+    }
+
+    protected function runCommand(string $command)
+    {
+        $exitCode = null;
+        system($command, $exitCode);
+        if ($exitCode !== 0) {
+            throw new \RuntimeException('Command returned a non-successful exit code: ' . $exitCode . ' through the command: ' . $command);
+        }
     }
 }

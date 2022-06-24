@@ -256,7 +256,7 @@ class Oci8Driver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES", array());
+        $arrTemp = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES WHERE owner = ?", [$this->objCfg->getUsername()]);
 
         foreach ($arrTemp as $intKey => $strValue) {
             $arrTemp[$intKey]["name"] = strtolower($strValue["name"]);
@@ -472,6 +472,15 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
+     * @inheritdoc
+     */
+    public function hasColumn(string $tableName, string $columnName): bool
+    {
+        $columnInfo = $this->getPArray("SELECT column_name FROM user_tab_columns WHERE table_name = ? AND column_name = ?", [strtoupper($tableName), strtoupper($columnName)]);
+        return !empty($columnInfo);
+    }
+
+    /**
      * @inheritDoc
      */
     public function transactionBegin()
@@ -543,9 +552,7 @@ class Oci8Driver extends DriverAbstract
         $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
         $strCommand = $dumpBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
@@ -558,9 +565,7 @@ class Oci8Driver extends DriverAbstract
         $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
         $strCommand = $restoreBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." FILE='".$strFilename."'";
 
-        $process = Process::fromShellCommandline($strCommand);
-        $process->setTimeout(3600.0);
-        $process->mustRun();
+        $this->runCommand($strCommand);
 
         return true;
     }
