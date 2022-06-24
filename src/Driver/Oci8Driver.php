@@ -260,7 +260,7 @@ class Oci8Driver extends DriverAbstract
      */
     public function getTables()
     {
-        $arrTemp = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES", array());
+        $arrTemp = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES WHERE owner = ?", [$this->objCfg->getUsername()]);
 
         foreach ($arrTemp as $intKey => $strValue) {
             $arrTemp[$intKey]["name"] = strtolower($strValue["name"]);

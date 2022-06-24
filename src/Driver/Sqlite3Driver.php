@@ -60,6 +60,7 @@ class Sqlite3Driver extends DriverAbstract
             $this->linkDB = new SQLite3($this->strDbFile);
             $this->_pQuery('PRAGMA encoding = "UTF-8"', array());
             $this->_pQuery('PRAGMA auto_vacuum = FULL', array());
+            $this->_pQuery('PRAGMA journal_mode = WAL', array());
             $this->linkDB->busyTimeout(5000);
 
             return true;
