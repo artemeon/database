@@ -150,7 +150,7 @@ jobs:
           composer-options: "--ignore-platform-req=php+"
       - name: "Run PHPUnit"
         env:
-          DB_HOST: "mariadb"
+          DB_HOST: "127.0.0.1"
           DB_USER: "agp"
           DB_PWD: "agp"
           DB_SCHEMA: "agp"
@@ -196,7 +196,7 @@ jobs:
           composer-options: "--ignore-platform-req=php+"
       - name: "Run PHPUnit"
         env:
-          DB_HOST: "mysql"
+          DB_HOST: "127.0.0.1"
           DB_USER: "agp"
           DB_PWD: "agp"
           DB_SCHEMA: "agp"
