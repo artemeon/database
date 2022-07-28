@@ -90,12 +90,12 @@ class ConnectionTest extends ConnectionTestCase
 
         $arrRow = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " where temp_id = ?", array("id1"));
         // MSSQL returns 16.799999237061 instead of 16.8
-        $this->assertEquals(16.8, round($arrRow["temp_float"], 1));
-        $this->assertEquals("16.8", round($arrRow["temp_float"], 1));
+        $this->assertEquals(16.8, round((float) $arrRow["temp_float"], 1));
+        $this->assertEquals("16.8", round((float) $arrRow["temp_float"], 1));
 
         $arrRow = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " where temp_id = ?", array("id2"));
-        $this->assertEquals(1000.8, round($arrRow["temp_float"], 1));
-        $this->assertEquals("1000.8", round($arrRow["temp_float"], 1));
+        $this->assertEquals(1000.8, round((float) $arrRow["temp_float"], 1));
+        $this->assertEquals("1000.8", round((float) $arrRow["temp_float"], 1));
     }
 
     public function testChangeColumn()
@@ -178,7 +178,7 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertTrue(count($arrRow) >= 9, "testDataBase getRow count");
 
         $this->assertEquals("20200508095301", $arrRow["temp_bigint"], "testDataBase getRow content");
-        $this->assertEquals("23.45", round($arrRow["temp_float"], 2), "testDataBase getRow content");
+        $this->assertEquals(23.45, round((float) $arrRow["temp_float"], 2), "testDataBase getRow content");
         $this->assertEquals("char10-1", $arrRow["temp_char10"], "testDataBase getRow content");
         $this->assertEquals("char20-1", $arrRow["temp_char20"], "testDataBase getRow content");
         $this->assertEquals("char100-1", $arrRow["temp_char100"], "testDataBase getRow content");
