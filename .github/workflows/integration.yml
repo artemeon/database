@@ -130,7 +130,7 @@ jobs:
         image: "mariadb:${{ matrix.mariadb-version }}"
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: "doctrine_tests"
+          MYSQL_DATABASE: "agp"
         options: >-
           --health-cmd "mysqladmin ping --silent"
         ports:
@@ -148,6 +148,12 @@ jobs:
         with:
           composer-options: "--ignore-platform-req=php+"
       - name: "Run PHPUnit"
+        env:
+          DB_HOST: "localhost"
+          DB_USER: "root"
+          DB_PWD: ""
+          DB_SCHEMA: "agp"
+          DB_DRIVER: "mysqli"
         run: "vendor/bin/phpunit"
   phpunit-mysql:
     name: "PHPUnit with MySQL"
@@ -166,7 +172,7 @@ jobs:
         options: >-
           --health-cmd "mysqladmin ping --silent"
           -e MYSQL_ALLOW_EMPTY_PASSWORD=yes
-          -e MYSQL_DATABASE=doctrine_tests
+          -e MYSQL_DATABASE=agp
           ${{ matrix.custom-entrypoint }}
         ports:
           - "3306:3306"
@@ -183,6 +189,12 @@ jobs:
         with:
           composer-options: "--ignore-platform-req=php+"
       - name: "Run PHPUnit"
+        env:
+          DB_HOST: "localhost"
+          DB_USER: "root"
+          DB_PWD: ""
+          DB_SCHEMA: "agp"
+          DB_DRIVER: "mysqli"
         run: "vendor/bin/phpunit"
   phpunit-mssql:
     name: "PHPUnit with SQL Server"
@@ -222,4 +234,10 @@ jobs:
         with:
           composer-options: "--ignore-platform-req=php+"
       - name: "Run PHPUnit"
+        env:
+          DB_HOST: "localhost"
+          DB_USER: "root"
+          DB_PWD: ""
+          DB_SCHEMA: "agp"
+          DB_DRIVER: "sqlsrv"
         run: "vendor/bin/phpunit"
