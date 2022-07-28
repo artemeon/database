@@ -610,7 +610,7 @@ class ConnectionTest extends ConnectionTestCase
                 $expect = substr($expect, 0, 4000);
             }
         } elseif ($type === DataType::STR_TYPE_DOUBLE) {
-            $actual = round($actual, 1);
+            $actual = round((float) $actual, 1);
         }
 
         $this->assertEquals($expect, $actual);
