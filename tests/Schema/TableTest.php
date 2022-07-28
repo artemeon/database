@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Artemeon\Database\Tests;
+namespace Artemeon\Database\Schema\Tests;
 
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
