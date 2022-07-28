@@ -213,17 +213,15 @@ jobs:
           - "8.1"
         extension:
           - "sqlsrv"
-        collation:
-          - "Latin1_General_100_CI_AS_SC_UTF8"
     services:
       mssql:
         image: "mcr.microsoft.com/mssql/server:2019-latest"
         env:
           ACCEPT_EULA: "Y"
-          SA_PASSWORD: "agp1234agp12"
-          MSSQL_COLLATION: "${{ matrix.collation }}"
+          SA_PASSWORD: "agp_1234"
+          MSSQL_COLLATION: "Latin1_General_100_CI_AS_SC_UTF8"
         options: >-
-          --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P agp1234agp12"
+          --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P agp_1234"
         ports:
           - "1433:1433"
     steps:
@@ -243,7 +241,7 @@ jobs:
         env:
           DB_HOST: "localhost"
           DB_USER: "sa"
-          DB_PWD: "agp1234agp12"
+          DB_PWD: "agp_1234"
           DB_SCHEMA: "master"
           DB_DRIVER: "sqlsrv"
         run: "vendor/bin/phpunit"
