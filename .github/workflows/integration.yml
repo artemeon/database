@@ -220,10 +220,10 @@ jobs:
         image: "mcr.microsoft.com/mssql/server:2019-latest"
         env:
           ACCEPT_EULA: "Y"
-          SA_PASSWORD: "agp"
+          SA_PASSWORD: "agp1234"
           MSSQL_COLLATION: "${{ matrix.collation }}"
         options: >-
-          --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P agp"
+          --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P agp1234"
         ports:
           - "1433:1433"
     steps:
@@ -243,7 +243,7 @@ jobs:
         env:
           DB_HOST: "localhost"
           DB_USER: "sa"
-          DB_PWD: "agp"
+          DB_PWD: "agp1234"
           DB_SCHEMA: "master"
           DB_DRIVER: "sqlsrv"
         run: "vendor/bin/phpunit"
