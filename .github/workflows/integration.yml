@@ -8,7 +8,6 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "7.4"
           - "8.0"
           - "8.1"
     steps:
@@ -18,8 +17,6 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php-version }}"
-          coverage: "pcov"
-          ini-values: "zend.assertions=1"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
         with:
@@ -37,14 +34,10 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "7.4"
           - "8.0"
           - "8.1"
         oracle-version:
           - "21"
-        include:
-          - php-version: "7.4"
-            oracle-version: "11"
     services:
       oracle:
         image: gvenzl/oracle-xe:${{ matrix.oracle-version }}
@@ -67,8 +60,6 @@ jobs:
         with:
           php-version: "${{ matrix.php-version }}"
           extensions: "oci8"
-          coverage: "pcov"
-          ini-values: "zend.assertions=1"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
         with:
@@ -88,14 +79,12 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "7.4"
+          - "8.0"
+          - "8.1"
         postgres-version:
           - "9.4"
           - "13"
           - "14"
-        include:
-          - php-version: "8.1"
-            postgres-version: "14"
     services:
       postgres:
         image: "postgres:${{ matrix.postgres-version }}"
@@ -112,8 +101,6 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php-version }}"
-          coverage: "pcov"
-          ini-values: "zend.assertions=1"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
         with:
@@ -133,7 +120,6 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "7.4"
           - "8.0"
           - "8.1"
         mariadb-version:
@@ -156,8 +142,6 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php-version }}"
-          coverage: "pcov"
-          ini-values: "zend.assertions=1"
           extensions: "mysqli"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
@@ -172,7 +156,6 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "7.4"
           - "8.0"
           - "8.1"
         mysql-version:
@@ -194,8 +177,6 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php-version }}"
-          coverage: "pcov"
-          ini-values: "zend.assertions=1"
           extensions: "mysqli"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
@@ -210,7 +191,6 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "7.4"
           - "8.0"
           - "8.1"
         extension:
@@ -235,8 +215,6 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php-version }}"
-          coverage: "pcov"
-          ini-values: "zend.assertions=1"
           tools: "pecl"
           extensions: "sqlsrv"
       - name: "Install dependencies with Composer"
