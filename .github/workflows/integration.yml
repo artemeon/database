@@ -49,7 +49,9 @@ jobs:
       oracle:
         image: gvenzl/oracle-xe:${{ matrix.oracle-version }}
         env:
-          ORACLE_PASSWORD: oracle
+          APP_USER: agp
+          APP_USER_PASSWORD: agp_1234
+          ORACLE_RANDOM_PASSWORD: true
         ports:
           - "1521:1521"
         options: >-
@@ -72,6 +74,12 @@ jobs:
         with:
           composer-options: "--ignore-platform-req=php+"
       - name: "Run PHPUnit"
+        env:
+          DB_HOST: "localhost"
+          DB_USER: "agp"
+          DB_PWD: "agp_1234"
+          DB_SCHEMA: "XEPDB1"
+          DB_DRIVER: "oci8"
         run: "vendor/bin/phpunit"
   phpunit-postgres:
     name: "PHPUnit with PostgreSQL"
@@ -111,6 +119,12 @@ jobs:
         with:
           composer-options: "--ignore-platform-req=php+"
       - name: "Run PHPUnit"
+        env:
+          DB_HOST: "localhost"
+          DB_USER: "postgres"
+          DB_PWD: "postgres"
+          DB_SCHEMA: "postgres"
+          DB_DRIVER: "postgres"
         run: "vendor/bin/phpunit"
   phpunit-mariadb:
     name: "PHPUnit with MariaDB"
