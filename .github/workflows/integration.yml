@@ -27,51 +27,51 @@ jobs:
           php -r 'printf("Testing with libsqlite version %s\n", (new PDO("sqlite::memory:"))->query("select sqlite_version()")->fetch()[0]);'
       - name: "Run PHPUnit"
         run: "vendor/bin/phpunit"
-  phpunit-oci8:
-    name: "PHPUnit on OCI8"
-    runs-on: "ubuntu-20.04"
-    needs: "phpunit-smoke-check"
-    strategy:
-      matrix:
-        php-version:
-          - "8.0"
-          - "8.1"
-        oracle-version:
-          - "21"
-    services:
-      oracle:
-        image: gvenzl/oracle-xe:${{ matrix.oracle-version }}
-        env:
-          APP_USER: agp
-          APP_USER_PASSWORD: agp_1234
-          ORACLE_RANDOM_PASSWORD: true
-        ports:
-          - "1521:1521"
-        options: >-
-          --health-cmd healthcheck.sh
-          --health-interval 20s
-          --health-timeout 10s
-          --health-retries 10
-    steps:
-      - name: "Checkout"
-        uses: "actions/checkout@v2"
-      - name: "Install PHP"
-        uses: "shivammathur/setup-php@v2"
-        with:
-          php-version: "${{ matrix.php-version }}"
-          extensions: "oci8"
-      - name: "Install dependencies with Composer"
-        uses: "ramsey/composer-install@v1"
-        with:
-          composer-options: "--ignore-platform-req=php+"
-      - name: "Run PHPUnit"
-        env:
-          DB_HOST: "localhost"
-          DB_USER: "agp"
-          DB_PWD: "agp_1234"
-          DB_SCHEMA: "XEPDB1"
-          DB_DRIVER: "oci8"
-        run: "vendor/bin/phpunit"
+#  phpunit-oci8:
+#    name: "PHPUnit on OCI8"
+#    runs-on: "ubuntu-20.04"
+#    needs: "phpunit-smoke-check"
+#    strategy:
+#      matrix:
+#        php-version:
+#          - "8.0"
+#          - "8.1"
+#        oracle-version:
+#          - "21"
+#    services:
+#      oracle:
+#        image: gvenzl/oracle-xe:${{ matrix.oracle-version }}
+#        env:
+#          APP_USER: agp
+#          APP_USER_PASSWORD: agp_1234
+#          ORACLE_RANDOM_PASSWORD: true
+#        ports:
+#          - "1521:1521"
+#        options: >-
+#          --health-cmd healthcheck.sh
+#          --health-interval 20s
+#          --health-timeout 10s
+#          --health-retries 10
+#    steps:
+#      - name: "Checkout"
+#        uses: "actions/checkout@v2"
+#      - name: "Install PHP"
+#        uses: "shivammathur/setup-php@v2"
+#        with:
+#          php-version: "${{ matrix.php-version }}"
+#          extensions: "oci8"
+#      - name: "Install dependencies with Composer"
+#        uses: "ramsey/composer-install@v1"
+#        with:
+#          composer-options: "--ignore-platform-req=php+"
+#      - name: "Run PHPUnit"
+#        env:
+#          DB_HOST: "localhost"
+#          DB_USER: "agp"
+#          DB_PWD: "agp_1234"
+#          DB_SCHEMA: "XEPDB1"
+#          DB_DRIVER: "oci8"
+#        run: "vendor/bin/phpunit"
   phpunit-postgres:
     name: "PHPUnit with PostgreSQL"
     runs-on: "ubuntu-20.04"
