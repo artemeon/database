@@ -74,6 +74,7 @@ class Oci8Driver extends DriverAbstract
             oci_set_client_info($this->linkDB, "ARTEMEON AGP");
             oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
             $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS='.,'", []);
+            $this->_pQuery("ALTER SESSION SET MAX_STRING_SIZE=EXTENDED", []);
             $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI", []);
             return true;
         }
