@@ -39,7 +39,7 @@ class ConnectionMultiInsertTest extends ConnectionTestCase
 
             $this->assertEquals(123456 + $i, $row["temp_int"]);
             $this->assertEquals(20200508095300 + $i, $row["temp_bigint"]);
-            $this->assertEquals(23.45, round($row["temp_float"], 2));
+            $this->assertEquals(23.45, round((float) $row["temp_float"], 2));
             $this->assertEquals("char10-" . $i, $row["temp_char10"]);
             $this->assertEquals("char20-" . $i, $row["temp_char20"]);
             $this->assertEquals("char100-" . $i, $row["temp_char100"]);

@@ -106,12 +106,12 @@ class ConnectionPreparedTest extends ConnectionTestCase
         $arrRow = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", array("id1"));
 
         $this->assertEquals(123456, $arrRow["temp_bigint"]);
-        $this->assertEquals(1.7, round($arrRow["temp_float"], 1));
+        $this->assertEquals(1.7, round((float) $arrRow["temp_float"], 1));
 
         $arrRow = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", array("id2"));
 
         $this->assertEquals(123456, $arrRow["temp_bigint"]);
-        $this->assertEquals(1.7, round($arrRow["temp_float"], 1));
+        $this->assertEquals(1.7, round((float) $arrRow["temp_float"], 1));
     }
 }
 

@@ -1,0 +1,247 @@
+name: "Continuous Integration"
+on:
+  - pull_request
+jobs:
+  phpunit-smoke-check:
+    name: "PHPUnit with SQLite"
+    runs-on: "ubuntu-20.04"
+    strategy:
+      matrix:
+        php-version:
+          - "8.0"
+          - "8.1"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+      - name: "Install dependencies with Composer"
+        uses: "ramsey/composer-install@v1"
+        with:
+          composer-options: "--ignore-platform-req=php+"
+          dependency-versions: "${{ matrix.dependencies }}"
+      - name: "Print SQLite version"
+        run: >
+          php -r 'printf("Testing with libsqlite version %s\n", (new PDO("sqlite::memory:"))->query("select sqlite_version()")->fetch()[0]);'
+      - name: "Run PHPUnit"
+        run: "vendor/bin/phpunit"
+#  phpunit-oci8:
+#    name: "PHPUnit on OCI8"
+#    runs-on: "ubuntu-20.04"
+#    needs: "phpunit-smoke-check"
+#    strategy:
+#      matrix:
+#        php-version:
+#          - "8.0"
+#          - "8.1"
+#        oracle-version:
+#          - "21"
+#    services:
+#      oracle:
+#        image: gvenzl/oracle-xe:${{ matrix.oracle-version }}
+#        env:
+#          APP_USER: agp
+#          APP_USER_PASSWORD: agp_1234
+#          ORACLE_RANDOM_PASSWORD: true
+#        ports:
+#          - "1521:1521"
+#        options: >-
+#          --health-cmd healthcheck.sh
+#          --health-interval 20s
+#          --health-timeout 10s
+#          --health-retries 10
+#    steps:
+#      - name: "Checkout"
+#        uses: "actions/checkout@v2"
+#      - name: "Install PHP"
+#        uses: "shivammathur/setup-php@v2"
+#        with:
+#          php-version: "${{ matrix.php-version }}"
+#          extensions: "oci8"
+#      - name: "Install dependencies with Composer"
+#        uses: "ramsey/composer-install@v1"
+#        with:
+#          composer-options: "--ignore-platform-req=php+"
+#      - name: "Run PHPUnit"
+#        env:
+#          DB_HOST: "localhost"
+#          DB_USER: "agp"
+#          DB_PWD: "agp_1234"
+#          DB_SCHEMA: "XEPDB1"
+#          DB_DRIVER: "oci8"
+#        run: "vendor/bin/phpunit"
+  phpunit-postgres:
+    name: "PHPUnit with PostgreSQL"
+    runs-on: "ubuntu-20.04"
+    needs: "phpunit-smoke-check"
+    strategy:
+      matrix:
+        php-version:
+          - "8.0"
+          - "8.1"
+        postgres-version:
+          - "13"
+          - "14"
+    services:
+      postgres:
+        image: "postgres:${{ matrix.postgres-version }}"
+        env:
+          POSTGRES_PASSWORD: "postgres"
+        options: >-
+          --health-cmd "pg_isready"
+        ports:
+          - "5432:5432"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+      - name: "Install dependencies with Composer"
+        uses: "ramsey/composer-install@v1"
+        with:
+          composer-options: "--ignore-platform-req=php+"
+      - name: "Run PHPUnit"
+        env:
+          DB_HOST: "localhost"
+          DB_USER: "postgres"
+          DB_PWD: "postgres"
+          DB_SCHEMA: "postgres"
+          DB_DRIVER: "postgres"
+        run: "vendor/bin/phpunit"
+  phpunit-mariadb:
+    name: "PHPUnit with MariaDB"
+    runs-on: "ubuntu-20.04"
+    needs: "phpunit-smoke-check"
+    strategy:
+      matrix:
+        php-version:
+          - "8.0"
+          - "8.1"
+        mariadb-version:
+          - "10.6"
+          - "10.8"
+    services:
+      mariadb:
+        image: "mariadb:${{ matrix.mariadb-version }}"
+        env:
+          MYSQL_RANDOM_ROOT_PASSWORD: yes
+          MYSQL_USER: "agp"
+          MYSQL_PASSWORD: "agp"
+          MYSQL_DATABASE: "agp"
+        options: >-
+          --health-cmd "mysqladmin ping --silent"
+        ports:
+          - "3306:3306"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+          extensions: "mysqli"
+      - name: "Install dependencies with Composer"
+        uses: "ramsey/composer-install@v1"
+        with:
+          composer-options: "--ignore-platform-req=php+"
+      - name: "Run PHPUnit"
+        env:
+          DB_HOST: "127.0.0.1"
+          DB_USER: "agp"
+          DB_PWD: "agp"
+          DB_SCHEMA: "agp"
+          DB_DRIVER: "mysqli"
+        run: "vendor/bin/phpunit"
+  phpunit-mysql:
+    name: "PHPUnit with MySQL"
+    runs-on: "ubuntu-20.04"
+    needs: "phpunit-smoke-check"
+    strategy:
+      matrix:
+        php-version:
+          - "8.0"
+          - "8.1"
+        mysql-version:
+          - "8.0"
+    services:
+      mysql:
+        image: "mysql:${{ matrix.mysql-version }}"
+        env:
+          MYSQL_RANDOM_ROOT_PASSWORD: yes
+          MYSQL_USER: "agp"
+          MYSQL_PASSWORD: "agp"
+          MYSQL_DATABASE: "agp"
+        options: >-
+          --health-cmd "mysqladmin ping --silent"
+          -e MYSQL_ALLOW_EMPTY_PASSWORD=yes
+          -e MYSQL_DATABASE=agp
+          ${{ matrix.custom-entrypoint }}
+        ports:
+          - "3306:3306"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+          extensions: "mysqli"
+      - name: "Install dependencies with Composer"
+        uses: "ramsey/composer-install@v1"
+        with:
+          composer-options: "--ignore-platform-req=php+"
+      - name: "Run PHPUnit"
+        env:
+          DB_HOST: "127.0.0.1"
+          DB_USER: "agp"
+          DB_PWD: "agp"
+          DB_SCHEMA: "agp"
+          DB_DRIVER: "mysqli"
+        run: "vendor/bin/phpunit"
+  phpunit-mssql:
+    name: "PHPUnit with SQL Server"
+    runs-on: "ubuntu-20.04"
+    needs: "phpunit-smoke-check"
+    strategy:
+      matrix:
+        php-version:
+          - "8.0"
+          - "8.1"
+        extension:
+          - "sqlsrv"
+    services:
+      mssql:
+        image: "mcr.microsoft.com/mssql/server:2019-latest"
+        env:
+          ACCEPT_EULA: "Y"
+          SA_PASSWORD: "agp_1234"
+          MSSQL_COLLATION: "Latin1_General_100_CI_AS_SC_UTF8"
+        options: >-
+          --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P agp_1234"
+        ports:
+          - "1433:1433"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+          tools: "pecl"
+          extensions: "sqlsrv"
+      - name: "Install dependencies with Composer"
+        uses: "ramsey/composer-install@v1"
+        with:
+          composer-options: "--ignore-platform-req=php+"
+      - name: "Run PHPUnit"
+        env:
+          DB_HOST: "localhost"
+          DB_USER: "sa"
+          DB_PWD: "agp_1234"
+          DB_SCHEMA: "master"
+          DB_DRIVER: "sqlsrv"
+        run: "vendor/bin/phpunit"
