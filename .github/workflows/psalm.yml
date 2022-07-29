@@ -1,0 +1,38 @@
+name: Psalm
+on:
+  - pull_request
+jobs:
+  psalm:
+    name: Psalm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.0
+          coverage: none
+          extensions: imagick
+      - name: Cache Composer Dependencies
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-psalm-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-psalm-
+      - name: Composer install
+        if: steps.composer-cache.outputs.cache-hit != 'true'
+        run: composer install --no-interaction --no-ansi --no-progress
+      - uses: actions/cache@v3
+        name: Cache Psalm
+        id: psalm-cache
+        with:
+          path: ~/.cache/psalm
+          key: ${{ runner.os }}-psalm-cache-v3-
+          restore-keys: |
+            ${{ runner.os }}-psalm-cache-v3-
+      - name: Run Psalm
+        if: steps.psalm-cache.outputs.cache-hit != 'true'
+        run: vendor/bin/psalm --no-progress --show-info=false
