@@ -356,9 +356,7 @@ class Connection implements ConnectionInterface
             trigger_error("The intNr parameter is deprecated", E_USER_DEPRECATED);
         }
 
-        $strQuery = $this->appendLimitExpression($strQuery, $intNr, $intNr);
         $result = $this->objDbDriver->getPArray($strQuery, $arrParams);
-
         foreach ($result as $row) {
             return $row;
         }
