@@ -30,6 +30,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
      * Note the new fetch* and iterate* methods dont use the dbsafeParams method, this means there is no htmlspecialchars handling
+     * also there is no query cache handling, so you need to cache the results if needed in your service
      *
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
@@ -50,6 +51,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
      * Note the new fetch* and iterate* methods dont use the dbsafeParams method, this means there is no htmlspecialchars handling
+     * also there is no query cache handling, so you need to cache the results if needed in your service
      *
      * Returns one row from a result-set.
      * Makes use of prepared statements.
