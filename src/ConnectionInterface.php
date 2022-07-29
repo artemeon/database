@@ -22,9 +22,10 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 
 /**
- * @since 7.3
+ * Interface of our internal database abstraction layer.
+ * If possible please use the new methods from the DoctrineConnectionInterface
  */
-interface ConnectionInterface
+interface ConnectionInterface extends DoctrineConnectionInterface
 {
     /**
      * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
@@ -99,53 +100,6 @@ interface ConnectionInterface
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true);
 
     /**
-     * Prepares and executes an SQL query and returns the result as an array of associative arrays.
-     *
-     * @param string $query
-     * @param array $params
-     * @return array
-     */
-    public function fetchAllAssociative(string $query, array $params = []): array;
-
-    /**
-     * Prepares and executes an SQL query and returns the first row of the result
-     * as an associative array.
-     *
-     * @param string $query
-     * @param array $params
-     * @return array|false
-     */
-    public function fetchAssociative(string $query, array $params = []);
-
-    /**
-     * Prepares and executes an SQL query and returns the result as an array of the first column values.
-     *
-     * @param string $query
-     * @param array $params
-     * @return mixed
-     */
-    public function fetchFirstColumn(string $query, array $params = []);
-
-    /**
-     * Prepares and executes an SQL query and returns the result as an iterator over rows represented
-     * as associative arrays.
-     *
-     * @param string $query
-     * @param array $params
-     * @return \Generator
-     */
-    public function iterateAssociative(string $query, array $params = []): \Generator;
-
-    /**
-     * Prepares and executes an SQL query and returns the result as an iterator over the first column values.
-     *
-     * @param string $query
-     * @param array $params
-     * @return \Generator
-     */
-    public function iterateColumn(string $query, array $params = []): \Generator;
-
-    /**
      * Legacy method to execute a query please use executeStatement
      *
      * Sending a prepared statement to the database
@@ -162,39 +116,11 @@ interface ConnectionInterface
     public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []);
 
     /**
-     * Executes an SQL statement with the given parameters and returns the number of affected rows.
-     *
-     * Could be used for:
-     *  - DML statements: INSERT, UPDATE, DELETE, etc.
-     *  - DDL statements: CREATE, DROP, ALTER, etc.
-     *  - DCL statements: GRANT, REVOKE, etc.
-     *  - Session control statements: ALTER SESSION, SET, DECLARE, etc.
-     *  - Other statements that don't yield a row set.
-     *
-     * @param string $query
-     * @param array $params
-     * @return int
-     */
-    public function executeStatement(string $query, array $params = []);
-
-    /**
      * Returns the number of affected rows from the last _pQuery call
      *
      * @return integer
      */
     public function getIntAffectedRows();
-
-    /**
-     * Creates a simple insert for a single row where the values parameter is an associative array with column names to
-     * value mapping
-     *
-     * @param string $tableName
-     * @param array $values
-     * @param array $escapes
-     * @return bool
-     * @throws QueryException
-     */
-    public function insert(string $tableName, array $values, ?array $escapes = null);
 
     /**
      * Creates a single query in order to insert multiple rows at one time.
@@ -224,28 +150,6 @@ interface ConnectionInterface
      * @throws QueryException
      */
     public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns);
-
-    /**
-     * Updates a row on the provided table by the identifier columns
-     *
-     * @param string $tableName
-     * @param array $values
-     * @param array $identifier
-     * @param array|null $escapes
-     * @return bool
-     * @throws QueryException
-     */
-    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool;
-
-    /**
-     * Deletes a row on the provided table by the identifier columns
-     *
-     * @param string $tableName
-     * @param array $identifier
-     * @return bool
-     * @throws QueryException
-     */
-    public function delete(string $tableName, array $identifier): bool;
 
     /**
      * @return bool
