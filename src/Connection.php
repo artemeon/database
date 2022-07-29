@@ -464,7 +464,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function fetchAssociative(string $query, array $params = [])
+    public function fetchAssociative(string $query, array $params = []): array|false
     {
         $result = $this->objDbDriver->getPArray($query, $params);
         foreach ($result as $row) {
@@ -477,7 +477,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function fetchFirstColumn(string $query, array $params = [])
+    public function fetchFirstColumn(string $query, array $params = []): mixed
     {
         $row = $this->fetchAssociative($query, $params);
         if ($row === false) {
