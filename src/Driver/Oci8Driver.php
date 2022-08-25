@@ -229,8 +229,7 @@ class Oci8Driver extends DriverAbstract
         //this was the old way, we're now no longer loading LOBS by default
         //while ($arrRow = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
         while ($arrRow = oci_fetch_assoc($objStatement)) {
-            $arrRow = $this->parseResultRow($arrRow);
-            yield $arrRow;
+            yield $this->parseResultRow($arrRow);
         }
 
         oci_free_statement($objStatement);
