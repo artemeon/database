@@ -33,7 +33,12 @@ interface DoctrineConnectionInterface
     /**
      * Prepares and executes an SQL query and returns the result as an array of the first column values.
      */
-    public function fetchFirstColumn(string $query, array $params = []): mixed;
+    public function fetchFirstColumn(string $query, array $params = []): array;
+
+    /**
+     * Prepares and executes an SQL query and returns the value of a single column of the first row of the result.
+     */
+    public function fetchOne(string $query, array $params = []): mixed;
 
     /**
      * Prepares and executes an SQL query and returns the result as an iterator over rows represented

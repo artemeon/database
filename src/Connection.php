@@ -477,7 +477,21 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function fetchFirstColumn(string $query, array $params = []): mixed
+    public function fetchFirstColumn(string $query, array $params = []): array
+    {
+        $values = [];
+        $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        foreach ($result as $row) {
+            $values[] = reset($row);
+        }
+
+        return $values;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function fetchOne(string $query, array $params = []): mixed
     {
         $row = $this->fetchAssociative($query, $params);
         if ($row === false) {
