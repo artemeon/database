@@ -150,7 +150,7 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getTables()
+    public function getTables(): array
     {
         $generator = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
         $result = [];

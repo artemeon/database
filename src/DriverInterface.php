@@ -117,7 +117,7 @@ interface DriverInterface
      *
      * @return array
      */
-    public function getTables();
+    public function getTables(): array;
 
     /**
      * Fetches the full table information as retrieved from the rdbms

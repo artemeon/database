@@ -243,7 +243,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getTables()
+    public function getTables(): array
     {
         $generator = $this->getPArray("SHOW TABLE STATUS", array());
         $result = [];

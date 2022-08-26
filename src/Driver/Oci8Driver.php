@@ -253,7 +253,7 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getTables()
+    public function getTables(): array
     {
         $generator = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES WHERE owner = ?", [$this->objCfg->getUsername()]);
         $result = [];

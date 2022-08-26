@@ -338,7 +338,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getTables()
+    public function getTables(): array
     {
         $generator = $this->getPArray("SELECT name FROM sqlite_master WHERE type='table'", []);
         $result = [];

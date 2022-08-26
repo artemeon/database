@@ -182,7 +182,7 @@ class PostgresDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getTables()
+    public function getTables(): array
     {
         $generator = $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", []);
         $result = [];
