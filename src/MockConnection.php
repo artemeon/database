@@ -90,7 +90,16 @@ class MockConnection implements ConnectionInterface
         return reset($this->rows);
     }
 
-    public function fetchFirstColumn(string $query, array $params = []): mixed
+    public function fetchFirstColumn(string $query, array $params = []): array
+    {
+        $values = [];
+        foreach ($this->rows as $row) {
+            $values[] = reset($row);
+        }
+        return $values;
+    }
+
+    public function fetchOne(string $query, array $params = []): mixed
     {
         return null;
     }
