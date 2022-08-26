@@ -247,9 +247,8 @@ class MysqliDriver extends DriverAbstract
     {
         $generator = $this->getPArray("SHOW TABLE STATUS", array());
         $result = [];
-        $index = 0;
         foreach ($generator as $row) {
-            $result[$index++]["name"] = $row["Name"];
+            $result[] = ['name' => $row['Name']];
         }
         return $result;
     }

@@ -186,9 +186,8 @@ class PostgresDriver extends DriverAbstract
     {
         $generator = $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", []);
         $result = [];
-        $index = 0;
         foreach ($generator as $row) {
-            $result[$index++]["name"] = strtolower($row["name"]);
+            $result[] = ['name' => strtolower($row["name"])];
         }
         return $result;
     }

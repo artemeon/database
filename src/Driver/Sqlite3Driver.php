@@ -342,9 +342,8 @@ class Sqlite3Driver extends DriverAbstract
     {
         $generator = $this->getPArray("SELECT name FROM sqlite_master WHERE type='table'", []);
         $result = [];
-        $index = 0;
         foreach ($generator as $row) {
-            $result[$index++]["name"] = strtolower($row["name"]);
+            $result[] = ['name' => strtolower($row['name'])];
         }
         return $result;
     }

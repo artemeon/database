@@ -257,9 +257,8 @@ class Oci8Driver extends DriverAbstract
     {
         $generator = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES WHERE owner = ?", [$this->objCfg->getUsername()]);
         $result = [];
-        $index = 0;
         foreach ($generator as $row) {
-            $result[$index++]["name"] = strtolower($row["name"]);
+            $result[] = ['name' => strtolower($row['name'])];
         }
         return $result;
     }

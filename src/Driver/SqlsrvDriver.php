@@ -154,9 +154,8 @@ class SqlsrvDriver extends DriverAbstract
     {
         $generator = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
         $result = [];
-        $index = 0;
         foreach ($generator as $row) {
-            $result[$index++]["name"] = strtolower($row["table_name"]);
+            $result[] = ['name' => strtolower($row['table_name'])];
         }
         return $result;
     }
