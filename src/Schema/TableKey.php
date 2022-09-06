@@ -34,6 +34,7 @@ class TableKey implements \JsonSerializable
     /**
      * @inheritDoc
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return ["name" => $this->getName()];
