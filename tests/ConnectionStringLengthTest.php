@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Tests;
 
-class ConnectionRoundTest extends ConnectionTestCase
+class ConnectionStringLengthTest extends ConnectionTestCase
 {
     public function testStringLength()
     {
