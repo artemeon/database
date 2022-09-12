@@ -431,6 +431,13 @@ interface DriverInterface
      * *Note*: Negative offsets or lengths are not guaranteed to work across different database drivers.
      */
     public function getSubstringExpression(string $value, int $offset, ?int $length): string;
+
+    /**
+     * Returns the database-specific string-length expression, e.g. LEN() or LENGTH().
+     * Pass the value to be counted (e.g. a column name) by param
+     *
+     */
+    public function getStringLengthExpression(string $targetString): string;
 }
 
 
