@@ -15,6 +15,7 @@ namespace Artemeon\Database\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\ProcessException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
@@ -416,11 +417,12 @@ class PostgresDriver extends DriverAbstract
     {
         $strTables = "-t ".implode(" -t ", $arrTables);
 
+        $strCommand = '';
         if ($this->objCfg->getPassword() != "") {
             if ($this->isWinOs()) {
-                $strCommand = "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
+                $strCommand .= "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
             } else {
-                $strCommand = "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
+                $strCommand .= "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
             }
         }
 
@@ -439,6 +441,10 @@ class PostgresDriver extends DriverAbstract
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
         $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessException('Export failed: ' . $process->getErrorOutput());
+        }
 
         return $process->isSuccessful();
     }
@@ -472,6 +478,10 @@ class PostgresDriver extends DriverAbstract
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
         $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessException('Import failed: ' . $process->getErrorOutput());
+        }
 
         return $process->isSuccessful();
     }
