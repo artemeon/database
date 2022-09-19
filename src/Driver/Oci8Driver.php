@@ -22,6 +22,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -558,6 +559,10 @@ class Oci8Driver extends DriverAbstract
         $process->setTimeout(3600.0);
         $process->run();
 
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
         return $process->isSuccessful();
     }
 
@@ -571,6 +576,10 @@ class Oci8Driver extends DriverAbstract
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
         $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
 
         return $process->isSuccessful();
     }

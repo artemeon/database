@@ -21,6 +21,7 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -416,11 +417,12 @@ class PostgresDriver extends DriverAbstract
     {
         $strTables = "-t ".implode(" -t ", $arrTables);
 
+        $strCommand = '';
         if ($this->objCfg->getPassword() != "") {
             if ($this->isWinOs()) {
-                $strCommand = "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
+                $strCommand .= "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
             } else {
-                $strCommand = "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
+                $strCommand .= "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
             }
         }
 
@@ -439,6 +441,10 @@ class PostgresDriver extends DriverAbstract
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
         $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
 
         return $process->isSuccessful();
     }
@@ -472,6 +478,10 @@ class PostgresDriver extends DriverAbstract
         $process = Process::fromShellCommandline($strCommand);
         $process->setTimeout(3600.0);
         $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
 
         return $process->isSuccessful();
     }
