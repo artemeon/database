@@ -16,13 +16,13 @@ namespace Artemeon\Database\Driver;
 use Artemeon\Database\ConnectionInterface;
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
-use Artemeon\Database\Exception\ProcessException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -560,7 +560,7 @@ class Oci8Driver extends DriverAbstract
         $process->run();
 
         if (!$process->isSuccessful()) {
-            throw new ProcessException('Export failed: ' . $process->getErrorOutput());
+            throw new ProcessFailedException($process);
         }
 
         return $process->isSuccessful();
@@ -578,7 +578,7 @@ class Oci8Driver extends DriverAbstract
         $process->run();
 
         if (!$process->isSuccessful()) {
-            throw new ProcessException('Import failed: ' . $process->getErrorOutput());
+            throw new ProcessFailedException($process);
         }
 
         return $process->isSuccessful();
