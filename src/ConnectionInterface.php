@@ -442,6 +442,13 @@ interface ConnectionInterface
     public function getSubstringExpression(string $value, int $offset, ?int $length): string;
 
     /**
+     * Returns the database-specific string-length expression, e.g. LEN() or LENGTH().
+     * Pass the value to be counted (e.g. a column name) by param
+     *
+     */
+    public function getStringLengthExpression(string $targetString): string;
+
+    /**
      * Method which converts a PHP value to a value which can be inserted into a table. I.e. it truncates the value to
      * the fitting length for the provided datatype
      *

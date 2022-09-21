@@ -310,6 +310,11 @@ abstract class DriverAbstract implements DriverInterface
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
 
+    public function getStringLengthExpression(string $targetString): string
+    {
+        return 'LENGTH('.$targetString.')';
+    }
+
     protected function runCommand(string $command)
     {
         $exitCode = null;

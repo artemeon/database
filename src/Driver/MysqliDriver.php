@@ -24,6 +24,7 @@ use Artemeon\Database\Schema\TableKey;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use mysqli;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
  * db-driver for MySQL using the php-mysqli-interface
