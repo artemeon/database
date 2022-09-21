@@ -59,7 +59,7 @@ class SqlsrvDriver extends DriverAbstract
             "Database" => $this->objCfg->getDatabase(),
             "CharacterSet" => "UTF-8",
             "ConnectionPooling" => "1",
-            "MultipleActiveResultSets"=> "0",
+            "MultipleActiveResultSets"=> "1",
             "APP" => "Artemeon Core",
             "TransactionIsolation" => SQLSRV_TXN_READ_UNCOMMITTED
         ]);
@@ -123,11 +123,8 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
-        $arrReturn = array();
-        $intCounter = 0;
-
         $objStatement = sqlsrv_query($this->linkDB, $strQuery, $this->convertParamsArray($arrParams));
         if ($objStatement === false) {
             throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
@@ -135,12 +132,10 @@ class SqlsrvDriver extends DriverAbstract
 
         while ($arrRow = sqlsrv_fetch_array($objStatement, SQLSRV_FETCH_ASSOC)) {
             $arrRow = $this->parseResultRow($arrRow);
-            $arrReturn[$intCounter++] = $arrRow;
+            yield $arrRow;
         }
 
         sqlsrv_free_stmt($objStatement);
-
-        return $arrReturn;
     }
 
     /**
@@ -155,14 +150,14 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getTables()
+    public function getTables(): array
     {
-        $arrTemp = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
-
-        foreach ($arrTemp as $intKey => $strValue) {
-            $arrTemp[$intKey]["name"] = strtolower($strValue["table_name"]);
+        $generator = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
+        $result = [];
+        foreach ($generator as $row) {
+            $result[] = ['name' => strtolower($row['table_name'])];
         }
-        return $arrTemp;
+        return $result;
     }
 
     /**
@@ -405,7 +400,7 @@ class SqlsrvDriver extends DriverAbstract
     {
         $strQuery = "SELECT name FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)";
 
-        $arrIndex = $this->getPArray($strQuery, [$strName, $strTable]);
+        $arrIndex = iterator_to_array($this->getPArray($strQuery, [$strName, $strTable]), false);
         return count($arrIndex) > 0;
     }
 

@@ -22,11 +22,16 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 
 /**
- * @since 7.3
+ * Interface of our internal database abstraction layer.
+ * If possible please use the new methods from the DoctrineConnectionInterface
  */
-interface ConnectionInterface
+interface ConnectionInterface extends DoctrineConnectionInterface
 {
     /**
+     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
+     * Note the new fetch* and iterate* methods dont use the dbsafeParams method, this means there is no htmlspecialchars handling
+     * also there is no query cache handling, so you need to cache the results if needed in your service
+     *
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
      *
@@ -39,10 +44,15 @@ interface ConnectionInterface
      * @return array
      * @throws QueryException
      * @since 3.4
+     * @see fetchAllAssociative
      */
     public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = []);
 
     /**
+     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
+     * Note the new fetch* and iterate* methods dont use the dbsafeParams method, this means there is no htmlspecialchars handling
+     * also there is no query cache handling, so you need to cache the results if needed in your service
+     *
      * Returns one row from a result-set.
      * Makes use of prepared statements.
      *
@@ -53,6 +63,7 @@ interface ConnectionInterface
      * @param array $arrEscapes
      * @return array
      * @throws QueryException
+     * @see fetchAssociative
      */
     public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = []);
 
@@ -70,6 +81,8 @@ interface ConnectionInterface
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array;
 
     /**
+     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
+     *
      * Returns a generator which can be used to iterate over a section of the query without loading the complete data
      * into the memory. This can be used to query big result sets i.e. on installation update.
      * Make sure to have an ORDER BY in the statement, otherwise the chunks may use duplicate entries depending on the RDBMS.
@@ -86,10 +99,13 @@ interface ConnectionInterface
      * @param bool $paging
      * @return \Generator
      * @throws QueryException
+     * @see iterateAssociative
      */
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true);
 
     /**
+     * Legacy method to execute a query please use executeStatement
+     *
      * Sending a prepared statement to the database
      *
      * @param string $strQuery
@@ -99,6 +115,7 @@ interface ConnectionInterface
      * @return bool
      * @throws QueryException
      * @since 3.4
+     * @see executeStatement
      */
     public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []);
 
@@ -108,18 +125,6 @@ interface ConnectionInterface
      * @return integer
      */
     public function getIntAffectedRows();
-
-    /**
-     * Creates a simple insert for a single row where the values parameter is an associative array with column names to
-     * value mapping
-     *
-     * @param string $tableName
-     * @param array $values
-     * @param array $escapes
-     * @return bool
-     * @throws QueryException
-     */
-    public function insert(string $tableName, array $values, ?array $escapes = null);
 
     /**
      * Creates a single query in order to insert multiple rows at one time.
@@ -149,28 +154,6 @@ interface ConnectionInterface
      * @throws QueryException
      */
     public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns);
-
-    /**
-     * Updates a row on the provided table by the identifier columns
-     *
-     * @param string $tableName
-     * @param array $values
-     * @param array $identifier
-     * @param array|null $escapes
-     * @return bool
-     * @throws QueryException
-     */
-    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool;
-
-    /**
-     * Deletes a row on the provided table by the identifier columns
-     *
-     * @param string $tableName
-     * @param array $identifier
-     * @return bool
-     * @throws QueryException
-     */
-    public function delete(string $tableName, array $identifier): bool;
 
     /**
      * @return bool

@@ -102,11 +102,8 @@ class PostgresDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams)
+    public function getPArray($strQuery, $arrParams): \Generator
     {
-        $arrReturn = array();
-        $intCounter = 0;
-
         $strQuery = $this->processQuery($strQuery);
         $strName = $this->getPreparedStatementName($strQuery);
         if ($strName === false) {
@@ -126,12 +123,10 @@ class PostgresDriver extends DriverAbstract
                 $arrRow["COUNT(*)"] = $arrRow["count"];
             }
 
-            $arrReturn[$intCounter++] = $arrRow;
+            yield $arrRow;
         }
 
         pg_free_result($resultSet);
-
-        return $arrReturn;
     }
 
     /**
@@ -186,9 +181,14 @@ class PostgresDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getTables()
+    public function getTables(): array
     {
-        return $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", array());
+        $generator = $this->getPArray("SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'", []);
+        $result = [];
+        foreach ($generator as $row) {
+            $result[] = ['name' => strtolower($row["name"])];
+        }
+        return $result;
     }
 
     /**
@@ -366,7 +366,7 @@ class PostgresDriver extends DriverAbstract
      */
     public function hasIndex($strTable, $strName): bool
     {
-        $arrIndex = $this->getPArray("SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?", [$strTable, $strName]);
+        $arrIndex = iterator_to_array($this->getPArray("SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?", [$strTable, $strName]), false);
         return count($arrIndex) > 0;
     }
 

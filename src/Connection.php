@@ -186,9 +186,10 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function insert(string $tableName, array $values, ?array $escapes = null)
+    public function insert(string $tableName, array $values, ?array $escapes = null): int
     {
-        return $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
+        $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
+        return $this->getIntAffectedRows();
     }
 
     /**
@@ -235,7 +236,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
-    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool
+    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): int
     {
         if (empty($identifier)) {
             throw new \InvalidArgumentException('Empty identifier for update statement');
@@ -256,13 +257,14 @@ class Connection implements ConnectionInterface
 
         $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
 
-        return $this->_pQuery($query, $params, $escapes ?? []);
+        $this->_pQuery($query, $params, $escapes ?? []);
+        return $this->getIntAffectedRows();
     }
 
     /**
      * @inheritDoc
      */
-    public function delete(string $tableName, array $identifier): bool
+    public function delete(string $tableName, array $identifier): int
     {
         if (empty($identifier)) {
             throw new \InvalidArgumentException('Empty identifier for delete statement');
@@ -277,7 +279,8 @@ class Connection implements ConnectionInterface
 
         $query = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $condition);
 
-        return $this->_pQuery($query, $params);
+        $this->_pQuery($query, $params);
+        return $this->getIntAffectedRows();
     }
 
     /**
@@ -333,6 +336,15 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    public function executeStatement(string $query, array $params = []): int
+    {
+        $this->_pQuery($query, $params);
+        return $this->objDbDriver->getIntAffectedRows();
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getIntAffectedRows()
     {
         return $this->objDbDriver->getIntAffectedRows();
@@ -347,9 +359,12 @@ class Connection implements ConnectionInterface
             trigger_error("The intNr parameter is deprecated", E_USER_DEPRECATED);
         }
 
-        $resultRow = $this->getPArray($strQuery, $arrParams, $intNr, $intNr, $bitCache, $arrEscapes);
-        $value = current($resultRow);
-        return $value !== false ? $value : [];
+        $result = $this->objDbDriver->getPArray($strQuery, $arrParams);
+        foreach ($result as $row) {
+            return $row;
+        }
+
+        return [];
     }
 
     /**
@@ -391,38 +406,27 @@ class Connection implements ConnectionInterface
             }
         }
 
-        $arrReturn = array();
-
         $queryId = '';
         if ($this->logger !== null) {
             $queryId = uniqid();
             $this->logger->info($queryId . " " . $this->prettifyQuery($strQuery, $arrParams));
         }
 
-        if ($this->objDbDriver != null) {
-            if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
-                $arrReturn = $this->objDbDriver->getPArraySection(
-                    $strQuery,
-                    $this->dbsafeParams($arrParams, $arrEscapes),
-                    $intStart,
-                    $intEnd
-                );
-            } else {
-                $arrReturn = $this->objDbDriver->getPArray($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
-            }
-
-            if ($this->logger !== null) {
-                $this->logger->info($queryId . " " . "Query finished");
-            }
-
-            if ($arrReturn === false) {
-                $this->getError($strQuery, $arrParams);
-                return array();
-            }
-            if ($bitCache) {
-                $this->arrQueryCache[$strQueryMd5] = $arrReturn;
-            }
+        if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
+            $strQuery = $this->appendLimitExpression($strQuery, $intStart, $intEnd);
+            $arrReturn = $this->fetchAllAssociative($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
+        } else {
+            $arrReturn = $this->fetchAllAssociative($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
         }
+
+        if ($this->logger !== null) {
+            $this->logger->info($queryId . " " . "Query finished");
+        }
+
+        if ($bitCache) {
+            $this->arrQueryCache[$strQueryMd5] = $arrReturn;
+        }
+
         return $arrReturn;
     }
 
@@ -431,23 +435,89 @@ class Connection implements ConnectionInterface
      */
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
     {
-        $start = 0;
-        $end = $chunkSize;
+        $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        $chunk = [];
 
-        do {
-            $result = $this->getPArray($query, $params, $start, $end - 1, false);
+        foreach ($result as $row) {
+            $chunk[] = $row;
 
-            if (!empty($result)) {
-                yield $result;
+            if (count($chunk) === $chunkSize) {
+                yield $chunk;
+                $chunk = [];
+                $this->flushQueryCache();
             }
+        }
 
-            if ($paging) {
-                $start += $chunkSize;
-                $end += $chunkSize;
-            }
+        if (!empty($chunk)) {
+            yield $chunk;
+        }
+    }
 
-            $this->flushQueryCache();
-        } while (!empty($result));
+    /**
+     * @inheritDoc
+     */
+    public function fetchAllAssociative(string $query, array $params = []): array
+    {
+        return iterator_to_array($this->objDbDriver->getPArray($query, $params), false);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function fetchAssociative(string $query, array $params = []): array|false
+    {
+        $result = $this->objDbDriver->getPArray($query, $params);
+        foreach ($result as $row) {
+            return $row;
+        }
+
+        return false;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function fetchFirstColumn(string $query, array $params = []): array
+    {
+        $values = [];
+        $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        foreach ($result as $row) {
+            $values[] = reset($row);
+        }
+
+        return $values;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function fetchOne(string $query, array $params = []): mixed
+    {
+        $row = $this->fetchAssociative($query, $params);
+        if ($row === false) {
+            return false;
+        }
+
+        return reset($row);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function iterateAssociative(string $query, array $params = []): \Generator
+    {
+        yield from $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function iterateColumn(string $query, array $params = []): \Generator
+    {
+        $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        foreach ($result as $row) {
+            yield reset($row);
+        }
     }
 
     /**

@@ -186,7 +186,7 @@ abstract class DriverAbstract implements DriverInterface
             }
         }
 
-        $arrRow = $this->getPArraySection("SELECT COUNT(*) AS cnt FROM ".$this->encloseTableName($strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares), $arrPrimaryValues, 0, 1);
+        $arrRow = $this->getPArray("SELECT COUNT(*) AS cnt FROM ".$this->encloseTableName($strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares), $arrPrimaryValues)->current();
 
         if ($arrRow === false) {
             return false;
@@ -204,14 +204,6 @@ abstract class DriverAbstract implements DriverInterface
             $strQuery = "UPDATE ".$this->encloseTableName($strTable)." SET ".implode(", ", $arrUpdateKeyValue)." WHERE ".implode(" AND ", $arrUpdateKeyValueKey);
             return $this->_pQuery($strQuery, array_merge($arrUpdateParams, $arrUpdateKeyParams));
         }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getPArraySection($strQuery, $arrParams, $intStart, $intEnd)
-    {
-        return $this->getPArray($this->appendLimitExpression($strQuery, $intStart, $intEnd), $arrParams);
     }
 
     /**

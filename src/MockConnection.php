@@ -80,9 +80,52 @@ class MockConnection implements ConnectionInterface
         yield from $this->rows;
     }
 
+    public function fetchAllAssociative(string $query, array $params = []): array
+    {
+        return $this->rows;
+    }
+
+    public function fetchAssociative(string $query, array $params = []): array|false
+    {
+        return reset($this->rows);
+    }
+
+    public function fetchFirstColumn(string $query, array $params = []): array
+    {
+        $values = [];
+        foreach ($this->rows as $row) {
+            $values[] = reset($row);
+        }
+        return $values;
+    }
+
+    public function fetchOne(string $query, array $params = []): mixed
+    {
+        return null;
+    }
+
+    public function iterateAssociative(string $query, array $params = []): \Generator
+    {
+        foreach ($this->rows as $row) {
+            yield $row;
+        }
+    }
+
+    public function iterateColumn(string $query, array $params = []): \Generator
+    {
+        foreach ($this->rows as $row) {
+            yield reset($row);
+        }
+    }
+
     public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []): bool
     {
         return true;
+    }
+
+    public function executeStatement(string $query, array $params = []): int
+    {
+        return 1;
     }
 
     public function getIntAffectedRows(): int
@@ -90,9 +133,9 @@ class MockConnection implements ConnectionInterface
         return 1;
     }
 
-    public function insert(string $tableName, array $values, ?array $escapes = null): bool
+    public function insert(string $tableName, array $values, ?array $escapes = null): int
     {
-        return true;
+        return 1;
     }
 
     public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null): bool
@@ -105,14 +148,14 @@ class MockConnection implements ConnectionInterface
         return true;
     }
 
-    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): bool
+    public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): int
     {
-        return true;
+        return 1;
     }
 
-    public function delete(string $tableName, array $identifier): bool
+    public function delete(string $tableName, array $identifier): int
     {
-        return true;
+        return 1;
     }
 
     public function getBitConnected(): bool
@@ -257,6 +300,11 @@ class MockConnection implements ConnectionInterface
         }
 
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
+    }
+
+    public function getStringLengthExpression(string $targetString): string
+    {
+        return 'LENGTH(' . $targetString . ')';
     }
 
     public function convertToDatabaseValue($value, string $type): string
