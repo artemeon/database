@@ -471,6 +471,10 @@ class SqlsrvDriver extends DriverAbstract
         return sqlsrv_server_info($this->linkDB);
     }
 
+    public function getStringLengthExpression(string $targetString): string
+    {
+        return 'LEN(' . $targetString . ')';
+    }
 
     //--- DUMP & RESTORE ------------------------------------------------------------------------------------
 

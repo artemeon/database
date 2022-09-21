@@ -22,7 +22,6 @@ use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
 use Symfony\Component\Process\ExecutableFinder;
-use Symfony\Component\Process\Process;
 
 /**
  * db-driver for postgres using the php-postgres-interface
@@ -417,11 +416,12 @@ class PostgresDriver extends DriverAbstract
     {
         $strTables = "-t ".implode(" -t ", $arrTables);
 
+        $strCommand = '';
         if ($this->objCfg->getPassword() != "") {
             if ($this->isWinOs()) {
-                $strCommand = "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
+                $strCommand .= "SET \"PGPASSWORD=".$this->objCfg->getPassword()."\" && ";
             } else {
-                $strCommand = "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
+                $strCommand .= "PGPASSWORD=\"".$this->objCfg->getPassword()."\" ";
             }
         }
 
