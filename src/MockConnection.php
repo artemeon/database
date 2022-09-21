@@ -302,6 +302,11 @@ class MockConnection implements ConnectionInterface
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
 
+    public function getStringLengthExpression(string $targetString): string
+    {
+        return 'LENGTH(' . $targetString . ')';
+    }
+
     public function convertToDatabaseValue($value, string $type): string
     {
         return (string) $value;
