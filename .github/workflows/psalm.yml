@@ -1,6 +1,7 @@
 name: Psalm
 on:
   - pull_request
+  - push
 jobs:
   psalm:
     name: Psalm
