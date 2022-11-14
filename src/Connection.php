@@ -759,6 +759,9 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        // always lower case the table name
+        $strName = strtolower($strName);
+
         // check whether table already exists
         $arrTables = $this->objDbDriver->getTables();
         foreach ($arrTables as $arrTable) {
