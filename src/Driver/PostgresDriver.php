@@ -545,6 +545,17 @@ class PostgresDriver extends DriverAbstract
         return $strQuery." LIMIT  ".$intEnd." OFFSET ".$intStart;
     }
 
+    public function getSubstringExpression(string $value, int $offset, ?int $length): string
+    {
+        $parameters = ['cast (' . $value . ' as text)' , $offset];
+        if (isset($length)) {
+            $parameters[] = $length;
+        }
+
+        return 'SUBSTRING(' . implode(', ', $parameters) . ')';
+    }
+
+
     /**
      * @inheritDoc
      */
