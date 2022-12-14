@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.2
+
+* Add missing lazy connect
+
 ## 2.0.0
 
 * Set minimum PHP version to 8.0
