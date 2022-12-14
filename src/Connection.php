@@ -162,6 +162,10 @@ class Connection implements ConnectionInterface
      */
     public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         if (count($arrValueSets) == 0) {
             return true;
         }
@@ -288,6 +292,10 @@ class Connection implements ConnectionInterface
      */
     public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $bitReturn = $this->objDbDriver->insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns);
         if (!$bitReturn) {
             $this->getError("", array());
