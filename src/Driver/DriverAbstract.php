@@ -17,6 +17,8 @@ use Artemeon\Database\ConnectionInterface;
 use Artemeon\Database\DriverInterface;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\TableIndex;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 /**
  * Base class for all database-drivers, holds methods to be used by all drivers
@@ -315,12 +317,14 @@ abstract class DriverAbstract implements DriverInterface
         return 'LENGTH('.$targetString.')';
     }
 
-    protected function runCommand(string $command)
+    protected function runCommand(string $command): void
     {
-        $exitCode = null;
-        system($command, $exitCode);
-        if ($exitCode !== 0) {
-            throw new \RuntimeException('Command returned a non-successful exit code: ' . $exitCode . ' through the command: ' . $command);
+        $process = Process::fromShellCommandline($command);
+        $process->setTimeout(3600.0);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
         }
     }
 }
