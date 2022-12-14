@@ -3,7 +3,7 @@
 ## 2.0.0
 
 * Set minimum PHP version to 8.0
-* The driver uses now yield to return a fetched row this means
+* The driver uses now yield to return a fetched row
 * Added DoctrineConnectionInterface which has a Doctrine DBAL compatible API
 
 ## 1.0.0
