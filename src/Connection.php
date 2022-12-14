@@ -355,6 +355,10 @@ class Connection implements ConnectionInterface
      */
     public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = [])
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         if ($intNr !== 0) {
             trigger_error("The intNr parameter is deprecated", E_USER_DEPRECATED);
         }
@@ -435,6 +439,10 @@ class Connection implements ConnectionInterface
      */
     public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
         $chunk = [];
 
@@ -458,6 +466,10 @@ class Connection implements ConnectionInterface
      */
     public function fetchAllAssociative(string $query, array $params = []): array
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         return iterator_to_array($this->objDbDriver->getPArray($query, $params), false);
     }
 
@@ -466,6 +478,10 @@ class Connection implements ConnectionInterface
      */
     public function fetchAssociative(string $query, array $params = []): array|false
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $result = $this->objDbDriver->getPArray($query, $params);
         foreach ($result as $row) {
             return $row;
@@ -479,6 +495,10 @@ class Connection implements ConnectionInterface
      */
     public function fetchFirstColumn(string $query, array $params = []): array
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $values = [];
         $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
         foreach ($result as $row) {
@@ -493,6 +513,10 @@ class Connection implements ConnectionInterface
      */
     public function fetchOne(string $query, array $params = []): mixed
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $row = $this->fetchAssociative($query, $params);
         if ($row === false) {
             return false;
@@ -506,6 +530,10 @@ class Connection implements ConnectionInterface
      */
     public function iterateAssociative(string $query, array $params = []): \Generator
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         yield from $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
     }
 
@@ -514,6 +542,10 @@ class Connection implements ConnectionInterface
      */
     public function iterateColumn(string $query, array $params = []): \Generator
     {
+        if (!$this->bitConnected) {
+            $this->dbconnect();
+        }
+
         $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
         foreach ($result as $row) {
             yield reset($row);
