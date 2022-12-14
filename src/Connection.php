@@ -1230,4 +1230,9 @@ class Connection implements ConnectionInterface
     {
         return $this->objDbDriver->getSubstringExpression($value, $offset, $length);
     }
+
+    public function getStringLengthExpression(string $targetString): string
+    {
+        return $this->objDbDriver->getStringLengthExpression($targetString);
+    }
 }
