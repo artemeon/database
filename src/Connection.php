@@ -1129,10 +1129,10 @@ class Connection implements ConnectionInterface
             if (!is_numeric($strOneParam) && $strOneParam !== null) {
                 $strOneParam = "'{$strOneParam}'";
             }
+
             if ($strOneParam === null) {
                 $strOneParam = 'null';
-            }
-            if (is_int($strOneParam)) {
+            } elseif (is_int($strOneParam) || is_float($strOneParam)) {
                 $strOneParam = (string) $strOneParam;
             }
 
