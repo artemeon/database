@@ -466,7 +466,7 @@ class Connection implements ConnectionInterface
 
         //send a warning to the logger
         if ($this->logger !== null) {
-            $this->logger->warning($strErrorCode);
+            $this->logger->error($strErrorCode);
         }
 
         throw new QueryException($strError, $strQuery, $arrParams);
