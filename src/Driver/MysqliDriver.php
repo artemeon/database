@@ -314,6 +314,8 @@ class MysqliDriver extends DriverAbstract
             return DataType::STR_TYPE_CHAR500;
         } elseif ($infoSchemaRow["Type"] == "text") {
             return DataType::STR_TYPE_TEXT;
+        } elseif ($infoSchemaRow["Type"] == "mediumtext") {
+            return DataType::STR_TYPE_TEXT;
         } elseif ($infoSchemaRow["Type"] == "longtext") {
             return DataType::STR_TYPE_LONGTEXT;
         }
