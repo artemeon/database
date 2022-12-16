@@ -82,8 +82,8 @@ class MysqliDriver extends DriverAbstract
         $this->_pQuery("SET NAMES 'utf8mb4'", array());
         $this->_pQuery("SET CHARACTER SET utf8mb4", array());
         $this->_pQuery("SET character_set_connection ='utf8mb4'", array());
-        $this->_pQuery("SET character_set_database ='utf8mb4'", array());
-        $this->_pQuery("SET character_set_server ='utf8mb4'", array());
+        //$this->_pQuery("SET character_set_database ='utf8mb4'", array());
+        //$this->_pQuery("SET character_set_server ='utf8mb4'", array());
 
         $this->connected = true;
         return true;
