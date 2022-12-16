@@ -317,12 +317,6 @@ class Connection implements ConnectionInterface
 
         $strQuery = $this->processQuery($strQuery);
 
-        $queryId = '';
-        if ($this->logger !== null) {
-            $queryId = uniqid();
-            $this->logger->info($queryId . " " . $this->prettifyQuery($strQuery, $arrParams));
-        }
-
         //Increasing the counter
         $this->intNumber++;
 
@@ -332,10 +326,6 @@ class Connection implements ConnectionInterface
 
         if (!$bitReturn) {
             $this->getError($strQuery, $arrParams);
-        }
-
-        if ($this->logger !== null) {
-            $this->logger->info($queryId . " " . "Query finished");
         }
 
         return $bitReturn;
@@ -418,21 +408,11 @@ class Connection implements ConnectionInterface
             }
         }
 
-        $queryId = '';
-        if ($this->logger !== null) {
-            $queryId = uniqid();
-            $this->logger->info($queryId . " " . $this->prettifyQuery($strQuery, $arrParams));
-        }
-
         if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
             $strQuery = $this->appendLimitExpression($strQuery, $intStart, $intEnd);
             $arrReturn = $this->fetchAllAssociative($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
         } else {
             $arrReturn = $this->fetchAllAssociative($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
-        }
-
-        if ($this->logger !== null) {
-            $this->logger->info($queryId . " " . "Query finished");
         }
 
         if ($bitCache) {
@@ -606,7 +586,7 @@ class Connection implements ConnectionInterface
 
         //send a warning to the logger
         if ($this->logger !== null) {
-            $this->logger->warning($strErrorCode);
+            $this->logger->error($strErrorCode);
         }
 
         throw new QueryException($strError, $strQuery, $arrParams);
@@ -1291,10 +1271,10 @@ class Connection implements ConnectionInterface
             if (!is_numeric($strOneParam) && $strOneParam !== null) {
                 $strOneParam = "'{$strOneParam}'";
             }
+
             if ($strOneParam === null) {
                 $strOneParam = 'null';
-            }
-            if (is_int($strOneParam)) {
+            } elseif (is_int($strOneParam) || is_float($strOneParam)) {
                 $strOneParam = (string) $strOneParam;
             }
 
