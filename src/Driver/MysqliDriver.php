@@ -79,11 +79,11 @@ class MysqliDriver extends DriverAbstract
 
         //erst ab mysql-client-bib > 4
         //mysqli_set_charset($this->linkDB, "utf8");
-        $this->_pQuery("SET NAMES 'utf8'", array());
-        $this->_pQuery("SET CHARACTER SET utf8", array());
-        $this->_pQuery("SET character_set_connection ='utf8'", array());
-        //$this->_pQuery("SET character_set_database ='utf8'", array());
-        //$this->_pQuery("SET character_set_server ='utf8'", array());
+        $this->_pQuery("SET NAMES 'utf8mb4'", array());
+        $this->_pQuery("SET CHARACTER SET utf8mb4", array());
+        $this->_pQuery("SET character_set_connection ='utf8mb4'", array());
+        $this->_pQuery("SET character_set_database ='utf8mb4'", array());
+        $this->_pQuery("SET character_set_server ='utf8mb4'", array());
 
         $this->connected = true;
         return true;
@@ -319,6 +319,8 @@ class MysqliDriver extends DriverAbstract
             return DataType::STR_TYPE_CHAR500;
         } elseif ($infoSchemaRow["Type"] == "text") {
             return DataType::STR_TYPE_TEXT;
+        } elseif ($infoSchemaRow["Type"] == "mediumtext") {
+            return DataType::STR_TYPE_TEXT;
         } elseif ($infoSchemaRow["Type"] == "longtext") {
             return DataType::STR_TYPE_LONGTEXT;
         }
@@ -391,7 +393,7 @@ class MysqliDriver extends DriverAbstract
         //primary keys
         $strQuery .= " PRIMARY KEY ( `" . implode("` , `", $arrKeys) . "` ) \n";
         $strQuery .= ") ";
-        $strQuery .= " ENGINE = innodb CHARACTER SET utf8 COLLATE utf8_unicode_ci;";
+        $strQuery .= " ENGINE = innodb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
 
         return $this->_pQuery($strQuery, array());
     }
