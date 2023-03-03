@@ -20,9 +20,9 @@ final class PostgresDriverTest extends TestCase
             ->setMethodsExcept(['getSubstringExpression'])
             ->getMock();
 
-        self::assertEquals('SUBSTRING(test_column, 1)', $postgresDriver->getSubstringExpression('test_column', 1, null));
-        self::assertEquals('SUBSTRING(test_column, 1, 1)', $postgresDriver->getSubstringExpression('test_column', 1, 1));
-        self::assertEquals('SUBSTRING("test value", 1)', $postgresDriver->getSubstringExpression('"test value"', 1, null));
-        self::assertEquals('SUBSTRING("test value", 1, 1)', $postgresDriver->getSubstringExpression('"test value"', 1, 1));
+        self::assertEquals('SUBSTRING(cast (test_column as text), 1)', $postgresDriver->getSubstringExpression('test_column', 1, null));
+        self::assertEquals('SUBSTRING(cast (test_column as text), 1, 1)', $postgresDriver->getSubstringExpression('test_column', 1, 1));
+        self::assertEquals('SUBSTRING(cast ("test value" as text), 1)', $postgresDriver->getSubstringExpression('"test value"', 1, null));
+        self::assertEquals('SUBSTRING(cast ("test value" as text), 1, 1)', $postgresDriver->getSubstringExpression('"test value"', 1, 1));
     }
 }
