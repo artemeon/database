@@ -31,6 +31,9 @@ use Symfony\Component\Process\ExecutableFinder;
  */
 class MysqliDriver extends DriverAbstract
 {
+    private const MAX_DEADLOCK_RETRY_COUNT = 10;
+    private const DEADLOCK_WAIT_TIMEOUT = 2;
+
     private $connected = false;
 
     /**  @var mysqli */
@@ -130,17 +133,17 @@ class MysqliDriver extends DriverAbstract
             call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
         }
 
-        $intCount = 0;
-        while ($intCount < 3) {
-            $bitReturn = $objStatement->execute();
-            if ($bitReturn === false && $objStatement->errno == 1213) {
-                // in case we have a dead lock wait a bit and retry the query
-                $intCount++;
-                sleep(2);
-            } else {
-                break;
+            $intCount = 0;
+            while ($intCount < self::MAX_DEADLOCK_RETRY_COUNT) {
+                $bitReturn = $objStatement->execute();
+                if ($bitReturn === false && $objStatement->errno == 1213) {
+                    // in case we have a deadlock wait a bit and retry the query
+                    $intCount++;
+                    sleep(self::DEADLOCK_WAIT_TIMEOUT);
+                } else {
+                    break;
+                }
             }
-        }
 
         if ($bitReturn === false) {
             throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
