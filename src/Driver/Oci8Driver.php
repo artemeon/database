@@ -624,7 +624,7 @@ class Oci8Driver extends DriverAbstract
         }
 
         foreach ($arrRow as $key => $val) {
-            if (is_object($val) && get_class($val) == "OCI-Lob") {
+            if (is_object($val) && get_class($val) == "OCILob") {
                 //inject an anonymous lazy loader
                 $arrRow[$key] = new class($val)   {
                     private $val;
