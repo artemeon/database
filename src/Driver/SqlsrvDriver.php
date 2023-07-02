@@ -21,51 +21,37 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Generator;
 
-/**
- * DbSqlsrv
- *
- * @package module_system
- * @author christoph.kappestein@gmail.com
- * @since 7.0
- */
 class SqlsrvDriver extends DriverAbstract
 {
     /**
-     * @var resource
+     * @var ?resource
      */
     private $linkDB;
 
     /**
-     * @var ConnectionParameters
-     */
-    private $objCfg;
-
-
-    /**
      * @inheritdoc
      */
-    public function dbconnect(ConnectionParameters $objParams)
+    public function dbconnect(ConnectionParameters $params): bool
     {
-        $this->objCfg = $objParams;
-
         // We need to set this to 0 otherwise i.e. the sp_rename procedure returns false with a warning even if the
-        // query was successful
-        sqlsrv_configure("WarningsReturnAsErrors", 0);
+        // query was successful.
+        sqlsrv_configure('WarningsReturnAsErrors', 0);
 
-        $this->linkDB = sqlsrv_connect($this->objCfg->getHost(), [
-            "UID" => $this->objCfg->getUsername(),
-            "PWD" => $this->objCfg->getPassword(),
-            "Database" => $this->objCfg->getDatabase(),
-            "CharacterSet" => "UTF-8",
-            "ConnectionPooling" => "1",
-            "MultipleActiveResultSets"=> "1",
-            "APP" => "Artemeon Core",
-            "TransactionIsolation" => SQLSRV_TXN_READ_UNCOMMITTED
+        $this->linkDB = sqlsrv_connect($params->getHost(), [
+            'UID' => $params->getUsername(),
+            'PWD' => $params->getPassword(),
+            'Database' => $params->getDatabase(),
+            'CharacterSet' => 'UTF-8',
+            'ConnectionPooling' => '1',
+            'MultipleActiveResultSets' => '1',
+            'APP' => 'Artemeon Core',
+            'TransactionIsolation' => SQLSRV_TXN_READ_UNCOMMITTED
         ]);
 
         if ($this->linkDB === false) {
-            throw new ConnectionException("Error connecting to database: ".$this->getError());
+            throw new ConnectionException('Error connecting to database: ' . $this->getError());
         }
 
         return true;
@@ -74,111 +60,118 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function dbclose()
+    public function dbclose(): void
     {
-        //do n.th. to keep the persistent connection
-        //sqlsrv_close($this->linkDB);
+        // Do n.th. to keep the persistent connection
+        // sqlsrv_close($this->linkDB);
     }
 
     /**
-     * Internal helper to convert php values to database values
+     * An internal helper to convert PHP values to database values
      * currently casting them to strings, otherwise the sqlsrv driver fails to
-     * set them back due to type conversions
-     * @param $arrParams
-     * @return array
+     * set them back due to type conversions.
      */
-    private function convertParamsArray($arrParams)
+    private function convertParamsArray(array $params): array
     {
         $converted = [];
-        foreach ($arrParams as $val) {
-            //$converted[] = [$val, null, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)]; //TODO: would be better but not working, casting internally to return type string
-            $converted[] = $val === null ? null : $val."";
+        foreach ($params as $val) {
+            // $converted[] = [$val, null, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)]; //TODO: would be better but not working, casting internally to return type string
+            $converted[] = $val === null ? null : $val . '';
         }
+
         return $converted;
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function _pQuery($strQuery, $arrParams)
+    public function _pQuery(string $query, array $params): bool
     {
-        $convertParamsArray = $this->convertParamsArray($arrParams);
-        $objStatement = sqlsrv_prepare($this->linkDB, $strQuery, $convertParamsArray);
-        if ($objStatement === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
+        $convertParamsArray = $this->convertParamsArray($params);
+        $statement = sqlsrv_prepare($this->linkDB, $query, $convertParamsArray);
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
 
-        $bitResult = sqlsrv_execute($objStatement);
-        if (!$bitResult) {
-            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
+        $result = sqlsrv_execute($statement);
+        if (!$result) {
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
-        $this->intAffectedRows = sqlsrv_rows_affected($objStatement);
+        $this->affectedRowsCount = sqlsrv_rows_affected($statement);
 
-        sqlsrv_free_stmt($objStatement);
-        return $bitResult;
-    }
+        sqlsrv_free_stmt($statement);
 
-    /**
-     * @inheritDoc
-     */
-    public function getPArray($strQuery, $arrParams): \Generator
-    {
-        $objStatement = sqlsrv_query($this->linkDB, $strQuery, $this->convertParamsArray($arrParams));
-        if ($objStatement === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
-        }
-
-        while ($arrRow = sqlsrv_fetch_array($objStatement, SQLSRV_FETCH_ASSOC)) {
-            $arrRow = $this->parseResultRow($arrRow);
-            yield $arrRow;
-        }
-
-        sqlsrv_free_stmt($objStatement);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getError()
-    {
-        $arrErrors = sqlsrv_errors();
-        return print_r($arrErrors, true);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getTables(): array
-    {
-        $generator = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", array()) ?? [];
-        $result = [];
-        foreach ($generator as $row) {
-            $result[] = ['name' => strtolower($row['table_name'])];
-        }
         return $result;
     }
 
     /**
      * @inheritDoc
      */
+    public function getPArray($query, $params): Generator
+    {
+        $statement = sqlsrv_query($this->linkDB, $query, $this->convertParamsArray($params));
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
+        }
+
+        while ($row = sqlsrv_fetch_array($statement, SQLSRV_FETCH_ASSOC)) {
+            $row = $this->parseResultRow($row);
+            yield $row;
+        }
+
+        sqlsrv_free_stmt($statement);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getError(): string
+    {
+        $errors = sqlsrv_errors();
+
+        return print_r($errors, true);
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function getTables(): array
+    {
+        $generator = $this->getPArray("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", []) ?? [];
+        $result = [];
+        foreach ($generator as $row) {
+            $result[] = ['name' => strtolower($row['table_name'])];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
     public function getTableInformation(string $tableName): Table
     {
         $table = new Table($tableName);
 
-        //fetch all columns
-        $columnInfo = $this->getPArray("SELECT * FROM information_schema.columns WHERE table_name = ?", [$tableName]) ?: [];
-        foreach ($columnInfo as $arrOneColumn) {
-            $col = new TableColumn($arrOneColumn["column_name"]);
-            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
-            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
-            $col->setNullable($arrOneColumn["is_nullable"] == "YES");
-            $table->addColumn($col);
+        // fetch all columns
+        $columnInfo = $this->getPArray('SELECT * FROM information_schema.columns WHERE table_name = ?', [$tableName]) ?: [];
+        foreach ($columnInfo as $column) {
+            $table->addColumn(
+                TableColumn::make($column['column_name'])
+                    ->setInternalType($this->getCoreTypeForDbType($column))
+                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column)))
+                    ->setNullable($column['is_nullable'] === 'YES'),
+            );
         }
 
         //fetch all indexes
-        $indexes = $this->getPArray("SELECT
+        $indexes = $this->getPArray(
+            'SELECT
                        t.name as tablename,
                        ind.name as indexname,
                        col.name as colname
@@ -197,19 +190,19 @@ class SqlsrvDriver extends DriverAbstract
                   AND t.is_ms_shipped = 0
                   AND t.name = ?
                 ORDER BY
-                         t.name, ind.name, ind.index_id, ic.index_column_id;", [$tableName]) ?: [];
+                         t.name, ind.name, ind.index_id, ic.index_column_id;', [$tableName]) ?: [];
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
-            $indexAggr[$indexInfo["indexname"]] = $indexAggr[$indexInfo["indexname"]] ?? [];
-            $indexAggr[$indexInfo["indexname"]][] = $indexInfo["colname"];
+            $indexAggr[$indexInfo['indexname']] = $indexAggr[$indexInfo['indexname']] ?? [];
+            $indexAggr[$indexInfo['indexname']][] = $indexInfo['colname'];
         }
         foreach ($indexAggr as $key => $desc) {
             $index = new TableIndex($key);
-            $index->setDescription(implode(", ", $desc));
+            $index->setDescription(implode(', ', $desc));
             $table->addIndex($index);
         }
 
-        //fetch all keys
+        // fetch all keys
         $keys = $this->getPArray("SELECT Col.Column_Name 
             from INFORMATION_SCHEMA.TABLE_CONSTRAINTS Tab, INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE Col 
             WHERE Col.Constraint_Name = Tab.Constraint_Name 
@@ -224,225 +217,235 @@ class SqlsrvDriver extends DriverAbstract
         return $table;
     }
 
-
     /**
-     * Tries to convert a column provided by the database back to the Kajona internal type constant
-     * @param $infoSchemaRow
-     * @return null|string
+     * Tries to convert a column provided by the database back to the Kajona internal type constant.
      */
-    private function getCoreTypeForDbType($infoSchemaRow)
+    private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
-        if ($infoSchemaRow["data_type"] == "int") {
-            return DataType::STR_TYPE_INT;
-        } elseif ($infoSchemaRow["data_type"] == "bigint") {
-            return DataType::STR_TYPE_LONG;
-        } elseif ($infoSchemaRow["data_type"] == "real") {
-            return DataType::STR_TYPE_DOUBLE;
-        } elseif ($infoSchemaRow["data_type"] == "varchar") {
-            if ($infoSchemaRow["character_maximum_length"] == "10") {
-                return DataType::STR_TYPE_CHAR10;
-            } elseif ($infoSchemaRow["character_maximum_length"] == "20") {
-                return DataType::STR_TYPE_CHAR20;
-            } elseif ($infoSchemaRow["character_maximum_length"] == "100") {
-                return DataType::STR_TYPE_CHAR100;
-            } elseif ($infoSchemaRow["character_maximum_length"] == "254") {
-                return DataType::STR_TYPE_CHAR254;
-            } elseif ($infoSchemaRow["character_maximum_length"] == "500") {
-                return DataType::STR_TYPE_CHAR500;
-            } elseif ($infoSchemaRow["character_maximum_length"] == "-1") {
-                return DataType::STR_TYPE_TEXT;
+        if ($infoSchemaRow['data_type'] === 'int') {
+            return DataType::INT;
+        }
+
+        if ($infoSchemaRow['data_type'] === 'bigint') {
+            return DataType::BIGINT;
+        }
+
+        if ($infoSchemaRow['data_type'] === 'real') {
+            return DataType::FLOAT;
+        }
+
+        if ($infoSchemaRow['data_type'] === 'varchar') {
+            if ($infoSchemaRow['character_maximum_length'] == '10') {
+                return DataType::CHAR10;
+            } elseif ($infoSchemaRow['character_maximum_length'] == '20') {
+                return DataType::CHAR20;
+            } elseif ($infoSchemaRow['character_maximum_length'] == '100') {
+                return DataType::CHAR100;
+            } elseif ($infoSchemaRow['character_maximum_length'] == '254') {
+                return DataType::CHAR254;
+            } elseif ($infoSchemaRow['character_maximum_length'] == '500') {
+                return DataType::CHAR500;
+            } elseif ($infoSchemaRow['character_maximum_length'] == '-1') {
+                return DataType::TEXT;
             }
         }
+
         return null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getDatatype($strType)
+    public function getDatatype(DataType $type): string
     {
-        $strReturn = "";
-
-        if ($strType == DataType::STR_TYPE_INT) {
-            $strReturn .= " INT ";
-        } elseif ($strType == DataType::STR_TYPE_LONG) {
-            $strReturn .= " BIGINT ";
-        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
-            $strReturn .= " FLOAT( 24 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
-            $strReturn .= " VARCHAR( 10 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
-            $strReturn .= " VARCHAR( 20 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
-            $strReturn .= " VARCHAR( 100 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
-            $strReturn .= " VARCHAR( 254 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
-            $strReturn .= " VARCHAR( 500 ) ";
-        } elseif ($strType == DataType::STR_TYPE_TEXT) {
-            $strReturn .= " VARCHAR( MAX ) ";
-        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
-            $strReturn .= " VARCHAR( MAX ) ";
-        } else {
-            $strReturn .= " VARCHAR( 254 ) ";
-        }
-
-        return $strReturn;
+        return match ($type) {
+            DataType::INT => ' INT ',
+            DataType::BIGINT => ' BIGINT ',
+            DataType::FLOAT => ' FLOAT( 24 ) ',
+            DataType::CHAR10 => ' VARCHAR( 10 ) ',
+            DataType::CHAR20 => ' VARCHAR( 20 ) ',
+            DataType::CHAR100 => ' VARCHAR( 100 ) ',
+            DataType::CHAR500 => ' VARCHAR( 500 ) ',
+            DataType::TEXT, DataType::LONGTEXT => ' VARCHAR( MAX ) ',
+            default => ' VARCHAR( 254 ) ',
+        };
     }
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function renameTable($strOldName, $strNewName)
+    public function renameTable(string $oldName, string $newName): bool
     {
-        return $this->_pQuery("EXEC sp_rename " . $this->encloseTableName($strOldName) . ", " . $this->encloseTableName($strNewName), []);
+        $enclosedOldName = $this->encloseTableName($oldName);
+        $enclosedNewName = $this->encloseTableName($newName);
+
+        return $this->_pQuery("EXEC sp_rename $enclosedOldName, $enclosedNewName", []);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
+    public function changeColumn(string $table, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
-        if ($strOldColumnName != $strNewColumnName) {
-            $bitReturn = $this->_pQuery("EXEC sp_rename '{$strTable}.{$strOldColumnName}', '{$strNewColumnName}', 'COLUMN'", array());
+        if ($oldColumnName !== $newColumnName) {
+            $output = $this->_pQuery("EXEC sp_rename '$table.$oldColumnName', '$newColumnName', 'COLUMN'", []);
         } else {
-            $bitReturn = true;
+            $output = true;
         }
 
-        return $bitReturn && $this->_pQuery("ALTER TABLE {$strTable} ALTER COLUMN {$strNewColumnName} {$this->getDatatype($strNewDatatype)}", array());
+        return $output && $this->_pQuery("ALTER TABLE $table ALTER COLUMN $newColumnName {$this->getDatatype($newDataType)}", []);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
+    public function addColumn(string $table, string $column, DataType $dataType, bool $nullable = null, string $default = null): bool
     {
-        $strQuery = "ALTER TABLE ".($this->encloseTableName($strTable))." ADD ".($this->encloseColumnName($strColumn)." ".$this->getDatatype($strDatatype));
+        $enclosedTableName = $this->encloseTableName($table);
+        $enclosedColumnName = $this->encloseColumnName($column);
 
-        if ($strDefault !== null) {
-            $strQuery .= " DEFAULT ".$strDefault;
+        $strQuery = "ALTER TABLE $enclosedTableName ADD $enclosedColumnName " . $this->getDatatype($dataType);
+
+        if ($default !== null) {
+            $strQuery .= " DEFAULT $default";
         }
 
-        if ($bitNull !== null) {
-            $strQuery .= $bitNull ? " NULL" : " NOT NULL";
+        if ($nullable !== null) {
+            $strQuery .= $nullable ? ' NULL' : ' NOT NULL';
         }
 
-        return $this->_pQuery($strQuery, array());
+        return $this->_pQuery($strQuery, []);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function createTable($strName, $arrFields, $arrKeys)
+    public function createTable(string $name, array $columns, array $primaryKeys): bool
     {
-        $strQuery = "";
+        $query = '';
 
-        //loop over existing tables to check, if the table already exists
-        $arrTables = $this->getTables();
-        foreach ($arrTables as $arrOneTable) {
-            if ($arrOneTable["name"] == $strName) {
+        // loop over existing tables to check, if the table already exists.
+        $tables = $this->getTables();
+        foreach ($tables as $table) {
+            if ($table['name'] === $name) {
                 return true;
             }
         }
 
-        //build the oracle code
-        $strQuery .= "CREATE TABLE ".$this->encloseTableName($strName)." ( \n";
+        $enclosedTableName = $this->encloseTableName($name);
 
-        //loop the fields
-        foreach ($arrFields as $strFieldName => $arrColumnSettings) {
-            $strQuery .= " ".$this->encloseColumnName($strFieldName)." ";
+        // build the oracle code
+        $query .= "CREATE TABLE $enclosedTableName ( \n";
 
-            $strQuery .= $this->getDatatype($arrColumnSettings[0]);
+        // loop the fields
+        foreach ($columns as $columnName => $columnSettings) {
+            $enclosedColumnName = $this->encloseColumnName($columnName);
 
-            //any default?
-            if (isset($arrColumnSettings[2])) {
-                $strQuery .= "DEFAULT ".$arrColumnSettings[2]." ";
+            $query .= " $enclosedColumnName ";
+
+            $query .= $this->getDatatype($columnSettings[0]);
+
+            // any default?
+            if (isset($columnSettings[2])) {
+                $query .= 'DEFAULT ' . $columnSettings[2] . ' ';
             }
 
-            //nullable?
-            if ($arrColumnSettings[1] === true) {
-                $strQuery .= " NULL ";
+            // nullable?
+            if ($columnSettings[1] === true) {
+                $query .= ' NULL ';
             } else {
-                $strQuery .= " NOT NULL ";
+                $query .= ' NOT NULL ';
             }
 
-            $strQuery .= " , \n";
-
+            $query .= " , \n";
         }
 
-        //primary keys
-        $strQuery .= " CONSTRAINT pk_".uniqid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
-        $strQuery .= ") ";
+        // primary keys
+        $query .= ' CONSTRAINT pk_' .uniqid() . ' primary key ( ' . implode(' , ', $primaryKeys)." ) \n";
+        $query .= ') ';
 
-        return $this->_pQuery($strQuery, array());
+        return $this->_pQuery($query, []);
     }
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool
     {
-        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$strTable." (" . implode(",", $arrColumns) . ")", []);
+        return $this->_pQuery('CREATE' . ($unique ? ' UNIQUE' : '') . " INDEX $name ON $table (" . implode(',', $columns) . ')', []);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function deleteIndex(string $table, string $index): bool
     {
-        return $this->_pQuery("DROP INDEX {$table}.{$index}", []);
+        return $this->_pQuery("DROP INDEX $table.$index", []);
     }
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function hasIndex($strTable, $strName): bool
+    public function hasIndex($table, $name): bool
     {
-        $strQuery = "SELECT name FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)";
+        $query = 'SELECT name FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)';
 
-        $arrIndex = iterator_to_array($this->getPArray($strQuery, [$strName, $strTable]), false);
-        return count($arrIndex) > 0;
+        $index = iterator_to_array($this->getPArray($query, [$name, $table]), false);
+
+        return count($index) > 0;
     }
 
     /**
      * @inheritDoc
      */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
+    public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
-        $arrPlaceholder = array();
-        $arrMappedColumns = array();
-        $arrKeyValuePairs = array();
-        $arrParams = [];
+        $placeholders = [];
+        $mappedColumns = [];
+        $keyValuePairs = [];
+        $params = [];
+        $primaryCompares = [];
 
-        foreach ($arrColumns as $intKey => $strOneCol) {
-            $arrPlaceholder[] = "?";
-            $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
-            $arrKeyValuePairs[] = $this->encloseColumnName($strOneCol)." = ?";
+        foreach ($columns as $key => $column) {
+            $enclosedColumnName = $this->encloseColumnName($column);
 
+            $placeholders[] = '?';
+            $mappedColumns[] = $enclosedColumnName;
+            $keyValuePairs[] = $enclosedColumnName . ' = ?';
 
-            if (in_array($strOneCol, $arrPrimaryColumns)) {
-                $arrPrimaryCompares[] = $strOneCol." = ? ";
-                $arrParams[] = $arrValues[$intKey];
+            if (in_array($column, $primaryColumns, true)) {
+                $primaryCompares[] = $column . ' = ? ';
+                $params[] = $values[$key];
             }
         }
 
-        $arrParams = array_merge($arrParams, $arrValues, $arrValues, $arrParams);
+        $params = array_merge($params, $values, $values, $params);
 
-        $strQuery = "
-            IF NOT EXISTS (SELECT ".implode(",", $arrPrimaryColumns)." FROM ".$this->encloseTableName($strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares).")
-                INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") 
-                     VALUES (".implode(", ", $arrPlaceholder).")
+        $enclosedTableName = $this->encloseTableName($table);
+
+        $query = '
+            IF NOT EXISTS (SELECT ' . implode(',', $primaryColumns) . " FROM $enclosedTableName WHERE " . implode(
+                ' AND ', $primaryCompares) . ")
+                INSERT INTO $enclosedTableName (" . implode(', ', $mappedColumns) . ') 
+                     VALUES (' . implode(', ', $placeholders) . ")
             ELSE
-                UPDATE ".$this->encloseTableName($strTable)." SET " . implode(", ", $arrKeyValuePairs) . "
-                 WHERE ".implode(" AND ", $arrPrimaryCompares);
+                UPDATE $enclosedTableName SET " . implode(', ', $keyValuePairs) . '
+                 WHERE ' . implode(' AND ', $primaryCompares);
 
-        return $this->_pQuery($strQuery, $arrParams);
+        return $this->_pQuery($query, $params);
     }
 
     /**
      * @inheritDoc
      */
-    public function transactionBegin()
+    public function beginTransaction(): void
     {
         sqlsrv_begin_transaction($this->linkDB);
     }
@@ -450,7 +453,7 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function transactionCommit()
+    public function commitTransaction(): void
     {
         sqlsrv_commit($this->linkDB);
     }
@@ -458,7 +461,7 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function transactionRollback()
+    public function rollbackTransaction(): void
     {
         sqlsrv_rollback($this->linkDB);
     }
@@ -466,7 +469,7 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getDbInfo()
+    public function getDbInfo(): array
     {
         return sqlsrv_server_info($this->linkDB);
     }
@@ -478,11 +481,10 @@ class SqlsrvDriver extends DriverAbstract
 
     //--- DUMP & RESTORE ------------------------------------------------------------------------------------
 
-
     /**
      * @inheritdoc
      */
-    public function handlesDumpCompression()
+    public function handlesDumpCompression(): bool
     {
         return false;
     }
@@ -490,101 +492,92 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function dbExport(&$strFilename, $arrTables)
+    public function dbExport(&$fileName, $tables): bool
     {
-        // @TODO implement
         return false;
     }
 
     /**
      * @inheritDoc
      */
-    public function dbImport($strFilename)
+    public function dbImport($fileName): bool
     {
-        // @TODO implement
         return false;
     }
 
     /**
-     * converts a result-row. changes all keys to lower-case keys again
-     *
-     * @param array $arrRow
-     * @return array
+     * Converts a result-row. Changes all keys to lower-case keys again.
      */
-    private function parseResultRow(array $arrRow)
+    private function parseResultRow(array $row): array
     {
-        $arrRow = array_change_key_case($arrRow, CASE_LOWER);
-        if (isset($arrRow["count(*)"])) {
-            $arrRow["COUNT(*)"] = $arrRow["count(*)"];
+        $row = array_change_key_case($row);
+        if (isset($row['count(*)'])) {
+            $row['COUNT(*)'] = $row['count(*)'];
         }
 
-        return $arrRow;
+        return $row;
     }
 
     /**
      * @inheritdoc
      */
-    public function appendLimitExpression($strQuery, $intStart, $intEnd)
+    public function appendLimitExpression(string $query, int $start, int $end): string
     {
-        $intLength = $intEnd - $intStart + 1;
+        $length = $end - $start + 1;
 
-        // OFFSET and FETCH can only be used with an ORDER BY
-        if (!$this->containsOrderBy($strQuery)) {
-            // should be fixed but produces a file write on every call so its bad for the performance
-            //Logger::getInstance(Logger::DBLOG)->warning("Using a limit expression without an order by: {$strQuery}");
+        // OFFSET and FETCH can only be used with an ORDER BY.
+        if (!$this->containsOrderBy($query)) {
+            // Should be fixed but produces a file write on every call, so it is bad for the performance.
+            // Logger::getInstance(Logger::DBLOG)->warning("Using a limit expression without an order by: {$strQuery}");
 
-            $strQuery .= " ORDER BY 1 ASC ";
+            $query .= ' ORDER BY 1 ASC ';
         }
 
-        return $strQuery . " OFFSET {$intStart} ROWS FETCH NEXT {$intLength} ROWS ONLY";
+        return $query . " OFFSET $start ROWS FETCH NEXT $length ROWS ONLY";
     }
 
     /**
      * @inheritdoc
      */
-    public function getConcatExpression(array $parts)
+    public function getConcatExpression(array $parts): string
     {
-        return "(" . implode(' + ', $parts) . ")";
+        return '(' . implode(' + ', $parts) . ')';
     }
 
-    /**
-     * @param string $strQuery
-     * @return bool
-     */
-    private function containsOrderBy($strQuery)
+    private function containsOrderBy(string $query): bool
     {
-        $intPos = stripos($strQuery, "ORDER BY");
-        if ($intPos === false) {
+        $pos = stripos($query, 'ORDER BY');
+        if ($pos === false) {
             return false;
-        } else {
-            // here is now the most fucked up heuristic to detect whether we have an ORDER BY in the outer query and
-            // not in a sub query
-            $intLastPos = strrpos($strQuery, ')');
-
-            if ($intLastPos !== false) {
-                // in case the order by is after the closing brace we have an order by otherwise it is used in a sub
-                // query
-                return $intPos > $intLastPos;
-            } else {
-                return true;
-            }
         }
+
+        // here is now the most fucked up heuristic to detect whether we have an ORDER BY in the outer query and
+        // not in a sub query.
+        $lastPos = strrpos($query, ')');
+
+        if ($lastPos !== false) {
+            // in case the order by is after the closing brace we have an order by otherwise it is used in a sub
+            // query.
+            return $pos > $lastPos;
+        }
+
+        return true;
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseColumnName($strColumn)
+    public function encloseColumnName(string $column): string
     {
-        return '['.$strColumn.']';
+        return '[' . $column . ']';
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseTableName($strTable)
+    public function encloseTableName($table): string
     {
-        return '['.$strTable.']';
+        return '[' . $table . ']';
     }
 
     /**
@@ -607,4 +600,3 @@ class SqlsrvDriver extends DriverAbstract
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
 }
-

@@ -20,6 +20,7 @@ use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use Generator;
 
 /**
  * Interface of our internal database abstraction layer.
@@ -35,18 +36,10 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
      *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int|null $intStart
-     * @param int|null $intEnd
-     * @param bool $bitCache
-     * @param array $arrEscapes
-     * @return array
      * @throws QueryException
-     * @since 3.4
      * @see fetchAllAssociative
      */
-    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = []);
+    public function getPArray(string $query, array $params = [], ?int $start = null, ?int $end = null, bool $cache = true, array $escapes = []): array;
 
     /**
      * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
@@ -56,16 +49,10 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Returns one row from a result-set.
      * Makes use of prepared statements.
      *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param int $intNr
-     * @param bool $bitCache
-     * @param array $arrEscapes
-     * @return array
      * @throws QueryException
      * @see fetchAssociative
      */
-    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = []);
+    public function getPRow(string $query, array $params = [], int $number = 0, bool $cache = true, array $escapes = []): array;
 
     /**
      * Retrieves a single row of the referenced table, returning the requested columns and filtering by the given identifier(s).
@@ -75,175 +62,133 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * @param array $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
      * @param bool $cached whether a previously selected result can be reused
      * @param array|null $escapes which parameters to escape (described in {@see dbsafeParams})
-     * @return array|null
      * @throws QueryException
      */
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array;
 
     /**
-     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
+     * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods.
      *
-     * Returns a generator which can be used to iterate over a section of the query without loading the complete data
+     * Returns a generator, which can be used to iterate over a section of the query without loading the complete data
      * into the memory. This can be used to query big result sets i.e. on installation update.
      * Make sure to have an ORDER BY in the statement, otherwise the chunks may use duplicate entries depending on the RDBMS.
      *
-     * NOTE if the loop which consumes the generator reduces the result set i.e. you delete for each result set all
+     * NOTE if the loop, which consumes the generator reduces the result set i.e. you delete for each result set all
      * entries then you need to set paging to false. In this mode we always query the first 0 to chunk size rows, since
-     * the loop reduces the result set we dont need to move the start and end values forward. NOTE if you set $paging to
-     * false and dont modify the result set you will get an endless loop, so you must get sure that in the end the
+     * the loop reduces the result set we don't need to move the start and end values forward. NOTE if you set $paging to
+     * false and don't modify the result set you will get an endless loop, so you must get sure that in the end the
      * result set will be empty.
      *
-     * @param string $query
-     * @param array $params
-     * @param int $chunkSize
-     * @param bool $paging
-     * @return \Generator
      * @throws QueryException
      * @see iterateAssociative
      */
-    public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true);
+    public function getGenerator(string $query, array $params = [], int $chunkSize = 2048, bool $paging = true): Generator;
 
     /**
      * Legacy method to execute a query please use executeStatement
      *
      * Sending a prepared statement to the database
      *
-     * @param string $strQuery
-     * @param array $arrParams
-     * @param array $arrEscapes An array of booleans for each param, used to block the escaping of html-special chars.
-     *                          If not passed, all params will be cleaned.
-     * @return bool
+     * @param array $escapes An array of booleans for each param, used to block the escaping of html-special chars.
+     *                       If not passed, all params will be cleaned.
      * @throws QueryException
-     * @since 3.4
      * @see executeStatement
      */
-    public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []);
+    public function _pQuery(string $query, array $params = [], array $escapes = []): bool;
 
     /**
-     * Returns the number of affected rows from the last _pQuery call
-     *
-     * @return integer
+     * Returns the number of affected rows from the last _pQuery call.
      */
-    public function getIntAffectedRows();
+    public function getAffectedRowsCount(): int;
 
     /**
      * Creates a single query in order to insert multiple rows at one time.
      * For most databases, this will create s.th. like
      * INSERT INTO $strTable ($arrColumns) VALUES (?, ?), (?, ?)...
      *
-     * @param string $strTable
-     * @param string[] $arrColumns
-     * @param array $arrValueSets
-     * @param array|null $arrEscapes
-     * @return bool
+     * @param string[] $columns
      * @throws QueryException
      */
-    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null);
+    public function multiInsert(string $tableName, array $columns, array $valueSets, ?array $escapes = null): bool;
 
     /**
-     * Fires an insert or update of a single record. it's up to the database (driver)
+     * Fires an insert or update of a single record. It is up to the database (driver)
      * to detect whether a row is already present or not.
-     * Please note: since some dbrms fire a delete && insert, make sure to pass ALL columns and values,
-     * otherwise data might be lost. And: params are sent to the datebase unescaped.
+     * Please note: since some DBRMs fire a delete && insert, make sure to pass ALL columns and values,
+     * otherwise data might be lost. And: params are sent to the database unescaped.
      *
-     * @param $strTable
-     * @param $arrColumns
-     * @param $arrValues
-     * @param $arrPrimaryColumns
-     * @return bool
      * @throws QueryException
      */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns);
+    public function insertOrUpdate(string $tableName, array $columns, array $values, array $primaryColumns): bool;
+
+    public function isConnected(): bool;
 
     /**
-     * @return bool
+     * Starts a transaction.
      */
-    public function getBitConnected();
+    public function beginTransaction(): void;
 
     /**
-     * Starts a transaction
+     * Ends a transaction successfully.
      */
-    public function transactionBegin();
+    public function commitTransaction(): void;
 
     /**
-     * Ends a tx successfully
+     * Rollback of the current transaction.
      */
-    public function transactionCommit();
+    public function rollbackTransaction(): void;
 
     /**
-     * Rollback of the current tx
-     */
-    public function transactionRollback();
-
-    /**
-     * Returns whether this connection uses a specific driver. In general please dont use this method
+     * Returns whether this connection uses a specific driver. In general please don't use this method
      * since it makes your code dependent on a specific driver. This is only intended for rare cases i.e.
-     * to execute a migration for a specific database type
-     *
-     * @param string $class
-     * @return bool
+     * to execute a migration for a specific database type.
      */
     public function hasDriver(string $class): bool;
 
     /**
-     * Returns all tables used by the project
+     * Returns all tables used by the project.
      *
-     * @return array
      * @throws QueryException
      */
-    public function getTables();
+    public function getTables(): array;
 
     /**
-     * Fetches extensive information per database table
-     * @param $tableName
-     * @return Table
+     * Fetches extensive information per database table.
+     *
      * @throws QueryException
      */
-    public function getTableInformation($tableName): Table;
+    public function getTableInformation(string $tableName): Table;
 
     /**
-     * Returns the db-specific datatype for the kajona internal datatype.
-     * Currently, this are
-     *
-     * @param string $strType
-     * @return string
-     * @see DataType
+     * Returns the db-specific datatype for the Kajona internal datatype.
      */
-    public function getDatatype($strType);
+    public function getDatatype(DataType $type): string;
 
     /**
      * Used to send a create table statement to the database
      * By passing the query through this method, the driver can
      * add db-specific commands.
      * The array of fields should have the following structure
-     * $array[string columnName] = array(string data-type, boolean isNull [, default (only if not null)])
+     * $array[string columnName] = [string data-type, boolean isNull [, default (only if not null)]]
      * whereas data-type is one of the following:
-     *         int
-     *      long
-     *         double
-     *         char10
-     *         char20
-     *         char100
-     *         char254
-     *      char500
-     *         text
-     *      longtext
+     *  - int
+     *  - long
+     *  - double
+     *  - char10
+     *  - char20
+     *  - char100
+     *  - char254
+     *  - char500
+     *  - text
+     *  - longtext
      *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     * @param array $arrIndices array of additional indices
-     *
-     * @return bool
      * @throws QueryException
-     * @see DataType
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array());
+    public function createTable(string $tableName, array $columns, array $keys, array $indices = []): bool;
 
     /**
-     * Drops a table from the database. Checks also whether the table already exists
+     * Drops a table from the database. Checks also whether the table already exists.
      *
-     * @param string $tableName
      * @throws QueryException
      */
     public function dropTable(string $tableName): void;
@@ -251,168 +196,111 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Generates a tables as configured by the passed Table definition. Includes all metadata such as
      * primary keys, indexes and columns.
-     * @param Table $table
+     *
      * @throws QueryException
      */
     public function generateTableFromMetadata(Table $table): void;
 
     /**
      * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
-     * where each index can only occur once in the table
+     * where each index can only occur once in the table.
      *
-     * @param string $strTable
-     * @param string $strName
-     * @param array $arrColumns
-     * @param bool $bitUnique
-     * @return bool
      * @throws QueryException
      */
-    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false);
+    public function createIndex(string $tableName, string $name, array $columns, bool $unique = false): bool;
 
     /**
-     * Removes an index from the database / table
-     * @param string $table
-     * @param string $index
-     * @return bool
+     * Removes an index from the database / table.
+     *
      * @throws QueryException
      */
     public function deleteIndex(string $table, string $index): bool;
 
     /**
-     * Adds an index to a table based on the import / export format
-     * @param string $table
-     * @param TableIndex $index
-     * @return bool
+     * Adds an index to a table based on the import / export format.
+     *
      * @throws QueryException
      * @internal
      */
-    public function addIndex(string $table, TableIndex $index);
+    public function addIndex(string $table, TableIndex $index): bool;
 
     /**
      * Checks whether the table has an index with the provided name
      *
-     * @param string $strTable
-     * @param string $strName
-     * @return bool
      * @throws QueryException
      */
-    public function hasIndex($strTable, $strName): bool;
+    public function hasIndex(string $tableName, string $name): bool;
 
     /**
-     * Renames a table
+     * Renames a table.
      *
-     * @param $strOldName
-     * @param $strNewName
-     * @return bool
      * @throws QueryException
      */
-    public function renameTable($strOldName, $strNewName);
+    public function renameTable(string $oldName, string $newName): bool;
 
     /**
      * Changes a single column, e.g. the datatype. Note in case you only change the column type you should be aware that
      * not all database engines support changing the type freely. Most engines disallow changing the type in case you
-     * would loose data i.e. on oracle it is not possible to change from longtext to char(10) since then the db engine
-     * would may need to truncate some rows
+     * would lose data i.e. on Oracle it is not possible to change from longtext to char(10) since then the DB engine
+     * may need to truncate some rows.
      *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     * @return bool
      * @throws ChangeColumnException
      */
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+    public function changeColumn(string $tableName, string $oldColumnName, string $newColumnName, DataType $newDataType): bool;
 
     /**
-     * Adds a column to a table
+     * Adds a column to a table.
      *
-     * @param $strTable
-     * @param $strColumn
-     * @param $strDatatype
-     * @param null $bitNull
-     * @param null $strDefault
-     * @return bool
      * @throws AddColumnException
      */
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null);
+    public function addColumn(string $table, string $column, DataType $dataType, ?bool $nullable = null, ?string $default = null): bool;
 
     /**
-     * Removes a column from a table
+     * Removes a column from a table.
      *
-     * @param $strTable
-     * @param $strColumn
-     * @return bool
      * @throws RemoveColumnException
      */
-    public function removeColumn($strTable, $strColumn);
+    public function removeColumn(string $tableName, string $column): bool;
 
     /**
-     * Checks whether a table has a specific column
+     * Checks whether a table has a specific column.
      *
-     * @param string $strTable
-     * @param string $strColumn
-     * @return bool
      * @throws QueryException
      */
-    public function hasColumn($strTable, $strColumn);
+    public function hasColumn(string $tableName, string $column): bool;
 
     /**
-     * Checks whether the provided table exists
+     * Checks whether the provided table exists.
      *
-     * @param string $strTable
-     * @return bool
      * @throws QueryException
      */
-    public function hasTable($strTable);
+    public function hasTable(string $tableName): bool;
 
     /**
      * Allows the db-driver to add database-specific surroundings to column-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strColumn
-     * @return string
+     * E.g. needed by the MySQL-drivers.
      */
-    public function encloseColumnName($strColumn);
+    public function encloseColumnName(string $column): string;
 
     /**
      * Allows the db-driver to add database-specific surroundings to table-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strTable
-     * @return string
+     * E.g. needed by the MySQL-drivers.
      */
-    public function encloseTableName($strTable);
+    public function encloseTableName(string $tableName): string;
 
     /**
      * Helper to replace all param-placeholder with the matching value, only to be used
      * to render a debuggable-statement.
-     *
-     * @param $strQuery
-     * @param $arrParams
-     * @return string
      */
-    public function prettifyQuery($strQuery, $arrParams);
+    public function prettifyQuery(string $query, array $params): string;
 
     /**
-     * Appends a limit expression to the provided query
-     *
-     * @param string $strQuery
-     * @param int $intStart
-     * @param int $intEnd
-     * @return string
+     * Appends a limit expression to the provided query.
      */
-    public function appendLimitExpression($strQuery, $intStart, $intEnd);
+    public function appendLimitExpression(string $query, int $start, int $end): string;
 
-    /**
-     * @param array $parts
-     * @return string
-     */
-    public function getConcatExpression(array $parts);
+    public function getConcatExpression(array $parts): string;
 
-    /**
-     * @param array $parts
-     * @return string
-     */
     public function getLeastExpression(array $parts): string;
 
     /**
@@ -432,12 +320,8 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     public function getStringLengthExpression(string $targetString): string;
 
     /**
-     * Method which converts a PHP value to a value which can be inserted into a table. I.e. it truncates the value to
-     * the fitting length for the provided datatype
-     *
-     * @param mixed $value
-     * @param string $type
-     * @return mixed
+     * Converts a PHP value to a value, which can be inserted into a table. I.e. it truncates the value to
+     * the fitting length for the provided datatype.
      */
-    public function convertToDatabaseValue($value, string $type);
+    public function convertToDatabaseValue(mixed $value, DataType $type): mixed;
 }

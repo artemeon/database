@@ -13,19 +13,16 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Exception;
 
-class RemoveColumnException extends \Exception
+use Exception;
+use Throwable;
+
+class RemoveColumnException extends Exception
 {
-    /**
-     * @var string
-     */
-    private $table;
+    private string $table;
 
-    /**
-     * @var string
-     */
-    private $column;
+    private string $column;
 
-    public function __construct(string $message, string $table, string $column, ?\Throwable $previous = null)
+    public function __construct(string $message, string $table, string $column, ?Throwable $previous = null)
     {
         parent::__construct($message, 0, $previous);
 
@@ -33,17 +30,11 @@ class RemoveColumnException extends \Exception
         $this->column = $column;
     }
 
-    /**
-     * @return string
-     */
     public function getTable(): string
     {
         return $this->table;
     }
 
-    /**
-     * @return string
-     */
     public function getColumn(): string
     {
         return $this->column;

@@ -13,20 +13,16 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Schema;
 
-/**
- * Base information about a tables index
- * @package Kajona\System\System\Db\Schema
- * @author stefan.idler@artemeon.de
- */
-class TableIndex implements \JsonSerializable
-{
-    private $name = "";
-    private $description = "";
+use JsonSerializable;
 
-    /**
-     * TableIndex constructor.
-     * @param string $name
-     */
+/**
+ * Base information about a table's index.
+ */
+class TableIndex implements JsonSerializable
+{
+    private string $name;
+    private string $description = '';
+
     public function __construct(string $name)
     {
         $this->name = $name;
@@ -38,46 +34,32 @@ class TableIndex implements \JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            "name" => $this->getName(),
-            "description" => $this->getDescription()
+            'name' => $this->getName(),
+            'description' => $this->getDescription(),
         ];
     }
 
-
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     */
-    public function setName(string $name)
+    public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getDescription(): string
     {
         return $this->description;
     }
 
-    /**
-     * @param string $description
-     */
-    public function setDescription(string $description)
+    public function setDescription(string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
-
-
-
 }

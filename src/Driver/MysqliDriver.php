@@ -21,81 +21,78 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Generator;
 use mysqli;
+use mysqli_stmt;
 use Symfony\Component\Process\ExecutableFinder;
 
 /**
- * db-driver for MySQL using the php-mysqli-interface
- *
- * @package module_system
+ * DB-driver for MySQL using the php-mysqli-interface.
  */
 class MysqliDriver extends DriverAbstract
 {
     private const MAX_DEADLOCK_RETRY_COUNT = 10;
     private const DEADLOCK_WAIT_TIMEOUT = 2;
 
-    private $connected = false;
+    private bool $connected = false;
 
-    /**  @var mysqli */
-    private $linkDB; //DB-Link
+    private ?mysqli $linkDB; //DB-Link
 
-    /** @var  ConnectionParameters */
-    private $objCfg;
+    private ?ConnectionParameters $config;
 
-    /** @var string  */
-    private $strDumpBin = "mysqldump"; //Binary to dump db (if not in path, add the path here)
+    private string $dumpBin = 'mysqldump'; // Binary to dump db (if not in path, add the path here)
 
-    /** @var string  */
-    private $strRestoreBin = "mysql"; //Binary to dump db (if not in path, add the path here)
+    private string $restoreBin = 'mysql'; // Binary to dump db (if not in path, add the path here)
 
-    /** @var string  */
-    private $strErrorMessage = "";
+    private string $errorMessage = '';
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function dbconnect(ConnectionParameters $objParams)
+    public function dbconnect(ConnectionParameters $params): bool
     {
         if ($this->connected) {
             return true;
         }
 
-        $port = $objParams->getPort();
+        $port = $params->getPort();
         if (empty($port)) {
             $port = 3306;
         }
 
-        //save connection-details
-        $this->objCfg = $objParams;
+        // Save connection-details
+        $this->config = $params;
 
         $this->linkDB = new mysqli(
-            $this->objCfg->getHost(),
-            $this->objCfg->getUsername(),
-            $this->objCfg->getPassword(),
-            $this->objCfg->getDatabase(),
+            $this->config->getHost(),
+            $this->config->getUsername(),
+            $this->config->getPassword(),
+            $this->config->getDatabase(),
             $port
         );
 
         if ($this->linkDB->connect_errno) {
-            throw new ConnectionException("Error connecting to database: " . $this->linkDB->connect_error);
+            throw new ConnectionException('Error connecting to database: ' . $this->linkDB->connect_error);
         }
 
-        //erst ab mysql-client-bib > 4
-        //mysqli_set_charset($this->linkDB, "utf8");
-        $this->_pQuery("SET NAMES 'utf8mb4'", array());
-        $this->_pQuery("SET CHARACTER SET utf8mb4", array());
-        $this->_pQuery("SET character_set_connection ='utf8mb4'", array());
-        //$this->_pQuery("SET character_set_database ='utf8mb4'", array());
-        //$this->_pQuery("SET character_set_server ='utf8mb4'", array());
+        // erst ab mysql-client-bib > 4
+        // mysqli_set_charset($this->linkDB, "utf8");
+        $this->_pQuery("SET NAMES 'utf8mb4'", []);
+        $this->_pQuery('SET CHARACTER SET utf8mb4', []);
+        $this->_pQuery("SET character_set_connection ='utf8mb4'", []);
+        // $this->_pQuery("SET character_set_database ='utf8mb4'", []);
+        // $this->_pQuery("SET character_set_server ='utf8mb4'", []);
 
         $this->connected = true;
+
         return true;
     }
 
     /**
      * @inheritDoc
      */
-    public function dbclose()
+    public function dbclose(): void
     {
         if (!$this->connected) {
             return;
@@ -108,185 +105,192 @@ class MysqliDriver extends DriverAbstract
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function _pQuery($strQuery, $arrParams)
+    public function _pQuery($query, $params): bool
     {
-        $objStatement = $this->getPreparedStatement($strQuery);
-        if ($objStatement === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
+        $statement = $this->getPreparedStatement($query);
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
-        $bitReturn = false;
-        $strTypes = "";
-        foreach ($arrParams as $strOneParam) {
-            if (is_float($strOneParam)) {
-                $strTypes .= "d";
-            } elseif (is_int($strOneParam)) {
-                $strTypes .= "i";
+        $output = false;
+        $types = '';
+        foreach ($params as $param) {
+            if (is_float($param)) {
+                $types .= 'd';
+            } elseif (is_int($param)) {
+                $types .= 'i';
             } else {
-                $strTypes .= "s";
+                $types .= 's';
             }
         }
 
-        if (count($arrParams) > 0) {
-            $arrParams = array_merge(array($strTypes), $arrParams);
-            call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
+        if (count($params) > 0) {
+            $params = array_merge([$types], $params);
+            call_user_func_array([$statement, 'bind_param'], $this->refValues($params));
         }
 
-            $intCount = 0;
-            while ($intCount < self::MAX_DEADLOCK_RETRY_COUNT) {
-                $bitReturn = $objStatement->execute();
-                if ($bitReturn === false && $objStatement->errno == 1213) {
-                    // in case we have a deadlock wait a bit and retry the query
-                    $intCount++;
-                    sleep(self::DEADLOCK_WAIT_TIMEOUT);
-                } else {
-                    break;
-                }
+        $count = 0;
+        while ($count < self::MAX_DEADLOCK_RETRY_COUNT) {
+            $output = $statement->execute();
+            if ($output === false && $statement->errno === 1213) {
+                // in case we have a deadlock wait for a bit and retry the query.
+                $count++;
+                sleep(self::DEADLOCK_WAIT_TIMEOUT);
+            } else {
+                break;
             }
-
-        if ($bitReturn === false) {
-            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
         }
 
-        $this->intAffectedRows = $objStatement->affected_rows;
+        if ($output === false) {
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
+        }
 
-        return $bitReturn;
+        $this->affectedRowsCount = $statement->affected_rows;
+
+        return $output;
     }
 
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams): \Generator
+    public function getPArray(string $query, array $params): Generator
     {
-        $objStatement = $this->getPreparedStatement($strQuery);
-        if ($objStatement === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
+        $statement = $this->getPreparedStatement($query);
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
-        $arrReturn = array();
-        $strTypes = "";
-        foreach ($arrParams as $strOneParam) {
-            $strTypes .= "s";
+        $types = '';
+        foreach ($params as $param) {
+            $types .= 's';
         }
 
-        if (count($arrParams) > 0) {
-            $arrParams = array_merge(array($strTypes), $arrParams);
-            call_user_func_array(array($objStatement, 'bind_param'), $this->refValues($arrParams));
+        if (count($params) > 0) {
+            $params = array_merge([$types], $params);
+            call_user_func_array([$statement, 'bind_param'], $this->refValues($params));
         }
 
-        if (!$objStatement->execute()) {
-            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
+        if (!$statement->execute()) {
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
         //should remain here due to the bug http://bugs.php.net/bug.php?id=47928
-        $objStatement->store_result();
+        $statement->store_result();
 
-        $objMetadata = $objStatement->result_metadata();
-        $arrParams = array();
-        $arrRow = array();
+        $metadata = $statement->result_metadata();
+        $params = [];
+        $row = [];
 
-        if ($objMetadata === false) {
-            $objStatement->free_result();
+        if ($metadata === false) {
+            $statement->free_result();
             return [];
         }
 
-        while ($objMetadata && $objField = $objMetadata->fetch_field()) {
-            $arrParams[] = &$arrRow[$objField->name];
+        while ($metadata && $field = $metadata->fetch_field()) {
+            $params[] = &$row[$field->name];
         }
 
-        call_user_func_array(array($objStatement, 'bind_result'), $arrParams);
+        call_user_func_array([$statement, 'bind_result'], $params);
 
-        while ($objStatement->fetch()) {
-            $arrSingleRow = array();
-            foreach ($arrRow as $key => $val) {
+        while ($statement->fetch()) {
+            $arrSingleRow = [];
+            foreach ($row as $key => $val) {
                 $arrSingleRow[$key] = $val;
             }
             yield $arrSingleRow;
         }
 
-        $objStatement->free_result();
+        $statement->free_result();
     }
 
     /**
      * @inheritDoc
      */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
+    public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
-        $arrPlaceholder = array();
-        $arrMappedColumns = array();
-        $arrKeyValuePairs = array();
+        $placeholders = [];
+        $mappedColumns = [];
+        $keyValuePairs = [];
 
-        foreach ($arrColumns as $strOneCol) {
-            $arrPlaceholder[] = "?";
-            $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
-            $arrKeyValuePairs[] = $this->encloseColumnName($strOneCol) . " = ?";
+        foreach ($columns as $strOneCol) {
+            $placeholders[] = '?';
+            $mappedColumns[] = $this->encloseColumnName($strOneCol);
+            $keyValuePairs[] = $this->encloseColumnName($strOneCol) . ' = ?';
         }
 
-        $strQuery = "INSERT INTO " . $this->encloseTableName($strTable) . " (" . implode(
-                ", ",
-                $arrMappedColumns
-            ) . ") VALUES (" . implode(", ", $arrPlaceholder) . ")
-                        ON DUPLICATE KEY UPDATE " . implode(", ", $arrKeyValuePairs);
-        return $this->_pQuery($strQuery, array_merge($arrValues, $arrValues));
+        $enclosedTableName = $this->encloseTableName($table);
+
+        $strQuery = "INSERT INTO $enclosedTableName (" . implode(
+                ', ',
+                $mappedColumns
+            ) . ') VALUES (' . implode(', ', $placeholders) . ')
+                        ON DUPLICATE KEY UPDATE ' . implode(', ', $keyValuePairs);
+
+        return $this->_pQuery($strQuery, array_merge($values, $values));
     }
 
     /**
      * @inheritDoc
      */
-    public function getError()
+    public function getError(): string
     {
-        $strError = $this->strErrorMessage . " " . $this->linkDB->error;
-        $this->strErrorMessage = "";
+        $error = $this->errorMessage . ' ' . $this->linkDB->error;
+        $this->errorMessage = '';
 
-        return $strError;
+        return $error;
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function getTables(): array
     {
-        $generator = $this->getPArray("SHOW TABLE STATUS", array());
+        $generator = $this->getPArray('SHOW TABLE STATUS', []);
         $result = [];
         foreach ($generator as $row) {
             $result[] = ['name' => $row['Name']];
         }
+
         return $result;
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function getTableInformation(string $tableName): Table
     {
         $table = new Table($tableName);
 
-        //fetch all columns
-        $columnInfo = $this->getPArray("SHOW COLUMNS FROM {$tableName}", []) ?: [];
-        foreach ($columnInfo as $arrOneColumn) {
-            $col = new TableColumn($arrOneColumn["Field"]);
-            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
-            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
-            $col->setNullable($arrOneColumn["Null"] == "YES");
-            $table->addColumn($col);
+        // fetch all columns
+        $columnInfo = $this->getPArray("SHOW COLUMNS FROM $tableName", []) ?: [];
+        foreach ($columnInfo as $column) {
+            $table->addColumn(
+                TableColumn::make($column['Field'])
+                    ->setInternalType($this->getCoreTypeForDbType($column))
+                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column)))
+                    ->setNullable($column['Null'] === 'YES'),
+            );
         }
 
         //fetch all indexes
-        $indexes = $this->getPArray("SHOW INDEX FROM {$tableName} WHERE Key_name != 'PRIMARY'", []) ?: [];
+        $indexes = $this->getPArray("SHOW INDEX FROM $tableName WHERE Key_name != 'PRIMARY'", []) ?: [];
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
-            $indexAggr[$indexInfo["Key_name"]] = $indexAggr[$indexInfo["Key_name"]] ?? [];
-            $indexAggr[$indexInfo["Key_name"]][] = $indexInfo["Column_name"];
+            $indexAggr[$indexInfo['Key_name']] = $indexAggr[$indexInfo['Key_name']] ?? [];
+            $indexAggr[$indexInfo['Key_name']][] = $indexInfo['Column_name'];
         }
         foreach ($indexAggr as $key => $desc) {
             $index = new TableIndex($key);
-            $index->setDescription(implode(", ", $desc));
+            $index->setDescription(implode(', ', $desc));
             $table->addIndex($index);
         }
 
         //fetch all keys
-        $keys = $this->getPArray("SHOW KEYS FROM {$tableName} WHERE Key_name = 'PRIMARY'", []) ?: [];
+        $keys = $this->getPArray("SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'", []) ?: [];
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['Column_name']);
             $table->addPrimaryKey($key);
@@ -296,144 +300,147 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Tries to convert a column provided by the database back to the Kajona internal type constant
-     *
-     * @param $infoSchemaRow
-     * @return null|string
+     * Tries to convert a column provided by the database back to the Kajona internal type constant.
      */
-    private function getCoreTypeForDbType($infoSchemaRow)
+    private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
-        if ($infoSchemaRow["Type"] == "int(11)" || $infoSchemaRow["Type"] == "int") {
-            return DataType::STR_TYPE_INT;
-        } elseif ($infoSchemaRow["Type"] == "bigint(20)" || $infoSchemaRow["Type"] == "bigint") {
-            return DataType::STR_TYPE_LONG;
-        } elseif ($infoSchemaRow["Type"] == "double") {
-            return DataType::STR_TYPE_DOUBLE;
-        } elseif ($infoSchemaRow["Type"] == "varchar(10)") {
-            return DataType::STR_TYPE_CHAR10;
-        } elseif ($infoSchemaRow["Type"] == "varchar(20)") {
-            return DataType::STR_TYPE_CHAR20;
-        } elseif ($infoSchemaRow["Type"] == "varchar(100)") {
-            return DataType::STR_TYPE_CHAR100;
-        } elseif ($infoSchemaRow["Type"] == "varchar(254)") {
-            return DataType::STR_TYPE_CHAR254;
-        } elseif ($infoSchemaRow["Type"] == "varchar(500)") {
-            return DataType::STR_TYPE_CHAR500;
-        } elseif ($infoSchemaRow["Type"] == "text") {
-            return DataType::STR_TYPE_TEXT;
-        } elseif ($infoSchemaRow["Type"] == "mediumtext") {
-            return DataType::STR_TYPE_TEXT;
-        } elseif ($infoSchemaRow["Type"] == "longtext") {
-            return DataType::STR_TYPE_LONGTEXT;
+        if ($infoSchemaRow['Type'] === 'int(11)' || $infoSchemaRow['Type'] === 'int') {
+            return DataType::INT;
         }
+
+        if ($infoSchemaRow['Type'] === 'bigint(20)' || $infoSchemaRow['Type'] === 'bigint') {
+            return DataType::BIGINT;
+        }
+
+        if ($infoSchemaRow['Type'] === 'double') {
+            return DataType::FLOAT;
+        }
+
+        if ($infoSchemaRow['Type'] === 'varchar(10)') {
+            return DataType::CHAR10;
+        }
+
+        if ($infoSchemaRow['Type'] === 'varchar(20)') {
+            return DataType::CHAR20;
+        }
+
+        if ($infoSchemaRow['Type'] === 'varchar(100)') {
+            return DataType::CHAR100;
+        }
+
+        if ($infoSchemaRow['Type'] === 'varchar(254)') {
+            return DataType::CHAR254;
+        }
+
+        if ($infoSchemaRow['Type'] === 'varchar(500)') {
+            return DataType::CHAR500;
+        }
+
+        if ($infoSchemaRow['Type'] === 'text') {
+            return DataType::TEXT;
+        }
+
+        if ($infoSchemaRow['Type'] === 'mediumtext') {
+            return DataType::TEXT;
+        }
+
+        if ($infoSchemaRow['Type'] === 'longtext') {
+            return DataType::LONGTEXT;
+        }
+
         return null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getDatatype($strType)
+    public function getDatatype(DataType $type): string
     {
-        $strReturn = "";
-
-        if ($strType == DataType::STR_TYPE_INT) {
-            $strReturn .= " INT ";
-        } elseif ($strType == DataType::STR_TYPE_LONG) {
-            $strReturn .= " BIGINT ";
-        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
-            $strReturn .= " DOUBLE ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
-            $strReturn .= " VARCHAR( 10 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
-            $strReturn .= " VARCHAR( 20 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
-            $strReturn .= " VARCHAR( 100 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
-            $strReturn .= " VARCHAR( 254 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
-            $strReturn .= " VARCHAR( 500 ) ";
-        } elseif ($strType == DataType::STR_TYPE_TEXT) {
-            $strReturn .= " TEXT ";
-        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
-            $strReturn .= " LONGTEXT ";
-        } else {
-            $strReturn .= " VARCHAR( 254 ) ";
-        }
-
-        return $strReturn;
+        return match ($type) {
+            DataType::INT => ' INT ',
+            DataType::BIGINT => ' BIGINT ',
+            DataType::FLOAT => ' DOUBLE ',
+            DataType::CHAR10 => ' VARCHAR( 10 ) ',
+            DataType::CHAR20 => ' VARCHAR( 20 ) ',
+            DataType::CHAR100 => ' VARCHAR( 100 ) ',
+            DataType::CHAR500 => ' VARCHAR( 500 ) ',
+            DataType::TEXT => ' TEXT ',
+            DataType::LONGTEXT => ' LONGTEXT ',
+            default => ' VARCHAR( 254 ) ',
+        };
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function createTable($strName, $arrFields, $arrKeys)
+    public function createTable(string $name, array $columns, array $primaryKeys): bool
     {
-        $strQuery = "";
+        $query = 'CREATE TABLE IF NOT EXISTS `' . $name . "` ( \n";
 
-        //build the mysql code
-        $strQuery .= "CREATE TABLE IF NOT EXISTS `" . $strName . "` ( \n";
+        foreach ($columns as $fieldName => $columnSettings) {
+            $query .= ' `' . $fieldName . '` ';
 
-        //loop the fields
-        foreach ($arrFields as $strFieldName => $arrColumnSettings) {
-            $strQuery .= " `" . $strFieldName . "` ";
+            $query .= $this->getDatatype($columnSettings[0]);
 
-            $strQuery .= $this->getDatatype($arrColumnSettings[0]);
-
-            //any default?
-            if (isset($arrColumnSettings[2])) {
-                $strQuery .= "DEFAULT " . $arrColumnSettings[2] . " ";
+            // any default?
+            if (isset($columnSettings[2])) {
+                $query .= 'DEFAULT ' . $columnSettings[2] . ' ';
             }
 
-            //nullable?
-            if ($arrColumnSettings[1] === true) {
-                $strQuery .= " NULL , \n";
+            // nullable?
+            if ($columnSettings[1] === true) {
+                $query .= " NULL , \n";
             } else {
-                $strQuery .= " NOT NULL , \n";
+                $query .= " NOT NULL , \n";
             }
         }
 
-        //primary keys
-        $strQuery .= " PRIMARY KEY ( `" . implode("` , `", $arrKeys) . "` ) \n";
-        $strQuery .= ") ";
-        $strQuery .= " ENGINE = innodb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+        // primary keys
+        $query .= ' PRIMARY KEY ( `' . implode('` , `', $primaryKeys) . "` ) \n";
+        $query .= ') ';
+        $query .= ' ENGINE = innodb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;';
 
-        return $this->_pQuery($strQuery, array());
+        return $this->_pQuery($query, []);
     }
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool
     {
+        $enclosedTableName = $this->encloseTableName($table);
+
         return $this->_pQuery(
-            "ALTER TABLE " . $this->encloseTableName(
-                $strTable
-            ) . " ADD " . ($bitUnique ? "UNIQUE" : "") . " INDEX " . $strName . " (" . implode(",", $arrColumns) . ")",
-            []
+            "ALTER TABLE $enclosedTableName ADD " . ($unique ? 'UNIQUE' : '') . " INDEX $name (" . implode(',', $columns) . ')',
+            [],
         );
     }
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function hasIndex($strTable, $strName): bool
+    public function hasIndex($table, $name): bool
     {
-        $arrIndex = iterator_to_array($this->getPArray("SHOW INDEX FROM {$strTable} WHERE Key_name = ?", [$strName]), false);
+        $arrIndex = iterator_to_array($this->getPArray("SHOW INDEX FROM $table WHERE Key_name = ?", [$name]), false);
         return count($arrIndex) > 0;
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function deleteIndex(string $table, string $index): bool
     {
-        return $this->_pQuery("DROP INDEX {$index} ON {$table}", []);
+        return $this->_pQuery("DROP INDEX $index ON $table", []);
     }
 
     /**
      * @inheritDoc
      */
-    public function transactionBegin()
+    public function beginTransaction(): void
     {
         $this->linkDB->begin_transaction();
     }
@@ -441,7 +448,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function transactionCommit()
+    public function commitTransaction(): void
     {
         $this->linkDB->commit();
     }
@@ -449,7 +456,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function transactionRollback()
+    public function rollbackTransaction(): void
     {
         $this->linkDB->rollback();
     }
@@ -457,61 +464,60 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getDbInfo()
+    public function getDbInfo(): array
     {
-        $arrReturn = array();
-        $arrReturn["dbserver"] = "MySQL " . $this->linkDB->server_info;
-        $arrReturn["server version"] = $this->linkDB->server_version;
-        $arrReturn["dbclient"] = $this->linkDB->client_info;
-        $arrReturn["client version"] = $this->linkDB->client_version;
-        $arrReturn["dbconnection"] = $this->linkDB->host_info;
-        $arrReturn["protocol version"] = $this->linkDB->protocol_version;
-        $arrReturn["thread id"] = $this->linkDB->thread_id;
-        return $arrReturn;
+        return [
+            'dbbserver' => 'MySQL ' . $this->linkDB->server_info,
+            'server_version' => $this->linkDB->server_version,
+            'dbclient' => $this->linkDB->client_info,
+            'client_version' => $this->linkDB->client_info,
+            'dbconnection' => $this->linkDB->host_info,
+            'protocol_version' => $this->linkDB->protocol_version,
+            'thread_id' => $this->linkDB->thread_id,
+        ];
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseColumnName($strColumn)
+    public function encloseColumnName(string $column): string
     {
-        return "`" . $strColumn . "`";
+        return "`$column`";
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseTableName($strTable)
+    public function encloseTableName(string $table): string
     {
-        return "`" . $strTable . "`";
+        return "`$table`";
     }
-
 
     //--- DUMP & RESTORE ------------------------------------------------------------------------------------
 
     /**
      * @inheritDoc
      */
-    public function dbExport(&$strFilename, $arrTables)
+    public function dbExport(string &$fileName, array $tables): bool
     {
-        $strTables = implode(" ", $arrTables);
-        $strParamPass = "";
+        $tablesString = implode(' ', $tables);
+        $paramPass = '';
 
-        if ($this->objCfg->getPassword() != "") {
-            $strParamPass = " -p\"" . $this->objCfg->getPassword() . "\"";
+        if ($this->config->getPassword() !== '') {
+            $paramPass = " -p\"" . $this->config->getPassword() . "\"";
         }
 
-        $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
+        $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
 
         if ($this->handlesDumpCompression()) {
-            $strFilename .= ".gz";
-            $strCommand = $dumpBin . " -h" . $this->objCfg->getHost(
-                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
-                ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " | gzip > \"" . $strFilename . "\"";
+            $fileName .= '.gz';
+            $strCommand = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
+                ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
+                ) . ' ' . $tablesString . " | gzip > \"" . $fileName . "\"";
         } else {
-            $strCommand = $dumpBin . " -h" . $this->objCfg->getHost(
-                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
-                ) . " " . $this->objCfg->getDatabase() . " " . $strTables . " > \"" . $strFilename . "\"";
+            $strCommand = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
+                ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
+                ) . ' ' . $tablesString . " > \"" . $fileName . "\"";
         }
 
         $this->runCommand($strCommand);
@@ -522,24 +528,24 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function dbImport($strFilename)
+    public function dbImport(string $fileName): bool
     {
-        $strParamPass = "";
+        $paramPass = '';
 
-        if ($this->objCfg->getPassword() != "") {
-            $strParamPass = " -p\"" . $this->objCfg->getPassword() . "\"";
+        if ($this->config->getPassword() !== '') {
+            $paramPass = " -p\"" . $this->config->getPassword() . "\"";
         }
 
-        $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
+        $restoreBin = (new ExecutableFinder())->find($this->restoreBin);
 
-        if ($this->handlesDumpCompression() && pathinfo($strFilename, PATHINFO_EXTENSION) === 'gz') {
-            $strCommand = " gunzip -c \"" . $strFilename . "\" | " . $restoreBin . " -h" . $this->objCfg->getHost(
-                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
-                ) . " " . $this->objCfg->getDatabase() . "";
+        if ($this->handlesDumpCompression() && pathinfo($fileName, PATHINFO_EXTENSION) === 'gz') {
+            $strCommand = " gunzip -c \"" . $fileName . "\" | " . $restoreBin . ' -h' . $this->config->getHost(
+                ) . ' -u' . $this->config->getUsername() . $paramPass . ' -P' . $this->config->getPort(
+                ) . ' ' . $this->config->getDatabase();
         } else {
-            $strCommand = $restoreBin . " -h" . $this->objCfg->getHost(
-                ) . " -u" . $this->objCfg->getUsername() . $strParamPass . " -P" . $this->objCfg->getPort(
-                ) . " " . $this->objCfg->getDatabase() . " < \"" . $strFilename . "\"";
+            $strCommand = $restoreBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
+                ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
+                ) . " < \"" . $fileName . "\"";
         }
 
         $this->runCommand($strCommand);
@@ -548,67 +554,55 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * Converts a simple array into a an array of references.
-     * Required for PHP > 5.3
-     *
-     * @param array $arrValues
-     *
-     * @return array
+     * Converts a simple array into an array of references.
+     * Required for PHP > 5.3.
      */
-    private function refValues($arrValues)
+    private function refValues(array $values): array
     {
-        if (strnatcmp(phpversion(), '5.3') >= 0) { //Reference is required for PHP 5.3+
-            $refs = array();
-            foreach ($arrValues as $key => $value) {
-                $refs[$key] = &$arrValues[$key];
+        if (strnatcmp(PHP_VERSION, '5.3') >= 0) { // Reference is required for PHP 5.3+
+            $refs = [];
+            foreach ($values as $key => $value) {
+                $refs[$key] = &$values[$key];
             }
             return $refs;
         }
-        return $arrValues;
+        return $values;
     }
 
     /**
-     * Prepares a statement or uses an instance from the cache
-     *
-     * @param string $strQuery
-     *
-     * @return \mysqli_stmt|false
+     * Prepares a statement or uses an instance from the cache.
      */
-    private function getPreparedStatement($strQuery)
+    private function getPreparedStatement(string $query): mysqli_stmt | false
     {
-        $strName = md5($strQuery);
+        $name = md5($query);
 
-        if (isset($this->arrStatementsCache[$strName])) {
-            return $this->arrStatementsCache[$strName];
+        if (isset($this->statementsCache[$name])) {
+            return $this->statementsCache[$name];
         }
 
-        if (count($this->arrStatementsCache) > 300) {
-            /** @var \mysqli_stmt $objOneEntry */
-            foreach ($this->arrStatementsCache as $objOneEntry) {
+        if (count($this->statementsCache) > 300) {
+            /** @var mysqli_stmt $objOneEntry */
+            foreach ($this->statementsCache as $objOneEntry) {
                 $objOneEntry->close();
             }
 
-            $this->arrStatementsCache = array();
+            $this->statementsCache = [];
         }
 
-        $objStatement = $this->linkDB->stmt_init();
-        if (!$objStatement->prepare($strQuery)) {
-            $this->strErrorMessage = $objStatement->error;
+        $statement = $this->linkDB->stmt_init();
+        if (!$statement->prepare($query)) {
+            $this->errorMessage = $statement->error;
+
             return false;
         }
 
-        $this->arrStatementsCache[$strName] = $objStatement;
+        $this->statementsCache[$name] = $statement;
 
-        return $objStatement;
+        return $statement;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function escape($strValue)
+    public function escape(mixed $value): string
     {
-        return str_replace("\\", "\\\\", $strValue);
+        return str_replace("\\", "\\\\", (string) $value);
     }
-
 }
-

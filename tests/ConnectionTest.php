@@ -15,12 +15,23 @@ namespace Artemeon\Database\Tests;
 
 use Artemeon\Database\Driver\Oci8Driver;
 use Artemeon\Database\Driver\PostgresDriver;
-use Artemeon\Database\Driver\SqlsrvDriver;
+use Artemeon\Database\Exception\AddColumnException;
+use Artemeon\Database\Exception\ChangeColumnException;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
+use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\DataType;
+use DateInterval;
+use DateTime;
+use ReflectionClass;
 
 class ConnectionTest extends ConnectionTestCase
 {
-    public function testRenameTable()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testRenameTable(): void
     {
         $connection = $this->getConnection();
         $newName = self::TEST_TABLE_NAME . '_new';
@@ -39,100 +50,134 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertTrue($connection->hasTable($newName));
     }
 
-    public function testCreateIndex()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testCreateIndex(): void
     {
         $connection = $this->getConnection();
 
-        $bitResult = $connection->createIndex(self::TEST_TABLE_NAME, "foo_index", ["temp_char10", "temp_char20"]);
+        $bitResult = $connection->createIndex(self::TEST_TABLE_NAME, 'foo_index', ['temp_char10', 'temp_char20']);
 
         $this->assertTrue($bitResult);
     }
 
-    public function testCreateUnqiueIndex()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testCreateUniqueIndex(): void
     {
         $connection = $this->getConnection();
 
-        $bitResult = $connection->createIndex(self::TEST_TABLE_NAME, "foo_index", ["temp_char10", "temp_char20"], true);
+        $bitResult = $connection->createIndex(self::TEST_TABLE_NAME, 'foo_index', ['temp_char10', 'temp_char20'], true);
 
         $this->assertTrue($bitResult);
     }
 
-    public function testHasIndex()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testHasIndex(): void
     {
         $connection = $this->getConnection();
 
-        $this->assertFalse($connection->hasIndex(self::TEST_TABLE_NAME, "foo_index"));
+        $this->assertFalse($connection->hasIndex(self::TEST_TABLE_NAME, 'foo_index'));
 
-        $bitResult = $connection->createIndex(self::TEST_TABLE_NAME, "foo_index", ["temp_char10", "temp_char20"]);
+        $bitResult = $connection->createIndex(self::TEST_TABLE_NAME, 'foo_index', ['temp_char10', 'temp_char20']);
 
-        $this->assertTrue($connection->hasIndex(self::TEST_TABLE_NAME, "foo_index"));
+        $this->assertTrue($connection->hasIndex(self::TEST_TABLE_NAME, 'foo_index'));
         $this->assertTrue($bitResult);
     }
 
-    public function testDropIndex()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testDropIndex(): void
     {
         $connection = $this->getConnection();
 
-        $this->assertFalse($connection->hasIndex(self::TEST_TABLE_NAME, "foo_index2"));
-        $this->assertTrue($connection->createIndex(self::TEST_TABLE_NAME, "foo_index2", ["temp_char10", "temp_char20"]));
-        $this->assertTrue($connection->hasIndex(self::TEST_TABLE_NAME, "foo_index2"));
+        $this->assertFalse($connection->hasIndex(self::TEST_TABLE_NAME, 'foo_index2'));
+        $this->assertTrue($connection->createIndex(self::TEST_TABLE_NAME, 'foo_index2', ['temp_char10', 'temp_char20']));
+        $this->assertTrue($connection->hasIndex(self::TEST_TABLE_NAME, 'foo_index2'));
 
-        $this->assertTrue($connection->deleteIndex(self::TEST_TABLE_NAME, "foo_index2"));
-        $this->assertFalse($connection->hasIndex(self::TEST_TABLE_NAME, "foo_index2"));
+        $this->assertTrue($connection->deleteIndex(self::TEST_TABLE_NAME, 'foo_index2'));
+        $this->assertFalse($connection->hasIndex(self::TEST_TABLE_NAME, 'foo_index2'));
     }
 
-    public function testFloatHandling()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testFloatHandling(): void
     {
         $connection = $this->getConnection();
 
         $connection->insert(self::TEST_TABLE_NAME, ['temp_id' => 'id1', 'temp_float' => 16.8]);
         $connection->insert(self::TEST_TABLE_NAME, ['temp_id' => 'id2', 'temp_float' => 1000.8]);
 
-        $arrRow = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " where temp_id = ?", array("id1"));
+        $arrRow = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' where temp_id = ?', ['id1']);
         // MSSQL returns 16.799999237061 instead of 16.8
-        $this->assertEquals(16.8, round((float) $arrRow["temp_float"], 1));
-        $this->assertEquals("16.8", round((float) $arrRow["temp_float"], 1));
+        $this->assertEquals(16.8, round((float) $arrRow['temp_float'], 1));
+        $this->assertEquals('16.8', round((float) $arrRow['temp_float'], 1));
 
-        $arrRow = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " where temp_id = ?", array("id2"));
-        $this->assertEquals(1000.8, round((float) $arrRow["temp_float"], 1));
-        $this->assertEquals("1000.8", round((float) $arrRow["temp_float"], 1));
+        $arrRow = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' where temp_id = ?', ['id2']);
+        $this->assertEquals(1000.8, round((float) $arrRow['temp_float'], 1));
+        $this->assertEquals('1000.8', round((float) $arrRow['temp_float'], 1));
     }
 
-    public function testChangeColumn()
+    /**
+     * @throws ChangeColumnException
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testChangeColumn(): void
     {
         $connection = $this->getConnection();
 
-        $connection->insert(self::TEST_TABLE_NAME, array('temp_id' => 'aaa', 'temp_int' => 111));
-        $connection->insert(self::TEST_TABLE_NAME, array('temp_id' => 'bbb', 'temp_int' => 222));
+        $connection->insert(self::TEST_TABLE_NAME, ['temp_id' => 'aaa', 'temp_int' => 111]);
+        $connection->insert(self::TEST_TABLE_NAME, ['temp_id' => 'bbb', 'temp_int' => 222]);
 
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_id'));
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_int'));
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint'));
 
-        $this->assertTrue($connection->changeColumn(self::TEST_TABLE_NAME, "temp_int", "temp_bigint_new", DataType::STR_TYPE_BIGINT));
+        $this->assertTrue($connection->changeColumn(self::TEST_TABLE_NAME, 'temp_int', 'temp_bigint_new', DataType::BIGINT));
 
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_id'));
         $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_int'));
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint_new'));
 
-        $row = $connection->getPRow("SELECT temp_id, temp_bigint_new FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", ['aaa']);
-        $this->assertEquals($row["temp_id"], "aaa");
-        $this->assertEquals($row["temp_bigint_new"], 111);
+        $row = $connection->getPRow('SELECT temp_id, temp_bigint_new FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['aaa']);
+        $this->assertEquals('aaa', $row['temp_id']);
+        $this->assertEquals(111, $row['temp_bigint_new']);
 
-        $row = $connection->getPRow("SELECT temp_id, temp_bigint_new FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", ['bbb']);
-        $this->assertEquals($row["temp_id"], "bbb");
-        $this->assertEquals($row["temp_bigint_new"], 222);
+        $row = $connection->getPRow('SELECT temp_id, temp_bigint_new FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['bbb']);
+        $this->assertEquals('bbb', $row['temp_id']);
+        $this->assertEquals(222, $row['temp_bigint_new']);
     }
 
-    public function testChangeColumnType()
+    /**
+     * @throws ConnectionException
+     * @throws ChangeColumnException
+     */
+    public function testChangeColumnType(): void
     {
         $connection = $this->getConnection();
 
         // test changing a column type with the same column name
-        $this->assertTrue($connection->changeColumn(self::TEST_TABLE_NAME, "temp_char500", "temp_char500", DataType::STR_TYPE_CHAR10));
+        $this->assertTrue($connection->changeColumn(self::TEST_TABLE_NAME, 'temp_char500', 'temp_char500', DataType::CHAR10));
     }
 
-    public function testAddColumn()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     * @throws AddColumnException
+     */
+    public function testAddColumn(): void
     {
         $connection = $this->getConnection();
 
@@ -141,10 +186,10 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_new_col3'));
         $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_new_col4'));
 
-        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col1', DataType::STR_TYPE_INT));
-        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col2', DataType::STR_TYPE_INT, true, "NULL"));
-        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col3', DataType::STR_TYPE_INT, false, "0"));
-        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col4', DataType::STR_TYPE_INT, true));
+        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col1', DataType::INT));
+        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col2', DataType::INT, true, 'NULL'));
+        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col3', DataType::INT, false, '0'));
+        $this->assertTrue($connection->addColumn(self::TEST_TABLE_NAME, 'temp_new_col4', DataType::INT, true));
 
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_new_col1'));
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_new_col2'));
@@ -152,80 +197,100 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_new_col4'));
     }
 
-    public function testHasColumn()
+    /**
+     * @throws QueryException
+     */
+    public function testHasColumn(): void
     {
         $connection = $this->getConnection();
 
-        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, "temp_id"));
-        $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, "temp_foo"));
+        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_id'));
+        $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_foo'));
     }
 
-    public function testRemoveColumn()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     * @throws RemoveColumnException
+     */
+    public function testRemoveColumn(): void
     {
         $connection = $this->getConnection();
 
-        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, "temp_bigint"));
-        $this->assertTrue($connection->removeColumn(self::TEST_TABLE_NAME, "temp_bigint"));
-        $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, "temp_bigint"));
+        $this->assertTrue($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint'));
+        $this->assertTrue($connection->removeColumn(self::TEST_TABLE_NAME, 'temp_bigint'));
+        $this->assertFalse($connection->hasColumn(self::TEST_TABLE_NAME, 'temp_bigint'));
     }
 
-    public function testCreateTable()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testCreateTable(): void
     {
         $connection = $this->getConnection();
 
-        $strQuery = "SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC";
-        $arrRow = $connection->getPRow($strQuery, array());
-        $this->assertTrue(count($arrRow) >= 9, "testDataBase getRow count");
+        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
+        $arrRow = $connection->getPRow($strQuery);
+        $this->assertTrue(count($arrRow) >= 9, 'testDataBase getRow count');
 
-        $this->assertEquals("20200508095301", $arrRow["temp_bigint"], "testDataBase getRow content");
-        $this->assertEquals(23.45, round((float) $arrRow["temp_float"], 2), "testDataBase getRow content");
-        $this->assertEquals("char10-1", $arrRow["temp_char10"], "testDataBase getRow content");
-        $this->assertEquals("char20-1", $arrRow["temp_char20"], "testDataBase getRow content");
-        $this->assertEquals("char100-1", $arrRow["temp_char100"], "testDataBase getRow content");
-        $this->assertEquals("char254-1", $arrRow["temp_char254"], "testDataBase getRow content");
-        $this->assertEquals("char500-1", $arrRow["temp_char500"], "testDataBase getRow content");
-        $this->assertEquals("text-1", $arrRow["temp_text"], "testDataBase getRow content");
+        $this->assertEquals('20200508095301', $arrRow['temp_bigint'], 'testDataBase getRow content');
+        $this->assertEquals(23.45, round((float) $arrRow['temp_float'], 2), 'testDataBase getRow content');
+        $this->assertEquals('char10-1', $arrRow['temp_char10'], 'testDataBase getRow content');
+        $this->assertEquals('char20-1', $arrRow['temp_char20'], 'testDataBase getRow content');
+        $this->assertEquals('char100-1', $arrRow['temp_char100'], 'testDataBase getRow content');
+        $this->assertEquals('char254-1', $arrRow['temp_char254'], 'testDataBase getRow content');
+        $this->assertEquals('char500-1', $arrRow['temp_char500'], 'testDataBase getRow content');
+        $this->assertEquals('text-1', $arrRow['temp_text'], 'testDataBase getRow content');
 
-        $strQuery = "SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC";
-        $arrRow = $connection->getPArray($strQuery, array());
-        $this->assertEquals(count($arrRow), 50, "testDataBase getArray count");
+        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
+        $arrRow = $connection->getPArray($strQuery);
+        $this->assertCount(50, $arrRow, 'testDataBase getArray count');
 
         $intI = 1;
         foreach ($arrRow as $arrSingleRow) {
-            $this->assertEquals($arrSingleRow["temp_char10"], 'char10-' . $intI, "testDataBase getArray content");
+            $this->assertEquals('char10-' . $intI, $arrSingleRow['temp_char10'], 'testDataBase getArray content');
             $intI++;
         }
 
-        $strQuery = "SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC";
-        $arrRow = $connection->getPArray($strQuery, array(), 0, 9);
-        $this->assertEquals(count($arrRow), 10, "testDataBase getArraySection count");
+        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
+        $arrRow = $connection->getPArray($strQuery, [], 0, 9);
+        $this->assertCount(10, $arrRow, 'testDataBase getArraySection count');
 
         $intI = 1;
         foreach ($arrRow as $arrSingleRow) {
-            $this->assertEquals($arrSingleRow["temp_char10"], 'char10-' . $intI, "testDataBase getArraySection content");
+            $this->assertEquals('char10-' . $intI, $arrSingleRow['temp_char10'], 'testDataBase getArraySection content');
             $intI++;
         }
     }
 
-    public function testCreateTableIndex()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testCreateTableIndex(): void
     {
         $connection = $this->getConnection();
 
-        $arrFields = array();
-        $arrFields["temp_id"] = array("char20", false);
-        $arrFields["temp_bigint"] = array("long", true);
-        $arrFields["temp_float"] = array("double", true);
-        $arrFields["temp_char10"] = array("char10", true);
-        $arrFields["temp_char20"] = array("char20", true);
-        $arrFields["temp_char100"] = array("char100", true);
-        $arrFields["temp_char254"] = array("char254", true);
-        $arrFields["temp_char500"] = array("char500", true);
-        $arrFields["temp_text"] = array("text", true);
+        $arrFields = [];
+        $arrFields['temp_id'] = [DataType::CHAR20, false];
+        $arrFields['temp_bigint'] = [DataType::BIGINT, true];
+        $arrFields['temp_float'] = [DataType::FLOAT, true];
+        $arrFields['temp_char10'] = [DataType::CHAR10, true];
+        $arrFields['temp_char20'] = [DataType::CHAR20, true];
+        $arrFields['temp_char100'] = [DataType::CHAR100, true];
+        $arrFields['temp_char254'] = [DataType::CHAR254, true];
+        $arrFields['temp_char500'] = [DataType::CHAR500, true];
+        $arrFields['temp_text'] = [DataType::TEXT, true];
 
-        $this->assertTrue($connection->createTable("agp_temp_autotest", $arrFields, array("temp_id"), array(array("temp_id", "temp_char10", "temp_char100"), "temp_char254")), "testDataBase createTable");
+        $this->assertTrue($connection->createTable('agp_temp_autotest', $arrFields, ['temp_id'], [['temp_id', 'temp_char10', 'temp_char100'], 'temp_char254']), 'testDataBase createTable');
     }
 
-    public function testEscapeText()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testEscapeText(): void
     {
         $connection = $this->getConnection();
         $systemId = $this->generateSystemid();
@@ -245,122 +310,145 @@ class ConnectionTest extends ConnectionTestCase
         ]);
 
         // like must be escaped
-        $strQuery = "SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_char20 LIKE ?";
-        $arrRow = $connection->getPRow($strQuery, array($connection->escape("Foo\\Bar%")));
+        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 LIKE ?';
+        $arrRow = $connection->getPRow($strQuery, [$connection->escape("Foo\\Bar%")]);
 
         $this->assertNotEmpty($arrRow);
         $this->assertEquals('Foo\\Bar\\Baz', $arrRow['temp_char20']);
 
         // equals needs no escape
-        $strQuery = "SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_char20 = ?";
-        $arrRow = $connection->getPRow($strQuery, array("Foo\\Bar\\Baz"));
+        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 = ?';
+        $arrRow = $connection->getPRow($strQuery, ["Foo\\Bar\\Baz"]);
 
         $this->assertNotEmpty($arrRow);
         $this->assertEquals('Foo\\Bar\\Baz', $arrRow['temp_char20']);
     }
 
-    public function testGetPArray()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testGetPArray(): void
     {
         $connection = $this->getConnection();
 
-        $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", array(), 0, 0);
-        $this->assertEquals(1, count($result));
-        $this->assertEquals(20200508095301, $result[0]["temp_bigint"]);
-        $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", array(), 0, 7);
-        $this->assertEquals(8, count($result));
+        $result = $connection->getPArray('SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC', [], 0, 0);
+        $this->assertCount(1, $result);
+        $this->assertEquals(20200508095301, $result[0]['temp_bigint']);
+        $result = $connection->getPArray('SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC', [], 0, 7);
+        $this->assertCount(8, $result);
         for ($intI = 0; $intI < 8; $intI++) {
-            $this->assertEquals(20200508095301 + $intI, $result[$intI]["temp_bigint"]);
+            $this->assertEquals(20200508095301 + $intI, $result[$intI]['temp_bigint']);
         }
 
-        $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", array(), 4, 7);
-        $this->assertEquals(4, count($result));
+        $result = $connection->getPArray('SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC', [], 4, 7);
+        $this->assertCount(4, $result);
         for ($intI = 4; $intI < 8; $intI++) {
-            $this->assertEquals(20200508095301 + $intI, $result[$intI - 4]["temp_bigint"]);
+            $this->assertEquals(20200508095301 + $intI, $result[$intI - 4]['temp_bigint']);
         }
     }
 
-    public function testGetAffectedRows()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testGetAffectedRows(): void
     {
         $connection = $this->getConnection();
         $strSystemId = $this->generateSystemid();
 
-        // insert which affects onw row
+        // insert, which affects one row
         $connection->multiInsert(self::TEST_TABLE_NAME,
-            array("temp_id", "temp_char20"),
-            array(array($this->generateSystemid(), $strSystemId))
+            ['temp_id', 'temp_char20'],
+            [[$this->generateSystemid(), $strSystemId]],
         );
-        $this->assertEquals(1, $connection->getIntAffectedRows());
+        $this->assertEquals(1, $connection->getAffectedRowsCount());
 
-        // insert which affects two rows
+        // insert, which affects two rows
         $connection->multiInsert(self::TEST_TABLE_NAME,
-            array("temp_id", "temp_char20"),
-            array(
-                array($this->generateSystemid(), $strSystemId),
-                array($this->generateSystemid(), $strSystemId)
-            )
+            ['temp_id', 'temp_char20'],
+            [
+                [$this->generateSystemid(), $strSystemId],
+                [$this->generateSystemid(), $strSystemId],
+            ],
         );
-        $this->assertEquals(2, $connection->getIntAffectedRows());
+        $this->assertEquals(2, $connection->getAffectedRowsCount());
 
-        $strNewSystemId = $this->generateSystemid();
+        $newSystemId = $this->generateSystemid();
 
-        // update which affects multiple rows
-        $connection->_pQuery("UPDATE " . self::TEST_TABLE_NAME . " SET temp_char20 = ? WHERE temp_char20 = ?", array($strNewSystemId, $strSystemId));
-        $this->assertEquals(3, $connection->getIntAffectedRows());
+        // update, which affects multiple rows
+        $connection->_pQuery('UPDATE ' . self::TEST_TABLE_NAME . ' SET temp_char20 = ? WHERE temp_char20 = ?', [$newSystemId, $strSystemId]);
+        $this->assertEquals(3, $connection->getAffectedRowsCount());
 
-        // update which does not affect a row
-        $connection->_pQuery("UPDATE " . self::TEST_TABLE_NAME . " SET temp_char20 = ? WHERE temp_char20 = ?", array($this->generateSystemid(), $this->generateSystemid()));
-        $this->assertEquals(0, $connection->getIntAffectedRows());
+        // update, which does not affect a row
+        $connection->_pQuery('UPDATE ' . self::TEST_TABLE_NAME . ' SET temp_char20 = ? WHERE temp_char20 = ?', [$this->generateSystemid(), $this->generateSystemid()]);
+        $this->assertEquals(0, $connection->getAffectedRowsCount());
 
-        // delete which affects two rows
-        $connection->_pQuery("DELETE FROM " . self::TEST_TABLE_NAME . " WHERE temp_char20 = ?", array($strNewSystemId));
-        $this->assertEquals(3, $connection->getIntAffectedRows());
+        // delete, which affects two rows
+        $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 = ?', [$newSystemId]);
+        $this->assertEquals(3, $connection->getAffectedRowsCount());
 
-        // delete which affects no rows
-        $connection->_pQuery("DELETE FROM " . self::TEST_TABLE_NAME . " WHERE temp_char20 = ?", array($this->generateSystemid()));
-        $this->assertEquals(0, $connection->getIntAffectedRows());
+        // delete, which affects no rows
+        $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 = ?', [$this->generateSystemid()]);
+        $this->assertEquals(0, $connection->getAffectedRowsCount());
     }
 
     /**
      * @dataProvider dataPostgresProcessQueryProvider
-     * @covers \Artemeon\Database\Driver\PostgresDriver::processQuery
+     * @covers       \Artemeon\Database\Driver\PostgresDriver::processQuery
+     * @throws \ReflectionException
      */
-    public function testPostgresProcessQuery($strExpect, $strQuery)
+    public function testPostgresProcessQuery($expected, $query): void
     {
-        $objDbPostgres = new PostgresDriver();
-        $objReflection = new \ReflectionClass(PostgresDriver::class);
+        $dbPostgres = new PostgresDriver();
+        $reflection = new ReflectionClass(PostgresDriver::class);
 
-        $objMethod = $objReflection->getMethod("processQuery");
+        $method = $reflection->getMethod('processQuery');
 
-        $objMethod->setAccessible(true);
-        $strActual = $objMethod->invoke($objDbPostgres, $strQuery);
+        $method->setAccessible(true);
+        $actual = $method->invoke($dbPostgres, $query);
 
-        $this->assertEquals($strExpect, $strActual);
+        $this->assertEquals($expected, $actual);
     }
 
-    public function dataPostgresProcessQueryProvider()
+    public function dataPostgresProcessQueryProvider(): array
     {
         return [
-            ["UPDATE temp_autotest_temp SET temp_char20 = $1 WHERE temp_char20 = $2", "UPDATE temp_autotest_temp SET temp_char20 = ? WHERE temp_char20 = ?"],
+            ['UPDATE temp_autotest_temp SET temp_char20 = $1 WHERE temp_char20 = $2', 'UPDATE temp_autotest_temp SET temp_char20 = ? WHERE temp_char20 = ?'],
             ["INSERT INTO temp_autotest (temp_char10, temp_char20, temp_char100, temp_char254, temp_char500, temp_text) VALUES ($1, $2, $3, $4, $5, $6),\n($7, $8, $9, $10, $11, $12)", "INSERT INTO temp_autotest (temp_char10, temp_char20, temp_char100, temp_char254, temp_char500, temp_text) VALUES (?, ?, ?, ?, ?, ?),\n(?, ?, ?, ?, ?, ?)"],
-            ["SELECT * FROM temp_autotest WHERE temp_char10 = $1 AND temp_char20 = $2 AND temp_char100 = $3", "SELECT * FROM temp_autotest WHERE temp_char10 = ? AND temp_char20 = ? AND temp_char100 = ?"],
+            ['SELECT * FROM temp_autotest WHERE temp_char10 = $1 AND temp_char20 = $2 AND temp_char100 = $3', 'SELECT * FROM temp_autotest WHERE temp_char10 = ? AND temp_char20 = ? AND temp_char100 = ?'],
         ];
     }
 
-    public function testGetGeneratorLimit()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testGetGeneratorLimit(): void
     {
         $maxCount = 60;
         $chunkSize = 16;
 
-        $data = array();
+        $data = [];
         for ($i = 0; $i < $maxCount; $i++) {
-            $data[] = array($this->generateSystemid(), $i, $i, $i, $i, $i, $i, $i, $i);
+            $data[] = [$this->generateSystemid(), $i, $i, $i, $i, $i, $i, $i, $i];
         }
 
         $database = $this->getConnection();
         $database->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE 1=1', []);
-        $database->multiInsert(self::TEST_TABLE_NAME, array("temp_id", "temp_bigint", "temp_float", "temp_char10", "temp_char20", "temp_char100", "temp_char254", "temp_char500", "temp_text"), $data);
+        $database->multiInsert(self::TEST_TABLE_NAME, [
+            'temp_id',
+            'temp_bigint',
+            'temp_float',
+            'temp_char10',
+            'temp_char20',
+            'temp_char100',
+            'temp_char254',
+            'temp_char500',
+            'temp_text',
+        ], $data);
 
-        $result = $database->getGenerator("SELECT temp_char10 FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", [], $chunkSize);
+        $result = $database->getGenerator('SELECT temp_char10 FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC', [], $chunkSize);
         $i = 0;
         $page = 0;
         $pages = floor($maxCount / $chunkSize);
@@ -369,17 +457,17 @@ class ConnectionTest extends ConnectionTestCase
         foreach ($result as $rows) {
             for ($j = 0; $j < $chunkSize; $j++) {
                 if ($page == $pages && $j >= $rest) {
-                    $this->assertEquals($rest, count($rows));
+                    $this->assertCount($rest, $rows);
 
-                    // if we have reached the last row of the last chunk break
+                    // if we have reached the last row of the last chunk break.
                     break 2;
                 }
 
-                $this->assertEquals($i, $rows[$j]["temp_char10"]);
+                $this->assertEquals($i, $rows[$j]['temp_char10']);
                 $i++;
             }
 
-            $this->assertEquals($chunkSize, count($rows));
+            $this->assertCount($chunkSize, $rows);
             $page++;
         }
 
@@ -387,26 +475,40 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($pages, $page);
     }
 
-    public function testGetGeneratorNoPaging()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testGetGeneratorNoPaging(): void
     {
         $maxCount = 60;
         $chunkSize = 16;
 
-        $data = array();
+        $data = [];
         for ($i = 0; $i < $maxCount; $i++) {
-            $data[] = array($this->generateSystemid(), $i, $i, $i, $i, $i, $i, $i, $i);
+            $data[] = [$this->generateSystemid(), $i, $i, $i, $i, $i, $i, $i, $i];
         }
 
         $database = $this->getConnection();
-        $database->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE 1=1', []);
-        $database->multiInsert(self::TEST_TABLE_NAME, array("temp_id", "temp_bigint", "temp_float", "temp_char10", "temp_char20", "temp_char100", "temp_char254", "temp_char500", "temp_text"), $data);
+        $database->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE 1=1');
+        $database->multiInsert(self::TEST_TABLE_NAME, [
+            'temp_id',
+            'temp_bigint',
+            'temp_float',
+            'temp_char10',
+            'temp_char20',
+            'temp_char100',
+            'temp_char254',
+            'temp_char500',
+            'temp_text',
+        ], $data);
 
-        $result = $database->getGenerator("SELECT temp_id FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_bigint ASC", [], $chunkSize, false);
+        $result = $database->getGenerator('SELECT temp_id FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC', [], $chunkSize, false);
         $i = 0;
 
         foreach ($result as $rows) {
             foreach ($rows as $row) {
-                $database->_pQuery("DELETE FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", [$row["temp_id"]]);
+                $database->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$row['temp_id']]);
                 $i++;
             }
         }
@@ -414,19 +516,21 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($maxCount, $i);
     }
 
-    public function testGetGenerator()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testGetGenerator(): void
     {
         $connection = $this->getConnection();
-        $generator = $connection->getGenerator("SELECT * FROM " . self::TEST_TABLE_NAME . " ORDER BY temp_int ASC", [], 6);
-
-        $this->assertInstanceOf(\Generator::class, $generator);
+        $generator = $connection->getGenerator('SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_int ASC', [], 6);
 
         $intI = 0;
         $j = 0;
         foreach ($generator as $arrResult) {
-            $this->assertEquals($j == 8 ? 2 : 6, count($arrResult));
+            $this->assertCount($j === 8 ? 2 : 6, $arrResult);
             foreach ($arrResult as $arrRow) {
-                $this->assertEquals("char20-" . ($intI + 1), $arrRow["temp_char20"]);
+                $this->assertEquals('char20-' . ($intI + 1), $arrRow['temp_char20']);
                 $intI++;
             }
             $j++;
@@ -434,91 +538,105 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals(50, $intI);
         $this->assertEquals(9, $j);
 
-        $connection->_pQuery("DROP TABLE " . self::TEST_TABLE_NAME, []);
+        $connection->_pQuery('DROP TABLE ' . self::TEST_TABLE_NAME);
     }
 
-    public function testInsert()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testInsert(): void
     {
         $connection = $this->getConnection();
         $systemId = $this->generateSystemid();
 
         $row = [
-            "temp_id" => $systemId,
-            "temp_char20" => $this->generateSystemid(),
+            'temp_id' => $systemId,
+            'temp_char20' => $this->generateSystemid(),
         ];
 
         $connection->insert(self::TEST_TABLE_NAME, $row);
 
-        $result = $connection->getPArray("SELECT * FROM " . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$systemId]);
+        $result = $connection->getPArray('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$systemId]);
 
-        $this->assertSame(1, count($result));
-        $this->assertEquals($row["temp_id"], $result[0]["temp_id"]);
-        $this->assertEquals($row["temp_char20"], $result[0]["temp_char20"]);
+        $this->assertCount(1, $result);
+        $this->assertEquals($row['temp_id'], $result[0]['temp_id']);
+        $this->assertEquals($row['temp_char20'], $result[0]['temp_char20']);
     }
 
-    public function testUpdate()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testUpdate(): void
     {
         $connection = $this->getConnection();
         $systemId = $this->generateSystemid();
 
         $row = [
-            "temp_id" => $systemId,
-            "temp_int" => 13,
-            "temp_char20" => "foobar",
+            'temp_id' => $systemId,
+            'temp_int' => 13,
+            'temp_char20' => 'foobar',
         ];
 
         $connection->insert(self::TEST_TABLE_NAME, $row);
 
-        $row = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", [$systemId], 0, false);
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$systemId], 0, false);
 
-        $this->assertEquals($systemId, $row["temp_id"]);
-        $this->assertEquals(13, $row["temp_int"]);
-        $this->assertEquals("foobar", $row["temp_char20"]);
+        $this->assertEquals($systemId, $row['temp_id']);
+        $this->assertEquals(13, $row['temp_int']);
+        $this->assertEquals('foobar', $row['temp_char20']);
 
-        $connection->update(self::TEST_TABLE_NAME, ["temp_int" => 1337, "temp_char20" => "foo"], ["temp_id" => $systemId]);
+        $connection->update(self::TEST_TABLE_NAME, ['temp_int' => 1337, 'temp_char20' => 'foo'], ['temp_id' => $systemId]);
 
-        $row = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", [$systemId], 0, false);
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$systemId], 0, false);
 
-        $this->assertEquals($systemId, $row["temp_id"]);
-        $this->assertEquals(1337, $row["temp_int"]);
-        $this->assertEquals("foo", $row["temp_char20"]);
+        $this->assertEquals($systemId, $row['temp_id']);
+        $this->assertEquals(1337, $row['temp_int']);
+        $this->assertEquals('foo', $row['temp_char20']);
     }
 
-    public function testDelete()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testDelete(): void
     {
         $connection = $this->getConnection();
         $systemId = $this->generateSystemid();
 
         $row = [
-            "temp_id" => $systemId,
-            "temp_int" => 13,
-            "temp_char20" => "foobar",
+            'temp_id' => $systemId,
+            'temp_int' => 13,
+            'temp_char20' => 'foobar',
         ];
 
         $connection->insert(self::TEST_TABLE_NAME, $row);
 
-        $row = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", [$systemId], 0, false);
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$systemId], 0, false);
 
-        $this->assertEquals($systemId, $row["temp_id"]);
-        $this->assertEquals(13, $row["temp_int"]);
-        $this->assertEquals("foobar", $row["temp_char20"]);
+        $this->assertEquals($systemId, $row['temp_id']);
+        $this->assertEquals(13, $row['temp_int']);
+        $this->assertEquals('foobar', $row['temp_char20']);
 
-        $connection->delete(self::TEST_TABLE_NAME, ["temp_id" => $systemId]);
+        $connection->delete(self::TEST_TABLE_NAME, ['temp_id' => $systemId]);
 
-        $row = $connection->getPRow("SELECT * FROM " . self::TEST_TABLE_NAME . " WHERE temp_id = ?", [$systemId], 0, false);
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$systemId], 0, false);
 
         $this->assertEmpty($row);
     }
 
     /**
-     * This test checks whether we can use a long timestamp format in in an sql query
+     * This test checks whether we can use a long timestamp format in in an sql query.
      * @dataProvider intComparisonDataProvider
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function testIntComparison($strId, $longDate, $longExpected)
+    public function testIntComparison($strId, $longDate, $longExpected): void
     {
-        // note calculation does not work if we cross a year border
-        $objLeftDate = \DateTime::createFromFormat('YmdHis', '' . $longDate);
-        $objLeftDate->add(new \DateInterval('P1M'));
+        // note calculation does not work if we cross a year border.
+        $objLeftDate = DateTime::createFromFormat('YmdHis', '' . $longDate);
+        $objLeftDate->add(new DateInterval('P1M'));
         $left = $objLeftDate->format('YmdHis');
 
         $objDB = $this->getConnection();
@@ -527,61 +645,66 @@ class ConnectionTest extends ConnectionTestCase
             'temp_bigint' => $longDate,
         ]);
 
-        $strQuery = "SELECT " . $left . " - " . $longDate . " AS result_1, " . $left . " - temp_bigint AS result_2 FROM " . self::TEST_TABLE_NAME . ' WHERE temp_id = ?';
+        $strQuery = 'SELECT ' . $left . ' - ' . $longDate . ' AS result_1, ' . $left . ' - temp_bigint AS result_2 FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?';
         $arrRow = $objDB->getPRow($strQuery, [$strId]);
 
         $this->assertEquals($longExpected, $left - $longDate);
-        $this->assertEquals($longExpected, $arrRow["result_1"]);
-        $this->assertEquals($longExpected, $arrRow["result_2"]);
+        $this->assertEquals($longExpected, $arrRow['result_1']);
+        $this->assertEquals($longExpected, $arrRow['result_2']);
     }
 
-    public function intComparisonDataProvider()
+    public function intComparisonDataProvider(): array
     {
         return [
-            ["a111", 20170801000000, 20170901000000-20170801000000],
-            ["a112", 20171101000000, 20171201000000-20171101000000],
-            ["a113", 20171201000000, 20180101000000-20171201000000],
-            ["a113", 20171215000000, 20180115000000-20171215000000],
-            ["a113", 20171230000000, 20180130000000-20171230000000],
-            ["a113", 20171231000000, 20180131000000-20171231000000],
-            ["a113", 20170101000000, 20170201000000-20170101000000],
+            ['a111', 20170801000000, 20170901000000-20170801000000],
+            ['a112', 20171101000000, 20171201000000-20171101000000],
+            ['a113', 20171201000000, 20180101000000-20171201000000],
+            ['a113', 20171215000000, 20180115000000-20171215000000],
+            ['a113', 20171230000000, 20180130000000-20171230000000],
+            ['a113', 20171231000000, 20180131000000-20171231000000],
+            ['a113', 20170101000000, 20170201000000-20170101000000],
         ];
     }
 
     /**
-     * This test checks whether we can safely use CONCAT on all database drivers
+     * This test checks whether we can safely use CONCAT on all database drivers.
+     *
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function testSqlConcat()
+    public function testSqlConcat(): void
     {
         $connection = $this->getConnection();
         $systemId = $this->generateSystemid();
-        $connection->multiInsert(self::TEST_TABLE_NAME, ["temp_id"], [[$systemId]]);
+        $connection->multiInsert(self::TEST_TABLE_NAME, ['temp_id'], [[$systemId]]);
 
-        $query = "SELECT " . $connection->getConcatExpression(["','", "temp_id", "','"]) . " AS val FROM " . self::TEST_TABLE_NAME . ' WHERE temp_id = ?';
+        $query = 'SELECT ' . $connection->getConcatExpression(["','", 'temp_id', "','"]) . ' AS val FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?';
         $row = $connection->getPRow($query, [$systemId]);
 
-        $this->assertEquals(",{$systemId},", $row["val"]);
+        $this->assertEquals(",$systemId,", $row['val']);
 
-        $query = "SELECT temp_id as val FROM " . self::TEST_TABLE_NAME . " WHERE " . $connection->getConcatExpression(["','", "temp_id", "','"]) ." LIKE ? ";//. " AS val FROM agp_temp_autotest";
-        $row = $connection->getPRow($query, ["%{$systemId}%"]);
+        $query = 'SELECT temp_id as val FROM ' . self::TEST_TABLE_NAME . ' WHERE ' . $connection->getConcatExpression(["','", 'temp_id', "','"]) . ' LIKE ? ';//. " AS val FROM agp_temp_autotest";
+        $row = $connection->getPRow($query, ["%$systemId%"]);
 
-        $this->assertEquals($systemId, $row["val"]);
+        $this->assertEquals($systemId, $row['val']);
     }
 
     /**
      * @dataProvider databaseValueProvider
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function testConvertToDatabaseValue($value, string $type)
+    public function testConvertToDatabaseValue($value, DataType $type): void
     {
         $connection = $this->getConnection();
         $systemId = $this->generateSystemid();
 
-        if ($type === DataType::STR_TYPE_FLOAT) {
+        if ($type === DataType::FLOAT) {
             $column = 'temp_float';
-        } elseif ($type === DataType::STR_TYPE_BIGINT) {
+        } elseif ($type === DataType::BIGINT) {
             $column = 'temp_bigint';
         } else {
-            $column = 'temp_' . $type;
+            $column = 'temp_' . $type->value;
         }
 
         $connection->insert(self::TEST_TABLE_NAME, [
@@ -594,66 +717,69 @@ class ConnectionTest extends ConnectionTestCase
         $actual = $row['val'];
         $expect = $value;
 
-        if ($type === DataType::STR_TYPE_CHAR10) {
+        if ($type === DataType::CHAR10) {
             $expect = substr($expect, 0, 10);
-        } elseif ($type === DataType::STR_TYPE_CHAR20) {
+        } elseif ($type === DataType::CHAR20) {
             $expect = substr($expect, 0, 20);
-        } elseif ($type === DataType::STR_TYPE_CHAR100) {
+        } elseif ($type === DataType::CHAR100) {
             $expect = substr($expect, 0, 100);
-        } elseif ($type === DataType::STR_TYPE_CHAR254) {
+        } elseif ($type === DataType::CHAR254) {
             $expect = substr($expect, 0, 254);
-        } elseif ($type === DataType::STR_TYPE_CHAR500) {
+        } elseif ($type === DataType::CHAR500) {
             $expect = substr($expect, 0, 500);
-        } elseif ($type === DataType::STR_TYPE_TEXT) {
+        } elseif ($type === DataType::TEXT) {
             if ($connection->hasDriver(Oci8Driver::class)) {
-                // for oracle the text column is max 4000 chars
+                // for Oracle the text column is max 4000 chars
                 $expect = substr($expect, 0, 4000);
             }
-        } elseif ($type === DataType::STR_TYPE_DOUBLE) {
+        } elseif ($type === DataType::FLOAT) {
             $actual = round((float) $actual, 1);
         }
 
         $this->assertEquals($expect, $actual);
     }
 
-    public function databaseValueProvider()
+    public function databaseValueProvider(): array
     {
         return [
-            [PHP_INT_MAX, DataType::STR_TYPE_LONG],
-            [4, DataType::STR_TYPE_INT],
-            [4.8, DataType::STR_TYPE_DOUBLE],
-            ['aaa', DataType::STR_TYPE_CHAR10],
-            [str_repeat('a', 50), DataType::STR_TYPE_CHAR10],
-            ['aaa', DataType::STR_TYPE_CHAR20],
-            [str_repeat('a', 50), DataType::STR_TYPE_CHAR20],
-            ['aaa', DataType::STR_TYPE_CHAR100],
-            [str_repeat('a', 150), DataType::STR_TYPE_CHAR100],
-            ['aaa', DataType::STR_TYPE_CHAR254],
-            [str_repeat('a', 300), DataType::STR_TYPE_CHAR254],
-            ['aaa', DataType::STR_TYPE_CHAR500],
-            [str_repeat('a', 600), DataType::STR_TYPE_CHAR500],
-            ['aaa', DataType::STR_TYPE_TEXT],
-            [str_repeat('a', 4010), DataType::STR_TYPE_TEXT],
-            ['aaa', DataType::STR_TYPE_LONGTEXT],
+            [PHP_INT_MAX, DataType::BIGINT],
+            [4, DataType::INT],
+            [4.8, DataType::FLOAT],
+            ['aaa', DataType::CHAR10],
+            [str_repeat('a', 50), DataType::CHAR10],
+            ['aaa', DataType::CHAR20],
+            [str_repeat('a', 50), DataType::CHAR20],
+            ['aaa', DataType::CHAR100],
+            [str_repeat('a', 150), DataType::CHAR100],
+            ['aaa', DataType::CHAR254],
+            [str_repeat('a', 300), DataType::CHAR254],
+            ['aaa', DataType::CHAR500],
+            [str_repeat('a', 600), DataType::CHAR500],
+            ['aaa', DataType::TEXT],
+            [str_repeat('a', 4010), DataType::TEXT],
+            ['aaa', DataType::LONGTEXT],
         ];
     }
 
     /**
-     * This test checks whether LEAST() Expression is working on all databases (Sqlite uses MIN() instead)
+     * This test checks whether LEAST() Expression is working on all databases (Sqlite uses MIN() instead).
+     *
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function testLeastExpressionWorksOnAllDatabases()
+    public function testLeastExpressionWorksOnAllDatabases(): void
     {
         $connection = $this->getConnection();
 
         $tableName = 'agp_test_least';
         $fields = [
-            'test_id' => [DataType::STR_TYPE_CHAR20, false],
-            'column_1'  => [DataType::STR_TYPE_INT, true],
-            'column_2'  => [DataType::STR_TYPE_INT, true],
-            'column_3'  => [DataType::STR_TYPE_INT, true],
-            'column_4'  => [DataType::STR_TYPE_CHAR20, true],
-            'column_5'  => [DataType::STR_TYPE_CHAR20, true],
-            'column_6'  => [DataType::STR_TYPE_CHAR20, true],
+            'test_id' => [DataType::CHAR20, false],
+            'column_1'  => [DataType::INT, true],
+            'column_2'  => [DataType::INT, true],
+            'column_3'  => [DataType::INT, true],
+            'column_4'  => [DataType::CHAR20, true],
+            'column_5'  => [DataType::CHAR20, true],
+            'column_6'  => [DataType::CHAR20, true],
         ];
 
         $connection->createTable($tableName, $fields, ['test_id']);
@@ -682,9 +808,13 @@ class ConnectionTest extends ConnectionTestCase
             $this->assertEquals($testCase['expectedResult'], $row['minimum']);
         }
 
-        $connection->_pQuery('DROP TABLE ' . $tableName, []);
+        $connection->_pQuery('DROP TABLE ' . $tableName);
     }
 
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
     public function testAllowsRetrievalOfSubstringsIndependentOfPlatform(): void
     {
         $connection = $this->getConnection();
@@ -715,11 +845,15 @@ class ConnectionTest extends ConnectionTestCase
         }
     }
 
-    public function testHasTable(){
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testHasTable(): void
+    {
         $tableName = self::TEST_TABLE_NAME;
         $connection = $this->getConnection();
         $this->assertTrue($connection->hasTable($tableName));
         $this->assertFalse($connection->hasTable('table_does_not_exist'));
     }
 }
-

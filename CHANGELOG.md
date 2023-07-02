@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0
+
+- Bump `symfony/process` to `^6.0.0`.
+- Clean up code
+
 ## 2.0.2
 
 * Add missing lazy connect

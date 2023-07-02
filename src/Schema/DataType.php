@@ -15,32 +15,17 @@ namespace Artemeon\Database\Schema;
 
 /**
  * List of possible data-types usable when generating new tables / updating tables.
- *
- * @package module_system
- * @author sidler@mulchprod.de
- * @since 4.5
  */
-class DataType
+enum DataType: string
 {
-    const STR_TYPE_INT = "int";
-
-    const STR_TYPE_BIGINT = "long";
-    /**
-     * @deprecated please use bigint
-     */
-    const STR_TYPE_LONG = "long";
-
-    const STR_TYPE_FLOAT = "double";
-    /**
-     * @deprecated please use float
-     */
-    const STR_TYPE_DOUBLE = "double";
-
-    const STR_TYPE_CHAR10 = "char10";
-    const STR_TYPE_CHAR20 = "char20";
-    const STR_TYPE_CHAR100 = "char100";
-    const STR_TYPE_CHAR254 = "char254";
-    const STR_TYPE_CHAR500 = "char500";
-    const STR_TYPE_TEXT = "text";
-    const STR_TYPE_LONGTEXT = "longtext";
+    case INT = 'int';
+    case BIGINT = 'long';
+    case FLOAT = 'double';
+    case CHAR10 = 'char10';
+    case CHAR20 = 'char20';
+    case CHAR100 = 'char100';
+    case CHAR254 = 'char254';
+    case CHAR500 = 'char500';
+    case TEXT = 'text';
+    case LONGTEXT = 'longtext';
 }

@@ -13,20 +13,23 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Tests;
 
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\MockConnection;
 
 class MockConnectionTest extends ConnectionTestCase
 {
-    public function testConnection()
+    /**
+     * @throws QueryException
+     */
+    public function testConnection(): void
     {
         $connection = new MockConnection();
         $connection->addRow(['title' => 'foo']);
         $connection->addRow(['title' => 'bar']);
 
-        $this->assertEquals([['title' => 'foo'], ['title' => 'bar']], $connection->getPArray('', []));
-        $this->assertEquals(['title' => 'foo'], $connection->getPRow('', []));
+        $this->assertEquals([['title' => 'foo'], ['title' => 'bar']], $connection->getPArray(''));
+        $this->assertEquals(['title' => 'foo'], $connection->getPRow(''));
         $this->assertEquals(['title' => 'foo'], $connection->selectRow('', [], []));
-        $this->assertEquals([['title' => 'foo'], ['title' => 'bar']], iterator_to_array($connection->getGenerator('', [])));
+        $this->assertEquals([['title' => 'foo'], ['title' => 'bar']], iterator_to_array($connection->getGenerator('')));
     }
 }
-

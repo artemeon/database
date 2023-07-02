@@ -13,22 +13,23 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Schema;
 
-/**
- * Base information about a tables column
- * @package Kajona\System\System\Db\Schema
- * @author stefan.idler@artemeon.de
- */
-class TableColumn implements \JsonSerializable
-{
-    private $name = "";
-    private $internalType = "";
-    private $databaseType = "";
-    private $nullable = true;
+use JsonSerializable;
 
-    /**
-     * TableColumn constructor.
-     * @param string $name
-     */
+/**
+ * Base information about a table's column.
+ */
+class TableColumn implements JsonSerializable
+{
+    private string $name;
+    private ?DataType $internalType = null;
+    private string $databaseType = '';
+    private bool $nullable = true;
+
+    public static function make(string $name): self
+    {
+        return new self($name);
+    }
+
     public function __construct(string $name)
     {
         $this->name = $name;
@@ -40,79 +41,58 @@ class TableColumn implements \JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            "name" => $this->getName(),
-            "internalType" => $this->getInternalType(),
-            "databaseType" => $this->getDatabaseType(),
-            "nullable" => $this->isNullable()
+            'name' => $this->getName(),
+            'internalType' => $this->getInternalType()?->value ?? '',
+            'databaseType' => $this->getDatabaseType(),
+            'nullable' => $this->isNullable(),
         ];
     }
 
-    /**
-     * @return bool
-     */
     public function isNullable(): bool
     {
         return $this->nullable;
     }
 
-    /**
-     * @param bool $nullable
-     */
-    public function setNullable(bool $nullable)
+    public function setNullable(bool $nullable): self
     {
         $this->nullable = $nullable;
+
+        return $this;
     }
 
-
-
-
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     */
-    public function setName(string $name)
+    public function setName(string $name): self
     {
         $this->name = $name;
+
+        return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getInternalType(): string
+    public function getInternalType(): ?DataType
     {
         return $this->internalType;
     }
 
-    /**
-     * @param string $internalType
-     */
-    public function setInternalType(string $internalType)
+    public function setInternalType(?DataType $internalType): self
     {
         $this->internalType = $internalType;
+
+        return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getDatabaseType(): string
     {
         return $this->databaseType;
     }
 
-    /**
-     * @param string $databaseType
-     */
-    public function setDatabaseType(string $databaseType)
+    public function setDatabaseType(string $databaseType): self
     {
         $this->databaseType = $databaseType;
+
+        return $this;
     }
-
-
 }

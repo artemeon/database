@@ -13,34 +13,21 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Exception;
 
+use Artemeon\Database\Schema\DataType;
+
 class AddColumnException extends \Exception
 {
-    /**
-     * @var string
-     */
-    private $table;
+    private string $table;
 
-    /**
-     * @var string
-     */
-    private $column;
+    private string $column;
 
-    /**
-     * @var string
-     */
-    private $dataType;
+    private DataType $dataType;
 
-    /**
-     * @var bool|null
-     */
-    private $null;
+    private ?bool $null;
 
-    /**
-     * @var string|null
-     */
-    private $default;
+    private ?string $default;
 
-    public function __construct(string $message, string $table, string $column, string $dataType, ?bool $null = null, ?string $default = null, ?\Throwable $previous = null)
+    public function __construct(string $message, string $table, string $column, DataType $dataType, ?bool $null = null, ?string $default = null, ?\Throwable $previous = null)
     {
         parent::__construct($message, 0, $previous);
 
@@ -51,41 +38,26 @@ class AddColumnException extends \Exception
         $this->default = $default;
     }
 
-    /**
-     * @return string
-     */
     public function getTable(): string
     {
         return $this->table;
     }
 
-    /**
-     * @return string
-     */
     public function getColumn(): string
     {
         return $this->column;
     }
 
-    /**
-     * @return string
-     */
     public function getDataType(): string
     {
-        return $this->dataType;
+        return $this->dataType->value;
     }
 
-    /**
-     * @return bool|null
-     */
     public function getNull(): ?bool
     {
         return $this->null;
     }
 
-    /**
-     * @return string|null
-     */
     public function getDefault(): ?string
     {
         return $this->default;

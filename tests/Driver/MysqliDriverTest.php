@@ -7,9 +7,6 @@ namespace Artemeon\Database\Tests\Driver;
 use Artemeon\Database\Driver\MysqliDriver;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @since 7.2
- */
 final class MysqliDriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void

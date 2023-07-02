@@ -1,13 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Artemeon\Database\Tests\Driver;
 
 use Artemeon\Database\Driver\PostgresDriver;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @since 7.2
- */
 final class PostgresDriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void
