@@ -27,67 +27,67 @@ class ConnectionPreparedTest extends ConnectionTestCase
     {
         $connection = $this->getConnection();
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPRow($strQuery);
-        $this->assertTrue(count($arrRow) >= 9, 'testDataBase getRow count');
-        $this->assertEquals('char10-1', $arrRow['temp_char10'], 'testDataBase getRow content');
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
+        $row = $connection->getPRow($query);
+        $this->assertTrue(count($row) >= 9, 'testDataBase getRow count');
+        $this->assertEquals('char10-1', $row['temp_char10'], 'testDataBase getRow content');
 
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char10 = ? ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPRow($strQuery, ['char10-2']);
-        $this->assertTrue(count($arrRow) >= 9, 'testDataBase getRow count');
-        $this->assertEquals('char10-2', $arrRow['temp_char10'], 'testDataBase getRow content');
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char10 = ? ORDER BY temp_bigint ASC';
+        $row = $connection->getPRow($query, ['char10-2']);
+        $this->assertTrue(count($row) >= 9, 'testDataBase getRow count');
+        $this->assertEquals('char10-2', $row['temp_char10'], 'testDataBase getRow content');
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPArray($strQuery);
-        $this->assertCount(50, $arrRow, 'testDataBase getArray count');
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
+        $row = $connection->getPArray($query);
+        $this->assertCount(50, $row, 'testDataBase getArray count');
 
-        $intI = 1;
-        foreach ($arrRow as $arrSingleRow) {
-            $this->assertEquals('char10-' . $intI++, $arrSingleRow['temp_char10'], 'testDataBase getArray content');
+        $i = 1;
+        foreach ($row as $singleRow) {
+            $this->assertEquals('char10-' . $i++, $singleRow['temp_char10'], 'testDataBase getArray content');
         }
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char10 = ? ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPArray($strQuery, ['char10-2']);
-        $this->assertCount(1, $arrRow, 'testDataBase getArray count');
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char10 = ? ORDER BY temp_bigint ASC';
+        $row = $connection->getPArray($query, ['char10-2']);
+        $this->assertCount(1, $row, 'testDataBase getArray count');
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPArray($strQuery, [], 0, 9);
-        $this->assertCount(10, $arrRow, 'testDataBase getArraySection count');
-        $this->assertEquals('char10-1', $arrRow[0]['temp_char10']);
-        $this->assertEquals('char10-10', $arrRow[9]['temp_char10']);
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
+        $row = $connection->getPArray($query, [], 0, 9);
+        $this->assertCount(10, $row, 'testDataBase getArraySection count');
+        $this->assertEquals('char10-1', $row[0]['temp_char10']);
+        $this->assertEquals('char10-10', $row[9]['temp_char10']);
 
-        $intI = 1;
-        foreach ($arrRow as $arrSingleRow) {
-            $this->assertEquals('char10-' . $intI++, $arrSingleRow['temp_char10'], 'testDataBase getArraySection content');
+        $i = 1;
+        foreach ($row as $singleRow) {
+            $this->assertEquals('char10-' . $i++, $singleRow['temp_char10'], 'testDataBase getArraySection content');
         }
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPArray($strQuery, [], 5, 14);
-        $this->assertCount(10, $arrRow, 'testDataBase getArraySection offset count');
-        $this->assertEquals('char10-6', $arrRow[0]['temp_char10']);
-        $this->assertEquals('char10-15', $arrRow[9]['temp_char10']);
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' ORDER BY temp_bigint ASC';
+        $row = $connection->getPArray($query, [], 5, 14);
+        $this->assertCount(10, $row, 'testDataBase getArraySection offset count');
+        $this->assertEquals('char10-6', $row[0]['temp_char10']);
+        $this->assertEquals('char10-15', $row[9]['temp_char10']);
 
         $this->flushDBCache();
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char10 LIKE ? ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPArray($strQuery, ['%'], 0, 9);
-        $this->assertCount(10, $arrRow, 'testDataBase getArraySection param count');
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char10 LIKE ? ORDER BY temp_bigint ASC';
+        $row = $connection->getPArray($query, ['%'], 0, 9);
+        $this->assertCount(10, $row, 'testDataBase getArraySection param count');
 
-        $intI = 1;
-        foreach ($arrRow as $arrSingleRow) {
-            $this->assertEquals('char10-' . $intI++, $arrSingleRow['temp_char10'], 'testDataBase getArraySection param content');
+        $i = 1;
+        foreach ($row as $singleRow) {
+            $this->assertEquals('char10-' . $i++, $singleRow['temp_char10'], 'testDataBase getArraySection param content');
         }
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . '  WHERE temp_char10 = ? AND temp_char20 = ? ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPArray($strQuery, ['char10-2', 'char202']);
-        $this->assertCount(0, $arrRow, 'testDataBase getArray 2 params count');
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . '  WHERE temp_char10 = ? AND temp_char20 = ? ORDER BY temp_bigint ASC';
+        $row = $connection->getPArray($query, ['char10-2', 'char202']);
+        $this->assertCount(0, $row, 'testDataBase getArray 2 params count');
 
-        $strQuery = 'SELECT * FROM ' . self::TEST_TABLE_NAME . '  WHERE temp_char10 = ? AND temp_char20 = ? ORDER BY temp_bigint ASC';
-        $arrRow = $connection->getPArray($strQuery, ['2', null]);
-        $this->assertCount(0, $arrRow, 'testDataBase getArray 2 params count');
+        $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . '  WHERE temp_char10 = ? AND temp_char20 = ? ORDER BY temp_bigint ASC';
+        $row = $connection->getPArray($query, ['2', null]);
+        $this->assertCount(0, $row, 'testDataBase getArray 2 params count');
 
-        $strQuery = 'DROP TABLE ' . self::TEST_TABLE_NAME;
-        $this->assertTrue($connection->_pQuery($strQuery), 'testDataBase dropTable');
+        $query = 'DROP TABLE ' . self::TEST_TABLE_NAME;
+        $this->assertTrue($connection->_pQuery($query), 'testDataBase dropTable');
     }
 
     /**
@@ -98,12 +98,13 @@ class ConnectionPreparedTest extends ConnectionTestCase
     {
         $connection = $this->getConnection();
 
-        $arrFields = [];
-        $arrFields['temp_id'] = [DataType::CHAR20, false];
-        $arrFields['temp_long'] = [DataType::BIGINT, true];
-        $arrFields['temp_double'] = [DataType::FLOAT, true];
+        $columns = [
+            'temp_id' => [DataType::CHAR20, false],
+            'temp_long' => [DataType::BIGINT, true],
+            'temp_double' => [DataType::FLOAT, true],
+        ];
 
-        $this->assertTrue($connection->createTable('agp_temp_autotest_float', $arrFields, ['temp_id']), 'testDataBase createTable');
+        $this->assertTrue($connection->createTable('agp_temp_autotest_float', $columns, ['temp_id']), 'testDataBase createTable');
 
         $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE 1 = 1');
 
@@ -113,15 +114,15 @@ class ConnectionPreparedTest extends ConnectionTestCase
             [['id1', 123456, 1.7], ['id2', '123456', '1.7']]
         );
 
-        $arrRow = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['id1']);
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['id1']);
 
-        $this->assertEquals(123456, $arrRow['temp_bigint']);
-        $this->assertEquals(1.7, round((float) $arrRow['temp_float'], 1));
+        $this->assertEquals(123456, $row['temp_bigint']);
+        $this->assertEquals(1.7, round((float) $row['temp_float'], 1));
 
-        $arrRow = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['id2']);
+        $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['id2']);
 
-        $this->assertEquals(123456, $arrRow['temp_bigint']);
-        $this->assertEquals(1.7, round((float) $arrRow['temp_float'], 1));
+        $this->assertEquals(123456, $row['temp_bigint']);
+        $this->assertEquals(1.7, round((float) $row['temp_float'], 1));
     }
 }
 

@@ -2,8 +2,14 @@
 
 ## 3.0.0
 
-- Bump `symfony/process` to `^6.0.0`.
-- Clean up code
+- Bumps `symfony/process` to `^6.0.0`.
+- Renames `ConnectionInterface::transactionBegin()` to `ConnectionInterface::beginTransaction()`.
+- Renames `ConnectionInterface::transactionCommit()` to `ConnectionInterface::commitTransaction()`.
+- Renames `ConnectionInterface::transactionRollback()` to `ConnectionInterface::rollbackTransaction()`.
+- Renames `DriverInterface::transactionBegin()` to `DriverInterface::beginTransaction()`.
+- Renames `DriverInterface::transactionCommit()` to `DriverInterface::commitTransaction()`.
+- Renames `DriverInterface::transactionRollback()` to `DriverInterface::rollbackTransaction()`.
+- Cleans up code
 
 ## 2.0.2
 

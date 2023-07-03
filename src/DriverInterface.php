@@ -41,7 +41,7 @@ interface DriverInterface
     /**
      * Creates a single query in order to insert multiple rows at one time.
      * For most databases, this will create s.th. like
-     * INSERT INTO $strTable ($arrColumns) VALUES (?, ?), (?, ?)...
+     * INSERT INTO $table ($columns) VALUES (?, ?), (?, ?)...
      * Please note that this method is used to create the query itself, based on the Kajona-internal syntax.
      * The query is fired to the database by Database.
      */
@@ -52,8 +52,6 @@ interface DriverInterface
      * to detect whether a row is already present or not.
      * Please note: since some dbrms fire a delete && insert, make sure to pass ALL colums and values,
      * otherwise data might be lost.
-     *
-     * @internal param $strPrimaryColumn
      */
     public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool;
 

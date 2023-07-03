@@ -160,7 +160,7 @@ class PostgresDriver extends DriverAbstract
         }
 
         if (empty($keyValuePairs)) {
-            $strQuery = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(
+            $query = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(
                     ', ',
                     $mappedColumns
                 ) . ') VALUES (' . implode(
@@ -169,14 +169,14 @@ class PostgresDriver extends DriverAbstract
                 ) . ')
                         ON CONFLICT ON CONSTRAINT ' . $table . '_pkey DO NOTHING';
         } else {
-            $strQuery = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(
+            $query = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(
                     ', ',
                     $mappedColumns
                 ) . ') VALUES (' . implode(', ', $placeholders) . ')
                         ON CONFLICT ON CONSTRAINT ' . $table . '_pkey DO UPDATE SET ' . implode(', ', $keyValuePairs);
         }
 
-        return $this->_pQuery($strQuery, $values);
+        return $this->_pQuery($query, $values);
     }
 
     /**
@@ -332,15 +332,15 @@ class PostgresDriver extends DriverAbstract
         if ($oldColumnName !== $newColumnName) {
             $enclosedOldColumnName = $this->encloseColumnName($oldColumnName);
 
-            $bitReturn = $this->_pQuery(
+            $output = $this->_pQuery(
                 "ALTER TABLE $enclosedTableName RENAME COLUMN $enclosedOldColumnName TO $enclosedNewColumnName",
                 [],
             );
         } else {
-            $bitReturn = true;
+            $output = true;
         }
 
-        return $bitReturn && $this->_pQuery(
+        return $output && $this->_pQuery(
                 "ALTER TABLE $enclosedTableName ALTER COLUMN $enclosedNewColumnName TYPE " . $this->getDatatype($newDataType),
                 [],
             );
@@ -355,18 +355,18 @@ class PostgresDriver extends DriverAbstract
         $query = 'CREATE TABLE ' . $this->encloseTableName($name) . " ( \n";
 
         //loop the fields
-        foreach ($columns as $strFieldName => $arrColumnSettings) {
-            $query .= " $strFieldName ";
+        foreach ($columns as $columnName => $columnSettings) {
+            $query .= " $columnName ";
 
-            $query .= $this->getDatatype($arrColumnSettings[0]);
+            $query .= $this->getDatatype($columnSettings[0]);
 
             //any default?
-            if (isset($arrColumnSettings[2])) {
-                $query .= 'DEFAULT ' . $arrColumnSettings[2] . ' ';
+            if (isset($columnSettings[2])) {
+                $query .= 'DEFAULT ' . $columnSettings[2] . ' ';
             }
 
             // nullable?
-            if ($arrColumnSettings[1] === true) {
+            if ($columnSettings[1] === true) {
                 $query .= ' NULL ';
             } else {
                 $query .= ' NOT NULL ';
@@ -388,12 +388,12 @@ class PostgresDriver extends DriverAbstract
      */
     public function hasIndex($table, $name): bool
     {
-        $arrIndex = iterator_to_array(
+        $index = iterator_to_array(
             $this->getPArray('SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?', [$table, $name]),
             false
         );
 
-        return count($arrIndex) > 0;
+        return count($index) > 0;
     }
 
     /**
@@ -402,8 +402,7 @@ class PostgresDriver extends DriverAbstract
      */
     public function beginTransaction(): void
     {
-        $strQuery = 'BEGIN';
-        $this->_pQuery($strQuery, []);
+        $this->_pQuery('BEGIN', []);
     }
 
     /**
@@ -412,8 +411,7 @@ class PostgresDriver extends DriverAbstract
      */
     public function commitTransaction(): void
     {
-        $str_pQuery = 'COMMIT';
-        $this->_pQuery($str_pQuery, []);
+        $this->_pQuery('COMMIT', []);
     }
 
     /**
@@ -422,8 +420,7 @@ class PostgresDriver extends DriverAbstract
      */
     public function rollbackTransaction(): void
     {
-        $strQuery = 'ROLLBACK';
-        $this->_pQuery($strQuery, []);
+        $this->_pQuery('ROLLBACK', []);
     }
 
     /**
@@ -529,9 +526,9 @@ class PostgresDriver extends DriverAbstract
     protected function processQuery(string $query): string
     {
         $query = preg_replace_callback('/\?/', static function (): string {
-            static $intI = 0;
-            $intI++;
-            return '$' . $intI;
+            static $i = 0;
+            $i++;
+            return '$' . $i;
         }, $query);
 
         return str_replace(' LIKE ', ' ILIKE ', $query);

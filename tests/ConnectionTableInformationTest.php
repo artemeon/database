@@ -34,8 +34,8 @@ class ConnectionTableInformationTest extends ConnectionTestCase
         $db = $this->getConnection();
 
         if (in_array(self::TEST_TABLE_NAME, $this->getConnection()->getTables(), true)) {
-            $strQuery = 'DROP TABLE ' . self::TEST_TABLE_NAME;
-            $this->getConnection()->_pQuery($strQuery);
+            $query = 'DROP TABLE ' . self::TEST_TABLE_NAME;
+            $this->getConnection()->_pQuery($query);
         }
 
         $colDefinitions = [

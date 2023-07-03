@@ -104,7 +104,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Creates a single query in order to insert multiple rows at one time.
      * For most databases, this will create s.th. like
-     * INSERT INTO $strTable ($arrColumns) VALUES (?, ?), (?, ?)...
+     * INSERT INTO $table ($columns) VALUES (?, ?), (?, ?)...
      *
      * @param string[] $columns
      * @throws QueryException

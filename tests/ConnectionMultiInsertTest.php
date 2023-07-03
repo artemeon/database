@@ -73,7 +73,7 @@ class ConnectionMultiInsertTest extends ConnectionTestCase
         $return = $connection->multiInsert(self::TEST_TABLE_NAME, $this->getColumnNames(), $values);
         $this->assertTrue($return);
 
-        $arrRow = $connection->getPRow('SELECT COUNT(*) AS cnt FROM ' . self::TEST_TABLE_NAME);
-        $this->assertEquals(1000, $arrRow['cnt']);
+        $row = $connection->getPRow('SELECT COUNT(*) AS cnt FROM ' . self::TEST_TABLE_NAME);
+        $this->assertEquals(1000, $row['cnt']);
     }
 }

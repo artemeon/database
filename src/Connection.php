@@ -573,24 +573,24 @@ class Connection implements ConnectionInterface
 
         $query = $this->prettifyQuery($query, $params);
 
-        $strErrorCode = "Error in query\n\n";
-        $strErrorCode .= "Error:\n";
-        $strErrorCode .= $error . "\n\n";
-        $strErrorCode .= "Query:\n";
-        $strErrorCode .= $query . "\n";
-        $strErrorCode .= "\n\n";
-        $strErrorCode .= 'Params: ' . implode(', ', $params) . "\n";
-        $strErrorCode .= "Callstack:\n";
+        $errorCode = "Error in query\n\n";
+        $errorCode .= "Error:\n";
+        $errorCode .= $error . "\n\n";
+        $errorCode .= "Query:\n";
+        $errorCode .= $query . "\n";
+        $errorCode .= "\n\n";
+        $errorCode .= 'Params: ' . implode(', ', $params) . "\n";
+        $errorCode .= "Callstack:\n";
         if (function_exists('debug_backtrace')) {
-            $arrStack = debug_backtrace();
+            $stack = debug_backtrace();
 
-            foreach ($arrStack as $arrValue) {
-                $strErrorCode .= ($arrValue['file'] ?? 'n.a.') . "\n\t Row " . ($arrValue['line'] ?? 'n.a.') . ', function ' . $arrValue['function'] . "\n";
+            foreach ($stack as $value) {
+                $errorCode .= ($value['file'] ?? 'n.a.') . "\n\t Row " . ($value['line'] ?? 'n.a.') . ', function ' . $value['function'] . "\n";
             }
         }
 
         // send a warning to the logger
-        $this->logger?->error($strErrorCode);
+        $this->logger?->error($errorCode);
 
         throw new QueryException($error, $query, $params);
     }
@@ -1101,7 +1101,7 @@ class Connection implements ConnectionInterface
      * @param array $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                          If not passed, all params will be cleaned.
      *
-     * @see Db::dbsafeString($strString, $bitHtmlSpecialChars = true)
+     * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
     private function dbsafeParams(array $params, array $escapes = []): array
     {

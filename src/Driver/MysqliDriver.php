@@ -195,11 +195,11 @@ class MysqliDriver extends DriverAbstract
         call_user_func_array([$statement, 'bind_result'], $params);
 
         while ($statement->fetch()) {
-            $arrSingleRow = [];
+            $singleRow = [];
             foreach ($row as $key => $val) {
-                $arrSingleRow[$key] = $val;
+                $singleRow[$key] = $val;
             }
-            yield $arrSingleRow;
+            yield $singleRow;
         }
 
         $statement->free_result();
@@ -214,21 +214,21 @@ class MysqliDriver extends DriverAbstract
         $mappedColumns = [];
         $keyValuePairs = [];
 
-        foreach ($columns as $strOneCol) {
+        foreach ($columns as $column) {
             $placeholders[] = '?';
-            $mappedColumns[] = $this->encloseColumnName($strOneCol);
-            $keyValuePairs[] = $this->encloseColumnName($strOneCol) . ' = ?';
+            $mappedColumns[] = $this->encloseColumnName($column);
+            $keyValuePairs[] = $this->encloseColumnName($column) . ' = ?';
         }
 
         $enclosedTableName = $this->encloseTableName($table);
 
-        $strQuery = "INSERT INTO $enclosedTableName (" . implode(
+        $query = "INSERT INTO $enclosedTableName (" . implode(
                 ', ',
                 $mappedColumns
             ) . ') VALUES (' . implode(', ', $placeholders) . ')
                         ON DUPLICATE KEY UPDATE ' . implode(', ', $keyValuePairs);
 
-        return $this->_pQuery($strQuery, array_merge($values, $values));
+        return $this->_pQuery($query, array_merge($values, $values));
     }
 
     /**
@@ -424,8 +424,8 @@ class MysqliDriver extends DriverAbstract
      */
     public function hasIndex($table, $name): bool
     {
-        $arrIndex = iterator_to_array($this->getPArray("SHOW INDEX FROM $table WHERE Key_name = ?", [$name]), false);
-        return count($arrIndex) > 0;
+        $index = iterator_to_array($this->getPArray("SHOW INDEX FROM $table WHERE Key_name = ?", [$name]), false);
+        return count($index) > 0;
     }
 
     /**
@@ -511,16 +511,16 @@ class MysqliDriver extends DriverAbstract
 
         if ($this->handlesDumpCompression()) {
             $fileName .= '.gz';
-            $strCommand = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
+            $command = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
                 ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
                 ) . ' ' . $tablesString . " | gzip > \"" . $fileName . "\"";
         } else {
-            $strCommand = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
+            $command = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
                 ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
                 ) . ' ' . $tablesString . " > \"" . $fileName . "\"";
         }
 
-        $this->runCommand($strCommand);
+        $this->runCommand($command);
 
         return true;
     }
@@ -539,16 +539,16 @@ class MysqliDriver extends DriverAbstract
         $restoreBin = (new ExecutableFinder())->find($this->restoreBin);
 
         if ($this->handlesDumpCompression() && pathinfo($fileName, PATHINFO_EXTENSION) === 'gz') {
-            $strCommand = " gunzip -c \"" . $fileName . "\" | " . $restoreBin . ' -h' . $this->config->getHost(
+            $command = " gunzip -c \"" . $fileName . "\" | " . $restoreBin . ' -h' . $this->config->getHost(
                 ) . ' -u' . $this->config->getUsername() . $paramPass . ' -P' . $this->config->getPort(
                 ) . ' ' . $this->config->getDatabase();
         } else {
-            $strCommand = $restoreBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
+            $command = $restoreBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
                 ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
                 ) . " < \"" . $fileName . "\"";
         }
 
-        $this->runCommand($strCommand);
+        $this->runCommand($command);
 
         return true;
     }

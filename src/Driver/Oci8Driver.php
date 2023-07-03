@@ -247,9 +247,9 @@ class Oci8Driver extends DriverAbstract
         }
 
         // this was the old way, we're now no longer loading LOBS by default
-        // while ($arrRow = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
-        while ($arrRow = oci_fetch_assoc($statement)) {
-            yield $this->parseResultRow($arrRow);
+        // while ($row = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
+        while ($row = oci_fetch_assoc($statement)) {
+            yield $this->parseResultRow($row);
         }
 
         oci_free_statement($statement);
@@ -438,17 +438,17 @@ class Oci8Driver extends DriverAbstract
         if ($oldColumnName !== $newColumnName) {
             $enclosedOldColumnName = $this->encloseColumnName($oldColumnName);
 
-            $bitReturn = $this->_pQuery(
+            $output = $this->_pQuery(
                 "ALTER TABLE $enclosedTableName RENAME COLUMN $enclosedOldColumnName TO $enclosedNewColumnName",
                 [],
             );
         } else {
-            $bitReturn = true;
+            $output = true;
         }
 
         $mappedDataType = $this->getDatatype($newDataType);
 
-        return $bitReturn && $this->_pQuery(
+        return $output && $this->_pQuery(
                 "ALTER TABLE $enclosedTableName MODIFY ( $enclosedNewColumnName $mappedDataType )",
                 [],
             );
@@ -520,7 +520,7 @@ class Oci8Driver extends DriverAbstract
      */
     public function hasIndex($table, $name): bool
     {
-        $arrIndex = iterator_to_array(
+        $index = iterator_to_array(
             $this->getPArray(
                 'SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?',
                 [strtoupper($table), strtoupper($name)],
@@ -528,7 +528,7 @@ class Oci8Driver extends DriverAbstract
             false,
         );
 
-        return count($arrIndex) > 0;
+        return count($index) > 0;
     }
 
     /**
@@ -624,10 +624,10 @@ class Oci8Driver extends DriverAbstract
         $tablesString = implode(',', $tables);
 
         $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
-        $strCommand = $dumpBin . ' ' . $this->config->getUsername() . '/' . $this->config->getPassword(
+        $command = $dumpBin . ' ' . $this->config->getUsername() . '/' . $this->config->getPassword(
             ) . ' CONSISTENT=n TABLES=' . $tablesString . " FILE='" . $fileName . "'";
 
-        $this->runCommand($strCommand);
+        $this->runCommand($command);
 
         return true;
     }
@@ -728,8 +728,8 @@ class Oci8Driver extends DriverAbstract
 
         if (self::$is12c) {
             // TODO: 12c has a new offset syntax - lets see if it's really faster
-            $intDelta = $end - $start + 1;
-            return $query . " OFFSET $start ROWS FETCH NEXT $intDelta ROWS ONLY";
+            $delta = $end - $start + 1;
+            return $query . " OFFSET $start ROWS FETCH NEXT $delta ROWS ONLY";
         }
 
         $start++;

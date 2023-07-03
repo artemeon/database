@@ -307,17 +307,17 @@ class SqlsrvDriver extends DriverAbstract
         $enclosedTableName = $this->encloseTableName($table);
         $enclosedColumnName = $this->encloseColumnName($column);
 
-        $strQuery = "ALTER TABLE $enclosedTableName ADD $enclosedColumnName " . $this->getDatatype($dataType);
+        $query = "ALTER TABLE $enclosedTableName ADD $enclosedColumnName " . $this->getDatatype($dataType);
 
         if ($default !== null) {
-            $strQuery .= " DEFAULT $default";
+            $query .= " DEFAULT $default";
         }
 
         if ($nullable !== null) {
-            $strQuery .= $nullable ? ' NULL' : ' NOT NULL';
+            $query .= $nullable ? ' NULL' : ' NOT NULL';
         }
 
-        return $this->_pQuery($strQuery, []);
+        return $this->_pQuery($query, []);
     }
 
     /**
@@ -528,7 +528,7 @@ class SqlsrvDriver extends DriverAbstract
         // OFFSET and FETCH can only be used with an ORDER BY.
         if (!$this->containsOrderBy($query)) {
             // Should be fixed but produces a file write on every call, so it is bad for the performance.
-            // Logger::getInstance(Logger::DBLOG)->warning("Using a limit expression without an order by: {$strQuery}");
+            // Logger::getInstance(Logger::DBLOG)->warning("Using a limit expression without an order by: {$query}");
 
             $query .= ' ORDER BY 1 ASC ';
         }
