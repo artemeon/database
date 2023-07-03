@@ -80,8 +80,8 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.0"
           - "8.1"
+          - "8.2"
         postgres-version:
           - "13"
           - "14"
@@ -120,8 +120,8 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.0"
           - "8.1"
+          - "8.2"
         mariadb-version:
           - "10.6"
           - "10.8"
@@ -164,8 +164,8 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.0"
           - "8.1"
+          - "8.2"
         mysql-version:
           - "8.0"
     services:
@@ -210,8 +210,8 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.0"
           - "8.1"
+          - "8.2"
         extension:
           - "sqlsrv"
     services:
