@@ -9,6 +9,20 @@
 - Renames `DriverInterface::transactionBegin()` to `DriverInterface::beginTransaction()`.
 - Renames `DriverInterface::transactionCommit()` to `DriverInterface::commitTransaction()`.
 - Renames `DriverInterface::transactionRollback()` to `DriverInterface::rollbackTransaction()`.
+- `DataType` is a (PHP 8.1) enum now.
+  - The deprecated `DataType::STR_TYPE_LONG` is removed.
+  - The deprecated `DataType::STR_TYPE_DOUBLE` is removed.
+  - `DataType::STR_TYPE_INT` is now `DataType::INT`.
+  - `DataType::STR_TYPE_BIGINT` is now `DataType::BIGINT`.
+  - `DataType::STR_TYPE_FLOAT` is now `DataType::FLOAT`.
+  - `DataType::STR_TYPE_CHAR10` is now `DataType::CHAR10`.
+  - `DataType::STR_TYPE_CHAR20` is now `DataType::CHAR20`.
+  - `DataType::STR_TYPE_CHAR100` is now `DataType::CHAR100`.
+  - `DataType::STR_TYPE_CHAR254` is now `DataType::CHAR254`.
+  - `DataType::STR_TYPE_CHAR500` is now `DataType::CHAR500`.
+  - `DataType::STR_TYPE_TEXT` is now `DataType::TEXT`.
+  - `DataType::STR_TYPE_LONGTEXT` is now `DataType::LONGTEXT`.
+- Various methods require the new `DataType` enum as a parameter instead of a plain string now.
 - Cleans up code
 
 ## 2.0.2
