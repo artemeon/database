@@ -2,7 +2,7 @@
 
 ## 3.0.0
 
-- Bumps `symfony/process` to `^6.0.0`.
+- Bumps the minimum required PHP version to `8.1`.
 - Renames `ConnectionInterface::transactionBegin()` to `ConnectionInterface::beginTransaction()`.
 - Renames `ConnectionInterface::transactionCommit()` to `ConnectionInterface::commitTransaction()`.
 - Renames `ConnectionInterface::transactionRollback()` to `ConnectionInterface::rollbackTransaction()`.
