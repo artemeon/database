@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.0
+
+* Add support for `symfony/process@^6.0.0`.
+
 ## 2.0.2
 
 * Add missing lazy connect
