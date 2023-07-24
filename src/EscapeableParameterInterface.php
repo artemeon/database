@@ -13,18 +13,8 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
-/**
- * @since 7.3
- */
 interface EscapeableParameterInterface
 {
-    /**
-     * @return bool
-     */
     public function isEscape(): bool;
-
-    /**
-     * @return mixed
-     */
-    public function getValue();
+    public function getValue(): mixed;
 }

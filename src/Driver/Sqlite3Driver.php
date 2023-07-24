@@ -22,57 +22,52 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Generator;
 use SQLite3;
+use SQLite3Stmt;
+use Throwable;
 
 /**
- * db-driver for sqlite3 using the php-sqlite3-interface.
- * Based on the sqlite2 driver by phwolfer
- *
- * @since 3.3.0.1
- * @author sidler@mulchprod.de
- * @package module_system
+ * DB-driver for sqlite3 using the php-sqlite3-interface.
+ * Based on the sqlite2 driver by phwolfer.
  */
 class Sqlite3Driver extends DriverAbstract
 {
-
-    /**
-     * @var SQLite3
-     */
-    private $linkDB;
-    private $strDbFile;
+    private ?SQLite3 $linkDB;
+    private string $dbFile;
 
     /**
      * @inheritdoc
      */
-    public function dbconnect(ConnectionParameters $objParams)
+    public function dbconnect(ConnectionParameters $params): bool
     {
-        if ($objParams->getDatabase() == "") {
+        if ($params->getDatabase() === '') {
             return false;
         }
 
-        if ($objParams->getDatabase() === ':memory:') {
-            $this->strDbFile = ':memory:';
+        if ($params->getDatabase() === ':memory:') {
+            $this->dbFile = ':memory:';
         } else {
-            $this->strDbFile = $objParams->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $objParams->getDatabase().'.db3';
+            $this->dbFile = $params->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $params->getDatabase().'.db3';
         }
 
         try {
-            $this->linkDB = new SQLite3($this->strDbFile);
-            $this->_pQuery('PRAGMA encoding = "UTF-8"', array());
-            $this->_pQuery('PRAGMA auto_vacuum = FULL', array());
-            $this->_pQuery('PRAGMA journal_mode = WAL', array());
+            $this->linkDB = new SQLite3($this->dbFile);
+            $this->_pQuery('PRAGMA encoding = "UTF-8"', []);
+            $this->_pQuery('PRAGMA auto_vacuum = FULL', []);
+            $this->_pQuery('PRAGMA journal_mode = WAL', []);
             $this->linkDB->busyTimeout(5000);
 
             return true;
-        } catch (\Throwable $e) {
-            throw new ConnectionException("Error connecting to database", 0, $e);
+        } catch (Throwable $e) {
+            throw new ConnectionException('Error connecting to database', 0, $e);
         }
     }
 
     /**
      * @inheritDoc
      */
-    public function dbclose()
+    public function dbclose(): void
     {
         if ($this->linkDB !== null) {
             $this->linkDB->close();
@@ -80,211 +75,215 @@ class Sqlite3Driver extends DriverAbstract
         }
     }
 
-
-    private function buildAndCopyTempTables($strTargetTableName, $arrSourceTableInfo, $arrTargetTableInfo)
+    /**
+     * @throws QueryException
+     */
+    private function buildAndCopyTempTables(string $targetTableName, array $sourceTableInfo, array $targetTableInfo): bool
     {
         /* Get existing table info */
-        $arrPragmaTableInfo = $this->getPArray("PRAGMA table_info('{$strTargetTableName}')", array());
-        $arrColumnsPragma = array();
-        foreach ($arrPragmaTableInfo as $arrRow) {
-            $arrColumnsPragma[$arrRow['name']] = $arrRow;
+        $pragmaTableInfo = $this->getPArray("PRAGMA table_info('$targetTableName')", []);
+        $columnsPragma = [];
+        foreach ($pragmaTableInfo as $row) {
+            $columnsPragma[$row['name']] = $row;
         }
 
-        $arrSourceColumns = array();
-        array_walk($arrSourceTableInfo, function ($arrValue) use (&$arrSourceColumns) {
-            $arrSourceColumns[] = $arrValue["columnName"];
+        $sourceColumns = [];
+        array_walk($sourceTableInfo, static function (array $value) use (&$sourceColumns) {
+            $sourceColumns[] = $value['columnName'];
         });
 
-        $arrTargetColumns = array();
-        array_walk($arrTargetTableInfo, function ($arrValue) use (&$arrTargetColumns) {
-            $arrTargetColumns[] = $arrValue["columnName"];
+        $targetColumns = [];
+        array_walk($targetTableInfo, static function (array $value) use (&$targetColumns) {
+            $targetColumns[] = $value['columnName'];
         });
 
+        // build the temp table
+        $query = 'CREATE TABLE ' . $targetTableName . "_temp ( \n";
 
-        //build the a temp table
-        $strQuery = "CREATE TABLE ".$strTargetTableName."_temp ( \n";
+        // loop the fields
+        $columns = [];
+        $pks = [];
+        foreach ($targetTableInfo as $column) {
+            $row = null;
 
-        //loop the fields
-        $arrColumns = array();
-        $arrPks = array();
-        foreach ($arrTargetTableInfo as $arrOneColumn) {
-            $arrRow = null;
-
-            if (array_key_exists($arrOneColumn["columnName"], $arrColumnsPragma)) {
-                $arrRow = $arrColumnsPragma[$arrOneColumn["columnName"]];
+            if (array_key_exists($column['columnName'], $columnsPragma)) {
+                $row = $columnsPragma[$column['columnName']];
             } else {
-                $arrRow["name"] = $arrOneColumn["columnName"];
-                $arrRow["type"] = $arrOneColumn["columnType"];
+                $row['name'] = $column['columnName'];
+                $row['type'] = $column['columnType'];
             }
 
-            //column settings
-            $strColumn = " ".$arrRow["name"]." ".$arrRow["type"];
+            // column settings
+            $columnString = ' ' . $row['name'] . ' ' . $row['type'];
 
-            if (array_key_exists("notnull", $arrRow) && $arrRow["notnull"] === 1) {
-                $strColumn .= " NOT NULL ";
-            } elseif (array_key_exists("notnull", $arrRow) && $arrRow["notnull"] === 0) {
-                $strColumn .= " NULL ";
+            if (array_key_exists('notnull', $row) && $row['notnull'] === 1) {
+                $columnString .= ' NOT NULL ';
+            } elseif (array_key_exists('notnull', $row) && $row['notnull'] === 0) {
+                $columnString .= ' NULL ';
             }
 
-            if (array_key_exists("dflt_value", $arrRow) && $arrRow["dflt_value"] !== null) {
-                $strColumn .= " DEFAULT {$arrRow["dflt_value"]} ";
+            if (array_key_exists('dflt_value', $row) && $row['dflt_value'] !== null) {
+                $columnString .= " DEFAULT {$row['dflt_value']} ";
             }
-            $arrColumns[] = $strColumn;
+            $columns[] = $columnString;
 
-            //primary key?
-            if (array_key_exists("pk", $arrRow) && $arrRow["pk"] === 1) {
-                $arrPks[] = $arrRow["name"];
+            // primary key?
+            if (array_key_exists('pk', $row) && $row['pk'] === 1) {
+                $pks[] = $row['name'];
             }
         }
 
-        //columns
-        $strQuery .= implode(",\n", $arrColumns);
+        // columns
+        $query .= implode(",\n", $columns);
 
-        //primary keys
-        if (count($arrPks) > 0) {
-            $strQuery .= ",PRIMARY KEY (";
-            $strQuery .= implode(",", $arrPks);
-            $strQuery .= ")\n";
+        // primary keys
+        if (count($pks) > 0) {
+            $query .= ',PRIMARY KEY (';
+            $query .= implode(',', $pks);
+            $query .= ")\n";
         }
 
-        $strQuery .= ")\n";
+        $query .= ")\n";
 
-        $bitReturn = $this->_pQuery($strQuery, array());
+        $output = $this->_pQuery($query, []);
 
         //copy all values
-        $strQuery = "INSERT INTO ".$strTargetTableName."_temp (".implode(",", $arrTargetColumns).") SELECT ".implode(",", $arrSourceColumns)." FROM ".$strTargetTableName;
-        $bitReturn = $bitReturn && $this->_pQuery($strQuery, array());
+        $query = 'INSERT INTO ' . $targetTableName . '_temp (' . implode(',', $targetColumns) . ') SELECT ' . implode(
+                ',', $sourceColumns) . ' FROM ' . $targetTableName;
+        $output = $output && $this->_pQuery($query, []);
 
-        $strQuery = "DROP TABLE ".$strTargetTableName;
-        $bitReturn = $bitReturn && $this->_pQuery($strQuery, array());
+        $query = 'DROP TABLE ' . $targetTableName;
+        $output = $output && $this->_pQuery($query, []);
 
-        return $bitReturn && $this->renameTable($strTargetTableName."_temp", $strTargetTableName);
+        return $output && $this->renameTable($targetTableName . '_temp', $targetTableName);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
+    public function changeColumn(string $table, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
+        $tableDef = $this->getTableInformation($table);
+        $tableInfo = [];
+        $targetTableInfo = [];
+        foreach ($tableDef->getColumns() as $column) {
+            $newDef = [
+                'columnName' => $column->getName(),
+                'columnType' => $column->getInternalType(),
+            ];
 
-        $tableDef = $this->getTableInformation($strTable);
-        $arrTableInfo = array();
-        $arrTargetTableInfo = array();
-        foreach ($tableDef->getColumns() as $colDef) {
-            $arrNewDef = array(
-                "columnName" => $colDef->getName(),
-                "columnType" => $colDef->getInternalType()
-            );
+            $tableInfo[] = $newDef;
 
-            $arrTableInfo[] = $arrNewDef;
-
-            if ($colDef->getName() == $strOldColumnName) {
-                $arrNewDef = array(
-                    "columnName" => $strNewColumnName,
-                    "columnType" => $this->getDatatype($strNewDatatype)
-                );
+            if ($column->getName() === $oldColumnName) {
+                $newDef = [
+                    'columnName' => $newColumnName,
+                    'columnType' => $this->getDatatype($newDataType),
+                ];
             }
 
-            $arrTargetTableInfo[] = $arrNewDef;
+            $targetTableInfo[] = $newDef;
         }
 
-        return $this->buildAndCopyTempTables($strTable, $arrTableInfo, $arrTargetTableInfo);
+        return $this->buildAndCopyTempTables($table, $tableInfo, $targetTableInfo);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function removeColumn($strTable, $strColumn)
+    public function removeColumn(string $table, string $column): bool
     {
-        $arrTargetTableInfo = array();
+        $targetTableInfo = [];
 
-        $tableDef = $this->getTableInformation($strTable);
-        foreach ($tableDef->getColumns() as $colDef) {
-            if ($colDef->getName() != $strColumn) {
-                $arrTargetTableInfo[] = array(
-                    "columnName" => $colDef->getName(),
-                    "columnType" => $colDef->getInternalType()
-                );
+        $tableDef = $this->getTableInformation($table);
+        foreach ($tableDef->getColumns() as $col) {
+            if ($col->getName() !== $column) {
+                $targetTableInfo[] = [
+                    'columnName' => $col->getName(),
+                    'columnType' => $col->getInternalType(),
+                ];
             }
         }
 
-        return $this->buildAndCopyTempTables($strTable, $arrTargetTableInfo, $arrTargetTableInfo);
+        return $this->buildAndCopyTempTables($table, $targetTableInfo, $targetTableInfo);
     }
 
     /**
      * @inheritDoc
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
+    public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool
     {
         $sqliteVersion = SQLite3::version();
         if (version_compare('3.7.11', $sqliteVersion['versionString'], '<=')) {
-            return parent::triggerMultiInsert($strTable, $arrColumns, $arrValueSets, $objDb, $arrEscapes);
+            return parent::triggerMultiInsert($table, $columns, $valueSets, $database, $escapes);
         }
+
         //legacy code
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
+        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
         $params = [];
         $escapeValues = [];
-        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($strTable) . '  (' . implode(',', $safeColumns) . ') ';
-        foreach ($arrValueSets as $key => $valueSet) {
+        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(',', $safeColumns) . ') ';
+        foreach ($valueSets as $key => $valueSet) {
             $selectStatement = $key === 0 ? ' SELECT ' : ' UNION SELECT ';
-            $insertStatement .= $selectStatement . implode(', ', array_map(function ($column) { return ' ? AS ' . $column; }, $safeColumns));
+            $insertStatement .= $selectStatement . implode(', ', array_map(static function ($column) { return ' ? AS ' . $column; }, $safeColumns));
             $params[] = array_values($valueSet);
-            if ($arrEscapes !== null) {
-                $escapeValues[] = $arrEscapes;
+            if ($escapes !== null) {
+                $escapeValues[] = $escapes;
             }
         }
 
-        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $database->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
     }
 
     /**
      * @inheritDoc
      */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
+    public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
-        $arrPlaceholder = array();
-        $arrMappedColumns = array();
+        $placeholders = [];
+        $mappedColumns = [];
 
-        foreach ($arrColumns as $strOneCol) {
-            $arrPlaceholder[] = "?";
-            $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
+        foreach ($columns as $column) {
+            $placeholders[] = '?';
+            $mappedColumns[] = $this->encloseColumnName($column);
         }
 
-        $strQuery = "INSERT OR REPLACE INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")";
-        return $this->_pQuery($strQuery, $arrValues);
+        $enclosedTableName = $this->encloseTableName($table);
+
+        $query = "INSERT OR REPLACE INTO $enclosedTableName (" . implode(', ', $mappedColumns) . ') VALUES (' . implode(
+                ', ', $placeholders) . ')';
+
+        return $this->_pQuery($query, $values);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function _pQuery($strQuery, $arrParams)
+    public function _pQuery(string $query, array $params): bool
     {
-        $strQuery = $this->fixQuoting($strQuery);
-        $strQuery = $this->processQuery($strQuery);
+        $query = $this->fixQuoting($query);
+        $query = $this->processQuery($query);
 
-        $objStmt = $this->getPreparedStatement($strQuery);
-        if ($objStmt === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
+        $statement = $this->getPreparedStatement($query);
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
-        $intCount = 1;
-        foreach ($arrParams as $strOneParam) {
-            if ($strOneParam === null) {
-                $objStmt->bindValue(':param'.$intCount++, $strOneParam, SQLITE3_NULL);
-            }
-            //else if(is_double($strOneParam))
-            //    $objStmt->bindValue(':param'.$intCount++ , $strOneParam, SQLITE3_FLOAT);
-            //else if(is_numeric($strOneParam))
-            //    $objStmt->bindValue(':param'.$intCount++ , $strOneParam, SQLITE3_INTEGER);
-            else {
-                $objStmt->bindValue(':param'.$intCount++, $strOneParam, SQLITE3_TEXT);
+        $count = 1;
+        foreach ($params as $param) {
+            if ($param === null) {
+                $statement->bindValue(':param' . $count++, $param, SQLITE3_NULL);
+            } else {
+                $statement->bindValue(':param' . $count++, $param);
             }
         }
 
-        if ($objStmt->execute() === false) {
-            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
+        if ($statement->execute() === false) {
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
-        $this->intAffectedRows = $this->linkDB->changes();
+        $this->affectedRowsCount = $this->linkDB->changes();
 
         return true;
     }
@@ -292,51 +291,47 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function getPArray($strQuery, $arrParams): \Generator
+    public function getPArray($query, $params): Generator
     {
-        $strQuery = $this->fixQuoting($strQuery);
-        $strQuery = $this->processQuery($strQuery);
+        $query = $this->fixQuoting($query);
+        $query = $this->processQuery($query);
 
-        $objStmt = $this->getPreparedStatement($strQuery);
-        if ($objStmt === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
+        $statement = $this->getPreparedStatement($query);
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
-        $intCount = 1;
-        foreach ($arrParams as $strOneParam) {
-            if ($strOneParam === null) {
-                $objStmt->bindValue(':param'.$intCount++, $strOneParam, SQLITE3_NULL);
-            }
-            //else if(is_double($strOneParam))
-            //    $objStmt->bindValue(':param'.$intCount++ , $strOneParam, SQLITE3_FLOAT);
-            //else if(is_numeric($strOneParam))
-            //    $objStmt->bindValue(':param'.$intCount++ , $strOneParam, SQLITE3_INTEGER);
-            else {
-                $objStmt->bindValue(':param'.$intCount++, $strOneParam, SQLITE3_TEXT);
+        $count = 1;
+        foreach ($params as $param) {
+            if ($param === null) {
+                $statement->bindValue(':param' . $count++, $param, SQLITE3_NULL);
+            } else {
+                $statement->bindValue(':param' . $count++, $param);
             }
         }
 
-        $objResult = $objStmt->execute();
+        $result = $statement->execute();
 
-        if ($objResult === false) {
-            throw new QueryException('Could not execute statement', $strQuery, $arrParams);
+        if ($result === false) {
+            throw new QueryException('Could not execute statement', $query, $params);
         }
 
-        while ($arrTemp = $objResult->fetchArray(SQLITE3_ASSOC)) {
-            yield $arrTemp;
+        while ($temp = $result->fetchArray(SQLITE3_ASSOC)) {
+            yield $temp;
         }
     }
 
     /**
      * @inheritDoc
      */
-    public function getError()
+    public function getError(): string
     {
         return $this->linkDB->lastErrorMsg();
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function getTables(): array
     {
@@ -345,31 +340,34 @@ class Sqlite3Driver extends DriverAbstract
         foreach ($generator as $row) {
             $result[] = ['name' => strtolower($row['name'])];
         }
+
         return $result;
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function getTableInformation(string $tableName): Table
     {
         $table = new Table($tableName);
 
-        //fetch all columns
-        $columnInfo = $this->getPArray("PRAGMA table_info('{$tableName}')", []) ?: [];
-        foreach ($columnInfo as $arrOneColumn) {
-            $col = new TableColumn($arrOneColumn["name"]);
-            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
-            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
-            $col->setNullable($arrOneColumn["notnull"] == 0);
-            $table->addColumn($col);
+        // fetch all columns
+        $columnInfo = $this->getPArray("PRAGMA table_info('$tableName')", []) ?: [];
+        foreach ($columnInfo as $column) {
+            $table->addColumn(
+                TableColumn::make($column['name'])
+                    ->setInternalType($this->getCoreTypeForDbType($column))
+                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column)))
+                    ->setNullable($column['notnull'] == 0),
+            );
 
-            if ($arrOneColumn['pk'] == 1) {
-                $table->addPrimaryKey(new TableKey($arrOneColumn["name"]));
+            if ($column['pk'] == 1) {
+                $table->addPrimaryKey(new TableKey($column['name']));
             }
         }
 
-        //fetch all indexes
+        // fetch all indexes
         $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?", [$tableName]) ?: [];
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['name']);
@@ -381,114 +379,148 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * Tries to convert a column provided by the database back to the Kajona internal type constant
-     * @param $infoSchemaRow
-     * @return null|string
+     * Tries to convert a column provided by the database back to the Kajona internal type constant.
      */
-    private function getCoreTypeForDbType($infoSchemaRow)
+    private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
-        $val = strtolower(trim($infoSchemaRow["type"]));
-        if ($val == "integer") {
-            return DataType::STR_TYPE_INT;
-        } elseif ($val == "real") {
-            return DataType::STR_TYPE_DOUBLE;
-        } elseif ($val == "text") {
-            return DataType::STR_TYPE_TEXT;
+        $val = strtolower(trim($infoSchemaRow['type']));
+
+        if ($val === 'integer') {
+            return DataType::INT;
         }
+
+        if ($val === 'real') {
+            return DataType::FLOAT;
+        }
+
+        if ($val === 'text') {
+            return DataType::TEXT;
+        }
+
         return null;
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function createTable($strName, $arrFields, $arrKeys)
+    public function createTable(string $name, array $columns, array $primaryKeys): bool
     {
-        $strQuery = "";
+        $query = "CREATE TABLE $name ( \n";
 
-        //build the mysql code
-        $strQuery .= "CREATE TABLE ".$strName." ( \n";
+        // loop the fields
+        foreach ($columns as $fieldName => $columnSettings) {
+            $query .= " $fieldName ";
 
-        //loop the fields
-        foreach ($arrFields as $strFieldName => $arrColumnSettings) {
-            $strQuery .= " ".$strFieldName." ";
+            $query .= $this->getDatatype($columnSettings[0]);
 
-            $strQuery .= $this->getDatatype($arrColumnSettings[0]);
-
-            //any default?
-            if (isset($arrColumnSettings[2])) {
-                $strQuery .= " DEFAULT ".$arrColumnSettings[2]." ";
+            // any default?
+            if (isset($columnSettings[2])) {
+                $query .= ' DEFAULT ' . $columnSettings[2] . ' ';
             }
 
-            //nullable?
-            if ($arrColumnSettings[1] === true) {
-                $strQuery .= ", \n";
+            // nullable?
+            if ($columnSettings[1] === true) {
+                $query .= ", \n";
             } else {
-                $strQuery .= " NOT NULL, \n";
+                $query .= " NOT NULL, \n";
             }
-
         }
 
-        //primary keys
-        $strQuery .= " PRIMARY KEY (".implode(", ", $arrKeys).") \n";
-        $strQuery .= ") ";
+        // primary keys
+        $query .= ' PRIMARY KEY (' . implode(', ', $primaryKeys) . ") \n";
+        $query .= ') ';
 
-        return $this->_pQuery($strQuery, array());
+        return $this->_pQuery($query, []);
+    }
+
+    /**
+     * @inheritdoc
+     * @throws QueryException
+     */
+    public function hasIndex($table, $name): bool
+    {
+        $index = iterator_to_array($this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$table, $name]), false);
+        return count($index) > 0;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function beginTransaction(): void
+    {
+        $this->_pQuery('BEGIN TRANSACTION', []);
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function transactionBegin(): void
+    {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function commit(): void
+    {
+        $this->_pQuery('COMMIT TRANSACTION', []);
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function transactionCommit(): void
+    {
+        $this->commit();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function rollBack(): void
+    {
+        $this->_pQuery('ROLLBACK TRANSACTION', []);
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function transactionRollback(): void
+    {
+        $this->rollBack();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function getDbInfo(): array
+    {
+        $timeout = iterator_to_array($this->getPArray('PRAGMA busy_timeout', []), false);
+        $encoding = iterator_to_array($this->getPArray('PRAGMA encoding', []), false);
+
+        $db = $this->linkDB->version();
+
+        return [
+            'dbserver' => 'SQLite3 ' . $db['versionString'] . ' ' . $db['versionNumber'],
+            'location' => $this->dbFile,
+            'busy_timeout' => $timeout[0]['timeout'] ?? '-',
+            'encoding' => $encoding[0]['encoding'] ?? '-',
+        ];
     }
 
     /**
      * @inheritdoc
      */
-    public function hasIndex($strTable, $strName): bool
-    {
-        $arrIndex = iterator_to_array($this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$strTable, $strName]), false);
-        return count($arrIndex) > 0;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function transactionBegin()
-    {
-        $this->_pQuery("BEGIN TRANSACTION", array());
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function transactionCommit()
-    {
-        $this->_pQuery("COMMIT TRANSACTION", array());
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function transactionRollback()
-    {
-        $this->_pQuery("ROLLBACK TRANSACTION", array());
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getDbInfo()
-    {
-        $timeout = iterator_to_array($this->getPArray("PRAGMA busy_timeout", array()), false);
-        $encoding = iterator_to_array($this->getPArray("PRAGMA encoding", array()), false);
-
-        $arrDB = $this->linkDB->version();
-        $arrReturn = [];
-        $arrReturn["dbserver"] = "SQLite3 ".$arrDB["versionString"]." ".$arrDB["versionNumber"];
-        $arrReturn["location"] = $this->strDbFile;
-        $arrReturn["busy timeout"] = $timeout[0]["timeout"] ?? '-';
-        $arrReturn["encoding"] = $encoding[0]["encoding"] ?? '-';
-        return $arrReturn;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function handlesDumpCompression()
+    public function handlesDumpCompression(): bool
     {
         return false;
     }
@@ -496,122 +528,81 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function dbExport(&$strFilename, $arrTables)
+    public function dbExport(string &$fileName, array $tables): bool
     {
-        // @TODO implement
         return false;
     }
 
     /**
      * @inheritDoc
      */
-    public function dbImport($strFilename)
+    public function dbImport(string $fileName): bool
     {
-        // @TODO implement
         return false;
     }
 
     /**
      * @inheritDoc
      */
-    public function getDatatype($strType)
+    public function getDatatype(DataType $type): string
     {
-        $strReturn = "";
-
-        if ($strType == DataType::STR_TYPE_INT) {
-            $strReturn .= " INTEGER ";
-        } elseif ($strType == DataType::STR_TYPE_LONG) {
-            $strReturn .= " INTEGER ";
-        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
-            $strReturn .= " REAL ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
-            $strReturn .= " TEXT ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
-            $strReturn .= " TEXT ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
-            $strReturn .= " TEXT ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
-            $strReturn .= " TEXT ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
-            $strReturn .= " TEXT ";
-        } elseif ($strType == DataType::STR_TYPE_TEXT) {
-            $strReturn .= " TEXT ";
-        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
-            $strReturn .= " TEXT ";
-        } else {
-            $strReturn .= " TEXT ";
-        }
-
-        return $strReturn;
+        return match ($type) {
+            DataType::INT, DataType::BIGINT => ' INTEGER ',
+            DataType::FLOAT => ' REAL ',
+            default => ' TEXT ',
+        };
     }
 
     /**
      * Fixes the quoting of ' in queries.
-     * By default ' is quoted as \', but it must be quoted as '' in sqlite.
-     *
-     * @param string $strSql
-     *
-     * @return string
+     * By default, ' is quoted as \', but it must be quoted as '' in sqlite.
      */
-    private function fixQuoting($strSql)
+    private function fixQuoting(string $query): string
     {
-        $strSql = str_replace("\\'", "''", $strSql);
-        $strSql = str_replace("\\\"", "\"", $strSql);
-        return $strSql;
+        return str_replace(["\\'", "\\\""], ["''", "\""], $query);
     }
 
     /**
-     * Transforms the query into a valid sqlite-syntax
-     *
-     * @param string $strQuery
-     *
-     * @return string
+     * Transforms the query into a valid sqlite-syntax.
      */
-    private function processQuery($strQuery)
+    private function processQuery(string $query): string
     {
-        $strQuery = preg_replace_callback('/\?/', static function($value): string {
+        return preg_replace_callback('/\?/', static function (): string {
             static $i = 0;
             $i++;
             return ':param' . $i;
-        }, $strQuery);
-
-        return $strQuery;
+        }, $query);
     }
 
     /**
-     * Prepares a statement or uses an instance from the cache
-     *
-     * @param string $strQuery
-     *
-     * @return \SQLite3Stmt|false
+     * Prepares a statement or uses an instance from the cache.
      */
-    private function getPreparedStatement($strQuery)
+    private function getPreparedStatement(string $query): SQLite3Stmt | false
     {
+        $name = md5($query);
 
-        $strName = md5($strQuery);
-
-        if (isset($this->arrStatementsCache[$strName])) {
-            return $this->arrStatementsCache[$strName];
+        if (isset($this->statementsCache[$name])) {
+            return $this->statementsCache[$name];
         }
 
-        $objStmt = $this->linkDB->prepare($strQuery);
-        $this->arrStatementsCache[$strName] = $objStmt;
+        $statement = $this->linkDB->prepare($query);
+        $this->statementsCache[$name] = $statement;
 
-        return $objStmt;
+        return $statement;
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseTableName($strTable)
+    public function encloseTableName(string $table): string
     {
-        return "'".$strTable."'";
+        return "'$table'";
     }
 
     /**
      * @inheritdoc
      */
-    public function getConcatExpression(array $parts)
+    public function getConcatExpression(array $parts): string
     {
         return implode(' || ', $parts);
     }

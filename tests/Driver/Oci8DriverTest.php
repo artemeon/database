@@ -1,13 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Artemeon\Database\Tests\Driver;
 
 use Artemeon\Database\Driver\Oci8Driver;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @since 7.2
- */
 final class Oci8DriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void

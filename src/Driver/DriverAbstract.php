@@ -15,42 +15,36 @@ namespace Artemeon\Database\Driver;
 
 use Artemeon\Database\ConnectionInterface;
 use Artemeon\Database\DriverInterface;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\TableIndex;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
- * Base class for all database-drivers, holds methods to be used by all drivers
+ * Base class for all database-drivers, holds methods to be used by all drivers.
  *
- * @package module_system
- * @since 4.5
  * @author sidler@mulchprod.de
  */
 abstract class DriverAbstract implements DriverInterface
 {
+    protected array $statementsCache = [];
 
-    protected $arrStatementsCache = array();
-
-    /**
-     * @var int
-     */
-    protected $intAffectedRows = 0;
+    protected int $affectedRowsCount = 0;
 
 
     /**
-     * Detects if the current installation runs on win or unix
-     * @return bool
+     * Detects if the current installation runs on Windows or UNIX.
      */
-    protected function isWinOs()
+    protected function isWinOs(): bool
     {
-        return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        return PHP_OS_FAMILY === 'Windows';
     }
 
     /**
      * @inheritDoc
      */
-    public function handlesDumpCompression()
+    public function handlesDumpCompression(): bool
     {
         return !$this->isWinOs();
     }
@@ -61,49 +55,63 @@ abstract class DriverAbstract implements DriverInterface
     public function hasColumn(string $tableName, string $columnName): bool
     {
         $table = $this->getTableInformation($tableName);
-        return in_array(strtolower($columnName), $table->getColumnNames());
+        return in_array(strtolower($columnName), $table->getColumnNames(), true);
     }
 
     /**
      * @inheritDoc
      */
-    public function renameTable($strOldName, $strNewName)
+    public function renameTable(string $oldName, string $newName): bool
     {
-        return $this->_pQuery("ALTER TABLE ".($this->encloseTableName($strOldName))." RENAME TO ".($this->encloseTableName($strNewName)), array());
+        $enclosedOldName = $this->encloseTableName($oldName);
+        $enclosedNewName = $this->encloseTableName($newName);
+        return $this->_pQuery("ALTER TABLE $enclosedOldName RENAME TO $enclosedNewName", []);
     }
 
     /**
      * @inheritDoc
      */
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
+    public function changeColumn(string $table, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
-        return $this->_pQuery("ALTER TABLE ".($this->encloseTableName($strTable))." CHANGE COLUMN ".($this->encloseColumnName($strOldColumnName)." ".$this->encloseColumnName($strNewColumnName)." ".$this->getDatatype($strNewDatatype)), array());
+        $enclosedTableName = $this->encloseTableName($table);
+        $enclosedOldColumnName = $this->encloseColumnName($oldColumnName);
+        $enclosedNewColumnName = $this->encloseColumnName($newColumnName);
+        $dataType = $this->getDatatype($newDataType);
+
+        return $this->_pQuery("ALTER TABLE $enclosedTableName CHANGE COLUMN $enclosedOldColumnName $enclosedNewColumnName $dataType", []);
     }
 
     /**
      * @inheritDoc
      */
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
+    public function addColumn(string $table, string $column, DataType $dataType, bool $nullable = null, string $default = null): bool
     {
-        $strQuery = "ALTER TABLE ".($this->encloseTableName($strTable))." ADD ".($this->encloseColumnName($strColumn)." ".$this->getDatatype($strDatatype));
+        $enclosedTableName = $this->encloseTableName($table);
+        $enclosedColumnName = $this->encloseColumnName($column);
+        $mappedDataType = $this->getDatatype($dataType);
 
-        if ($bitNull !== null) {
-            $strQuery .= $bitNull ? " NULL" : " NOT NULL";
+        $query = "ALTER TABLE $enclosedTableName ADD $enclosedColumnName $mappedDataType";
+
+        if ($nullable !== null) {
+            $query .= $nullable ? ' NULL' : ' NOT NULL';
         }
 
-        if ($strDefault !== null) {
-            $strQuery .= " DEFAULT ".$strDefault;
+        if ($default !== null) {
+            $query .= ' DEFAULT ' . $default;
         }
 
-        return $this->_pQuery($strQuery, array());
+        return $this->_pQuery($query, []);
     }
 
     /**
      * @inheritdoc
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false)
+    public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool
     {
-        return $this->_pQuery("CREATE ".($bitUnique ? "UNIQUE" : "")." INDEX ".$strName." ON ".$strTable." (" . implode(",", $arrColumns) . ")", []);
+        return $this->_pQuery(
+            'CREATE' . ($unique ? ' UNIQUE' : '') . " INDEX $name ON $table (" . implode(',', $columns) . ')',
+            [],
+        );
     }
 
     /**
@@ -111,157 +119,161 @@ abstract class DriverAbstract implements DriverInterface
      */
     public function deleteIndex(string $table, string $index): bool
     {
-        return $this->_pQuery("DROP INDEX ".$index, []);
+        return $this->_pQuery("DROP INDEX $index", []);
     }
-
 
     /**
      * @inheritDoc
      */
     public function addIndex(string $table, TableIndex $index): bool
     {
-        return $this->createIndex($table, $index->getName(), explode(",", $index->getDescription()));
+        return $this->createIndex($table, $index->getName(), explode(',', $index->getDescription()));
     }
 
     /**
      * @inheritDoc
      */
-    public function removeColumn($strTable, $strColumn)
+    public function removeColumn(string $table, string $column): bool
     {
-        return $this->_pQuery("ALTER TABLE ".($this->encloseTableName($strTable))." DROP COLUMN ".($this->encloseColumnName($strColumn)), array());
+        $enclosedTableName = $this->encloseTableName($table);
+        $enclosedColumnName = $this->encloseColumnName($column);
+
+        return $this->_pQuery("ALTER TABLE $enclosedTableName DROP COLUMN $enclosedColumnName", []);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
+    public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool
     {
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
+        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $placeholderSets = [];
         $params = [];
         $escapeValues = [];
-        foreach ($arrValueSets as $singleSet) {
+        foreach ($valueSets as $singleSet) {
             $placeholderSets[] = $paramsPlaceholder;
             $params[] = array_values($singleSet);
-            if ($arrEscapes !== null) {
-                $escapeValues[] = $arrEscapes;
+            if ($escapes !== null) {
+                $escapeValues[] = $escapes;
             }
         }
-        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($strTable) . ' (' . implode(',', $safeColumns) . ') VALUES ' . implode(',', $placeholderSets);
+        $insertStatement = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(',', $safeColumns) . ') VALUES ' . implode(',', $placeholderSets);
 
-        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $database->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
+    public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
+        $placeholders = [];
+        $mappedColumns = [];
 
-        $arrPlaceholder = array();
-        $arrMappedColumns = array();
+        $updateKeyValues = [];
+        $updateKeyValueKeys = [];
+        $updateParams = [];
+        $updateKeyParams = [];
 
-        $arrUpdateKeyValue = array();
-        $arrUpdateKeyValueKey = array();
-        $arrUpdateParams = array();
-        $arrUpdateKeyParams = array();
+        $primaryCompares = [];
+        $primaryValues = [];
 
-        $arrPrimaryCompares = array();
-        $arrPrimaryValues = array();
+        foreach ($columns as $key => $column) {
+            $placeholders[] = '?';
+            $mappedColumns[] = $this->encloseColumnName($column);
 
-        foreach ($arrColumns as $intKey => $strOneCol) {
-            $arrPlaceholder[] = "?";
-            $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
+            if (in_array($column, $primaryColumns, true)) {
+                $primaryCompares[] = "$column = ? ";
+                $primaryValues[] = $values[$key];
 
-            if (in_array($strOneCol, $arrPrimaryColumns)) {
-                $arrPrimaryCompares[] = $strOneCol." = ? ";
-                $arrPrimaryValues[] = $arrValues[$intKey];
-
-                $arrUpdateKeyValueKey[] = $strOneCol." = ? ";
-                $arrUpdateKeyParams[] = $arrValues[$intKey];
+                $updateKeyValueKeys[] = "$column = ? ";
+                $updateKeyParams[] = $values[$key];
             } else {
-                $arrUpdateKeyValue[] = $strOneCol." = ? ";
-                $arrUpdateParams[] = $arrValues[$intKey];
+                $updateKeyValues[] = "$column = ? ";
+                $updateParams[] = $values[$key];
             }
         }
 
-        $arrRow = $this->getPArray("SELECT COUNT(*) AS cnt FROM ".$this->encloseTableName($strTable)." WHERE ".implode(" AND ", $arrPrimaryCompares), $arrPrimaryValues)->current();
+        $enclosedTableName = $this->encloseTableName($table);
 
-        if ($arrRow === false) {
+        $rows = $this->getPArray("SELECT COUNT(*) AS cnt FROM $enclosedTableName WHERE " . implode(' AND ', $primaryCompares), $primaryValues)->current();
+
+        if ($rows === false) {
             return false;
         }
 
-        $arrSingleRow = isset($arrRow[0]) ? $arrRow[0] : null;
+        $firstRow = $rows[0] ?? null;
 
-        if ($arrSingleRow === null || $arrSingleRow["cnt"] == "0") {
-            $strQuery = "INSERT INTO ".$this->encloseTableName($strTable)." (".implode(", ", $arrMappedColumns).") VALUES (".implode(", ", $arrPlaceholder).")";
-            return $this->_pQuery($strQuery, $arrValues);
-        } else {
-            if (count($arrUpdateKeyValue) === 0) {
-                return true;
-            }
-            $strQuery = "UPDATE ".$this->encloseTableName($strTable)." SET ".implode(", ", $arrUpdateKeyValue)." WHERE ".implode(" AND ", $arrUpdateKeyValueKey);
-            return $this->_pQuery($strQuery, array_merge($arrUpdateParams, $arrUpdateKeyParams));
+        if ($firstRow === null || $firstRow['cnt'] === '0') {
+            $query = "INSERT INTO $enclosedTableName (" . implode(', ', $mappedColumns) . ') VALUES (' . implode(', ', $placeholders) . ')';
+
+            return $this->_pQuery($query, $values);
         }
+
+        if (count($updateKeyValues) === 0) {
+            return true;
+        }
+        $query = "UPDATE $enclosedTableName SET " . implode(', ', $updateKeyValues) . ' WHERE ' . implode(' AND ', $updateKeyValueKeys);
+
+        return $this->_pQuery($query, array_merge($updateParams, $updateKeyParams));
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseColumnName($strColumn)
+    public function encloseColumnName(string $column): string
     {
-        return $strColumn;
+        return $column;
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseTableName($strTable)
+    public function encloseTableName(string $table): string
     {
-        return $strTable;
+        return $table;
     }
 
     /**
      * @inheritDoc
      */
-    public function flushQueryCache()
+    public function flushQueryCache(): void
     {
-        $this->arrStatementsCache = array();
+        $this->statementsCache = [];
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function escape($strValue)
+    public function escape(mixed $value): mixed
     {
-        return $strValue;
+        return $value;
     }
 
     /**
      * @inheritdoc
      */
-    public function getIntAffectedRows()
+    public function getAffectedRowsCount(): int
     {
-        return $this->intAffectedRows;
+        return $this->affectedRowsCount;
     }
 
     /**
      * @inheritdoc
      */
-    public function appendLimitExpression($strQuery, $intStart, $intEnd)
+    public function appendLimitExpression(string $query, int $start, int $end): string
     {
-        //calculate the end-value: mysql limit: start, nr of records, so:
-        $intEnd = $intEnd - $intStart + 1;
-        //add the limits to the query
+        // Calculate the end-value: mysql limit: start, nr of records, so:
+        $end = $end - $start + 1;
+        // Add the limits to the query
 
-        return $strQuery." LIMIT ".$intStart.", ".$intEnd;
+        return "$query LIMIT $start, $end";
     }
 
     /**
      * @inheritdoc
      */
-    public function getConcatExpression(array $parts)
+    public function getConcatExpression(array $parts): string
     {
         return 'CONCAT(' . implode(', ', $parts) . ')';
     }
@@ -269,21 +281,16 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
-    public function convertToDatabaseValue($value, string $type)
+    public function convertToDatabaseValue(mixed $value, DataType $type): mixed
     {
-        if ($type === DataType::STR_TYPE_CHAR10) {
-            return mb_substr($value, 0, 10);
-        } elseif ($type === DataType::STR_TYPE_CHAR20) {
-            return mb_substr($value, 0, 20);
-        } elseif ($type === DataType::STR_TYPE_CHAR100) {
-            return mb_substr($value, 0, 100);
-        } elseif ($type === DataType::STR_TYPE_CHAR254) {
-            return mb_substr($value, 0, 254);
-        } elseif ($type === DataType::STR_TYPE_CHAR500) {
-            return mb_substr($value, 0, 500);
-        }
-
-        return $value;
+        return match ($type) {
+            DataType::CHAR10 => mb_substr($value, 0, 10),
+            DataType::CHAR20 => mb_substr($value, 0, 20),
+            DataType::CHAR100 => mb_substr($value, 0, 100),
+            DataType::CHAR254 => mb_substr($value, 0, 254),
+            DataType::CHAR500 => mb_substr($value, 0, 500),
+            default => $value,
+        };
     }
 
     /**

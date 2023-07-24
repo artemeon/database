@@ -16,12 +16,11 @@ namespace Artemeon\Database\Tests;
 use Artemeon\Database\Connection;
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\DriverFactory;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @since 7.3
- */
 abstract class ConnectionTestCase extends TestCase
 {
     private static $connection;
@@ -60,14 +59,18 @@ abstract class ConnectionTestCase extends TestCase
         return self::$connection = new Connection($params, $factory);
     }
 
-    protected function flushDBCache()
+    protected function flushDBCache(): void
     {
         $this->getConnection()->flushPreparedStatementsCache();
         $this->getConnection()->flushQueryCache();
         $this->getConnection()->flushTablesCache();
     }
 
-    private function setupFixture()
+    /**
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    private function setupFixture(): void
     {
         $this->getConnection()->dropTable(self::TEST_TABLE_NAME);
         $this->getConnection()->createTable(self::TEST_TABLE_NAME, $this->getTestTableColumns(), ['temp_id']);
@@ -80,18 +83,18 @@ abstract class ConnectionTestCase extends TestCase
 
     protected function getTestTableColumns(): array
     {
-        $columns = array();
-        $columns["temp_id"] = array(DataType::STR_TYPE_CHAR20, false);
-        $columns["temp_int"] = array(DataType::STR_TYPE_INT, true);
-        $columns["temp_bigint"] = array(DataType::STR_TYPE_BIGINT, true);
-        $columns["temp_float"] = array(DataType::STR_TYPE_FLOAT, true);
-        $columns["temp_char10"] = array(DataType::STR_TYPE_CHAR10, true);
-        $columns["temp_char20"] = array(DataType::STR_TYPE_CHAR20, true);
-        $columns["temp_char100"] = array(DataType::STR_TYPE_CHAR100, true);
-        $columns["temp_char254"] = array(DataType::STR_TYPE_CHAR254, true);
-        $columns["temp_char500"] = array(DataType::STR_TYPE_CHAR500, true);
-        $columns["temp_text"] = array(DataType::STR_TYPE_TEXT, true);
-        $columns["temp_longtext"] = array(DataType::STR_TYPE_LONGTEXT, true);
+        $columns = [];
+        $columns['temp_id'] = [DataType::CHAR20, false];
+        $columns['temp_int'] = [DataType::INT, true];
+        $columns['temp_bigint'] = [DataType::BIGINT, true];
+        $columns['temp_float'] = [DataType::FLOAT, true];
+        $columns['temp_char10'] = [DataType::CHAR10, true];
+        $columns['temp_char20'] = [DataType::CHAR20, true];
+        $columns['temp_char100'] = [DataType::CHAR100, true];
+        $columns['temp_char254'] = [DataType::CHAR254, true];
+        $columns['temp_char500'] = [DataType::CHAR500, true];
+        $columns['temp_text'] = [DataType::TEXT, true];
+        $columns['temp_longtext'] = [DataType::LONGTEXT, true];
 
         return $columns;
     }

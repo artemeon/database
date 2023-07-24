@@ -13,9 +13,16 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Tests;
 
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
+
 class ConnectionStringLengthTest extends ConnectionTestCase
 {
-    public function testStringLength()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     */
+    public function testStringLength(): void
     {
         $query = 'SELECT ' . $this->getConnection()->getStringLengthExpression('temp_char10') . ' AS val FROM ' . self::TEST_TABLE_NAME
             . ' WHERE temp_char10 = ?';

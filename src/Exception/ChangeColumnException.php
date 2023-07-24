@@ -13,12 +13,11 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Exception;
 
+use Artemeon\Database\Schema\DataType;
+
 class ChangeColumnException extends \Exception
 {
-    /**
-     * @var string
-     */
-    private $table;
+    private string $table;
 
     /**
      * @var string
@@ -35,7 +34,7 @@ class ChangeColumnException extends \Exception
      */
     private $newDataType;
 
-    public function __construct(string $message, string $table, string $oldColumnName, string $newColumnName, string $newDataType, ?\Throwable $previous = null)
+    public function __construct(string $message, string $table, string $oldColumnName, string $newColumnName, DataType $newDataType, ?\Throwable $previous = null)
     {
         parent::__construct($message, 0, $previous);
 

@@ -18,6 +18,8 @@ use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 
+use Generator;
+
 use function current;
 
 /**
@@ -60,12 +62,12 @@ class MockConnection implements ConnectionInterface
         $this->rows = [];
     }
 
-    public function getPArray($strQuery, $arrParams = [], $intStart = null, $intEnd = null, $bitCache = true, array $arrEscapes = []): array
+    public function getPArray($query, $params = [], $start = null, $end = null, $cache = true, array $escapes = []): array
     {
         return $this->rows;
     }
 
-    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = []): array
+    public function getPRow($query, $params = [], $number = 0, $cache = true, array $escapes = []): array
     {
         return current($this->rows);
     }
@@ -75,7 +77,7 @@ class MockConnection implements ConnectionInterface
         return current($this->rows);
     }
 
-    public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
+    public function getGenerator(string $query, array $params = [], int $chunkSize = 2048, bool $paging = true): Generator
     {
         yield from $this->rows;
     }
@@ -104,21 +106,21 @@ class MockConnection implements ConnectionInterface
         return null;
     }
 
-    public function iterateAssociative(string $query, array $params = []): \Generator
+    public function iterateAssociative(string $query, array $params = []): Generator
     {
         foreach ($this->rows as $row) {
             yield $row;
         }
     }
 
-    public function iterateColumn(string $query, array $params = []): \Generator
+    public function iterateColumn(string $query, array $params = []): Generator
     {
         foreach ($this->rows as $row) {
             yield reset($row);
         }
     }
 
-    public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = []): bool
+    public function _pQuery($query, $params = [], array $escapes = []): bool
     {
         return true;
     }
@@ -128,7 +130,7 @@ class MockConnection implements ConnectionInterface
         return 1;
     }
 
-    public function getIntAffectedRows(): int
+    public function getAffectedRowsCount(): int
     {
         return 1;
     }
@@ -138,12 +140,12 @@ class MockConnection implements ConnectionInterface
         return 1;
     }
 
-    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null): bool
+    public function multiInsert(string $tableName, array $columns, array $valueSets, ?array $escapes = null): bool
     {
         return true;
     }
 
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns): bool
+    public function insertOrUpdate($tableName, $columns, $values, $primaryColumns): bool
     {
         return true;
     }
@@ -158,16 +160,28 @@ class MockConnection implements ConnectionInterface
         return 1;
     }
 
-    public function getBitConnected(): bool
+    public function isConnected(): bool
     {
         return true;
+    }
+
+    public function beginTransaction(): void
+    {
     }
 
     public function transactionBegin(): void
     {
     }
 
+    public function commit(): void
+    {
+    }
+
     public function transactionCommit(): void
+    {
+    }
+
+    public function rollBack(): void
     {
     }
 
@@ -190,12 +204,12 @@ class MockConnection implements ConnectionInterface
         throw new QueryException('not implemented', 'getTableInformation', []);
     }
 
-    public function getDatatype($strType): string
+    public function getDatatype(DataType $type): string
     {
-        return DataType::STR_TYPE_TEXT;
+        return DataType::TEXT->value;
     }
 
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array())
+    public function createTable(string $tableName, array $columns, array $keys, array $indices = []): bool
     {
         return true;
     }
@@ -208,7 +222,7 @@ class MockConnection implements ConnectionInterface
     {
     }
 
-    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
+    public function createIndex(string $tableName, string $name, array $columns, bool $unique = false): bool
     {
         return true;
     }
@@ -218,68 +232,68 @@ class MockConnection implements ConnectionInterface
         return true;
     }
 
-    public function addIndex(string $table, TableIndex $index)
+    public function addIndex(string $table, TableIndex $index): bool
     {
         return true;
     }
 
-    public function hasIndex($strTable, $strName): bool
+    public function hasIndex($tableName, $name): bool
     {
         return true;
     }
 
-    public function renameTable($strOldName, $strNewName)
+    public function renameTable(string $oldName, string $newName): bool
     {
         return true;
     }
 
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
+    public function changeColumn(string $tableName, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
         return true;
     }
 
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
+    public function addColumn(string $table, string $column, DataType $dataType, ?bool $nullable = null, ?string $default = null): bool
     {
         return true;
     }
 
-    public function removeColumn($strTable, $strColumn)
+    public function removeColumn(string $tableName, string $column): bool
     {
         return true;
     }
 
-    public function hasColumn($strTable, $strColumn): bool
+    public function hasColumn(string $tableName, string $column): bool
     {
         return true;
     }
 
-    public function hasTable($strTable): bool
+    public function hasTable($tableName): bool
     {
         return true;
     }
 
-    public function encloseColumnName($strColumn): string
+    public function encloseColumnName($column): string
     {
-        return $strColumn;
+        return $column;
     }
 
-    public function encloseTableName($strTable): string
+    public function encloseTableName($tableName): string
     {
-        return $strTable;
+        return $tableName;
     }
 
-    public function prettifyQuery($strQuery, $arrParams): string
+    public function prettifyQuery($query, $params): string
     {
-        foreach ($arrParams as $strParam) {
-            $strQuery = preg_replace('/\?/', isset($strParam) ? '"' . $strParam . '"' : 'NULL', $strQuery, 1);
+        foreach ($params as $param) {
+            $query = preg_replace('/\?/', isset($param) ? '"' . $param . '"' : 'NULL', $query, 1);
         }
 
-        return $strQuery;
+        return $query;
     }
 
-    public function appendLimitExpression($strQuery, $intStart, $intEnd): string
+    public function appendLimitExpression($query, $start, $end): string
     {
-        return $strQuery . ' LIMIT ' . $intStart . ',' . ($intEnd - $intStart + 1);
+        return $query . ' LIMIT ' . $start . ',' . ($end - $start + 1);
     }
 
     public function getConcatExpression(array $parts): string
@@ -307,7 +321,7 @@ class MockConnection implements ConnectionInterface
         return 'LENGTH(' . $targetString . ')';
     }
 
-    public function convertToDatabaseValue($value, string $type): string
+    public function convertToDatabaseValue(mixed $value, DataType $type): string
     {
         return (string) $value;
     }

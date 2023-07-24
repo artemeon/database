@@ -15,413 +15,282 @@ namespace Artemeon\Database;
 
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
+use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use Generator;
 
 /**
  * Interface to specify the layout of db-drivers.
  * Implement this interface, if you want to provide a db-layer for Kajona.
- *
- * @package module_system
  */
 interface DriverInterface
 {
-
     /**
-     * This method makes sure to connect to the database properly
+     * This method makes sure to connect to the database properly.
      *
-     * @param ConnectionParameters $objParams
-     * @return bool
      * @throws ConnectionException
      */
-    public function dbconnect(ConnectionParameters $objParams);
+    public function dbconnect(ConnectionParameters $params): bool;
 
     /**
-     * Closes the connection to the database
-     *
-     * @return void
+     * Closes the connection to the database.
      */
-    public function dbclose();
+    public function dbclose(): void;
 
     /**
      * Creates a single query in order to insert multiple rows at one time.
      * For most databases, this will create s.th. like
-     * INSERT INTO $strTable ($arrColumns) VALUES (?, ?), (?, ?)...
+     * INSERT INTO $table ($columns) VALUES (?, ?), (?, ?)...
      * Please note that this method is used to create the query itself, based on the Kajona-internal syntax.
-     * The query is fired to the database by Database
-     *
-     * @param string $strTable
-     * @param string[] $arrColumns
-     * @param array $arrValueSets
-     * @param ConnectionInterface $objDb
-     *
-     * @param array|null $arrEscapes
-     * @return bool
+     * The query is fired to the database by Database.
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes);
+    public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool;
 
     /**
-     * Fires an insert or update of a single record. it's up to the database (driver)
+     * Fires an insert or update of a single record. It is up to the database (driver)
      * to detect whether a row is already present or not.
      * Please note: since some dbrms fire a delete && insert, make sure to pass ALL colums and values,
      * otherwise data might be lost.
-     *
-     * @param $strTable
-     * @param $arrColumns
-     * @param $arrValues
-     * @param $arrPrimaryColumns
-     *
-     * @return bool
-     * @internal param $strPrimaryColumn
-     *
      */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns);
+    public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool;
 
     /**
-     * Sends a prepared statement to the database. All params must be represented by the ? char.
+     * Sends a prepared statement to the database. All params must be represented by the "?" char.
      * The params themselves are stored using the second params using the matching order.
-     *
-     * @param string $strQuery
-     * @param array<int, scalar> $arrParams
-     *
-     * @return bool
-     * @since 3.4
      */
-    public function _pQuery($strQuery, $arrParams);
+    public function _pQuery(string $query, array $params): bool;
 
     /**
-     * This method is used to retrieve an array of resultsets from the database using
-     * a prepared statement
+     * This method is used to retrieve an array of result-sets from the database using
+     * a prepared statement.
      *
-     * @param string $strQuery
-     * @param array $arrParams
-     *
-     * @since 3.4
-     * @return \Generator
      * @throws QueryException
      */
-    public function getPArray($strQuery, $arrParams): \Generator;
+    public function getPArray(string $query, array $params): Generator;
 
     /**
      * Returns the last error reported by the database.
-     * Is being called after unsuccessful queries
-     *
-     * @return string
+     * Is being called after unsuccessful queries.
      */
-    public function getError();
+    public function getError(): string;
 
     /**
      * Returns ALL tables in the database currently connected to.
      * The method should return an array using the following keys:
      * name => Table name
-     *
-     * @return array
      */
     public function getTables(): array;
 
     /**
-     * Fetches the full table information as retrieved from the rdbms
-     * @param $tableName
-     * @return Table
+     * Fetches the full table information as retrieved from the rdbms.
      */
     public function getTableInformation(string $tableName): Table;
 
 
-
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
+     * Used to send a CREATE table statement to the database
+     * By passing the query through this method, the driver can add db-specific commands.
      * The array of fields should have the following structure
-     * $array[string columnName] = array(string datatype, boolean isNull [, default (only if not null)])
+     * $array[string columnName] = [{@see DataType} datatype, bool isNull [, default (only if not null)]]
      * whereas datatype is one of the following:
-     *        int
-     *      long
-     *        double
-     *        char10
-     *        char20
-     *        char100
-     *        char254
-     *      char500
-     *        text
-     *      longtext
-     *
-     * @param string $strName
-     * @param array $arrFields array of fields / columns
-     * @param array $arrKeys array of primary keys
-     *
-     * @return bool
+     *  - int
+     *  - long
+     *  - double
+     *  - char10
+     *  - char20
+     *  - char100
+     *  - char254
+     *  - char500
+     *  - text
+     *  - longtext
      */
-    public function createTable($strName, $arrFields, $arrKeys);
+    public function createTable(string $name, array $columns, array $primaryKeys): bool;
 
     /**
      * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
-     * where each index can only occur once in the table
-     *
-     * @param string $strTable
-     * @param string $strName
-     * @param array $arrColumns
-     * @param bool $bitUnique
-     * @return bool
+     * where each index can only occur once in the table.
      */
-    public function createIndex($strTable, $strName, $arrColumns, $bitUnique = false);
+    public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool;
 
     /**
-     * Deletes an index from the database
-     * @param string $table
-     * @param string $index
-     * @return bool
+     * Deletes an index from the database.
      */
     public function deleteIndex(string $table, string $index): bool;
 
     /**
-     * Adds a new index to the provided table
-     * @param TableIndex $index
-     * @return bool
+     * Adds a new index to the provided table.
      */
     public function addIndex(string $table, TableIndex $index): bool;
 
     /**
-     * Checks whether the table has an index with the provided name
-     *
-     * @param string $strTable
-     * @param string $strName
-     * @return bool
+     * Checks whether the table has an index with the provided name.
      */
-    public function hasIndex($strTable, $strName): bool;
+    public function hasIndex(string $table, string $name): bool;
 
     /**
-     * Returns whether a column exists on a table
-     *
-     * @param string $tableName
-     * @param string $columnName
-     * @return bool
+     * Returns whether a column exists on a table.
      */
     public function hasColumn(string $tableName, string $columnName): bool;
 
     /**
-     * Renames a table
-     *
-     * @param $strOldName
-     * @param $strNewName
-     *
-     * @return bool
-     * @since 4.6
+     * Renames a table.
      */
-    public function renameTable($strOldName, $strNewName);
-
+    public function renameTable(string $oldName, string $newName): bool;
 
     /**
-     * Changes a single column, e.g. the datatype
-     *
-     * @param $strTable
-     * @param $strOldColumnName
-     * @param $strNewColumnName
-     * @param $strNewDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * Changes a single column, e.g. the datatype.
      */
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+    public function changeColumn(string $table, string $oldColumnName, string $newColumnName, DataType $newDataType): bool;
 
     /**
-     * Adds a column to a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     * @param $strDatatype
-     *
-     * @return bool
-     * @since 4.6
+     * Adds a column to a table.
      */
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null);
+    public function addColumn(string $table, string $column, DataType $dataType, ?bool $nullable = null, ?string $default = null): bool;
 
     /**
-     * Removes a column from a table
-     *
-     * @param $strTable
-     * @param $strColumn
-     *
-     * @return bool
-     * @since 4.6
+     * Removes a column from a table.
      */
-    public function removeColumn($strTable, $strColumn);
+    public function removeColumn(string $table, string $column): bool;
 
     /**
-     * Starts a transaction
-     *
-     * @return void
-     * @since 4.6
+     * Starts a transaction.
      */
-    public function transactionBegin();
+    public function beginTransaction(): void;
 
     /**
-     * Ends a successful operation by committing the transaction
+     * Starts a transaction.
      *
-     * @return void
-     * @since 4.6
+     * @deprecated Use {@see DriverInterface::beginTransaction()} instead.
      */
-    public function transactionCommit();
+    public function transactionBegin(): void;
 
     /**
-     * Ends a non-successful transaction by using a rollback
-     *
-     * @return void
+     * Ends a successful operation by committing the transaction.
      */
-    public function transactionRollback();
+    public function commit(): void;
 
     /**
-     * returns an array of key value pairs with infos about the current database
+     * Ends a successful operation by committing the transaction.
+     *
+     * @deprecated Use {@see DriverInterface::commit()} instead.
+     */
+    public function transactionCommit(): void;
+
+    /**
+     * Ends a non-successful transaction by using a rollback.
+     */
+    public function rollBack(): void;
+
+    /**
+     * Ends a non-successful transaction by using a rollback.
+     *
+     * @deprecated Use {@see DriverInterface::rollBack()} instead.
+     */
+    public function transactionRollback(): void;
+
+    /**
+     * Returns an array of key value pairs with infos about the current database
      * The array returned should have tho following structure:
      *  property name => value
-     *
-     * @return array
      */
-    public function getDbInfo();
+    public function getDbInfo(): array;
 
     /**
-     * Creates an db-dump usind the given filename. the filename is relative to _realpath_
-     * The dump must include, and ONLY include the pass tables
+     * Creates an db-dump using the given filename. The filename is relative to _realpath_
+     * The dump must include, and ONLY include the pass tables.
      *
-     * @param string &$strFilename passed by reference so that the driver is able to update the filename, e.g. in order to add a .gz suffix
-     * @param array $arrTables
-     *
-     * @return bool Indicates, if the dump worked or not
+     * @param string &$fileName passed by reference so that the driver is able to update the filename, e.g. in order to add a .gz suffix.
      */
-    public function dbExport(&$strFilename, $arrTables);
+    public function dbExport(string &$fileName, array $tables): bool;
 
     /**
-     * Imports the given db-dump file to the database. The filename ist relative to _realpath_
-     *
-     * @param string $strFilename
-     *
-     * @return bool
+     * Imports the given db-dump file to the database. The filename ist relative to _realpath_.
      */
-    public function dbImport($strFilename);
+    public function dbImport(string $fileName): bool;
 
     /**
      * Allows the db-driver to add database-specific surroundings to column-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strColumn
-     *
-     * @return string
+     * E.g. needed by the mysql-drivers.
      */
-    public function encloseColumnName($strColumn);
+    public function encloseColumnName(string $column): string;
 
     /**
      * Allows the db-driver to add database-specific surroundings to table-names.
-     * E.g. needed by the mysql-drivers
-     *
-     * @param string $strTable
-     *
-     * @return string
+     * E.g. needed by the mysql-drivers.
      */
-    public function encloseTableName($strTable);
+    public function encloseTableName(string $table): string;
 
     /**
      * Returns the db-specific datatype for the kajona internal datatype.
-     *
-     * @param string $strType
-     *
-     * @return string
-     * @see DbDatatypes
      */
-    public function getDatatype($strType);
+    public function getDatatype(DataType $type): string;
 
     /**
      * A method triggered in special cases in order to
      * have even the caches stored at the db-driver being flushed.
      * This could get important in case of schema updates since precompiled queries may get invalid due
      * to updated table definitions.
-     *
-     * @return void
      */
-    public function flushQueryCache();
+    public function flushQueryCache(): void;
 
-    /**
-     * @param string $strValue
-     *
-     * @return mixed
-     */
-    public function escape($strValue);
+    public function escape(mixed $value): mixed;
 
     /**
      * Appends a limit expression to the provided query. The start and end parameter are the positions of the start and
-     * end row which you want include in your resultset. I.e. to return a single row use 0, 0. To return the first 8
-     * rows use 0, 7.
-     *
-     * @param string $strQuery
-     * @param int $intStart
-     * @param int $intEnd
-     * @return string
+     * end row, which you want to include in your result-set. I.e. to return a single row use 0, 0. To return the first
+     * 8 rows use 0, 7.
      */
-    public function appendLimitExpression($strQuery, $intStart, $intEnd);
+    public function appendLimitExpression(string $query, int $start, int $end): string;
 
     /**
-     * Returns a query expression which concatenates different values. This can bei either column names or strings.
+     * Returns a query expression, which concatenates different values. This can bei either column names or strings.
      * <code>
      *  $connection->getConcatExpression(['user_kajona.user_forename', '\' \'', 'user_kajona.user_name'])
      * </code>
-     *
-     * @param array $parts
-     * @return string
      */
-    public function getConcatExpression(array $parts);
+    public function getConcatExpression(array $parts): string;
 
     /**
-     * Returns the number of affected rows from the last _pQuery call
+     * Returns the number of affected rows from the last _pQuery call.
      *
      * @return int
      */
-    public function getIntAffectedRows();
-
+    public function getAffectedRowsCount(): int;
 
     /**
      * Default implementation to detect if a driver handles compression.
-     * By default, db-drivers us a piped gzip / gunzip command when creating / restoring dumps on unix.
+     * By default, db-drivers us a piped gzip / gunzip command when creating / restoring dumps on UNIX.
      * If running on windows, the Database class handles the compression / decompression.
-     *
-     * @return bool
      */
-    public function handlesDumpCompression();
+    public function handlesDumpCompression(): bool;
 
     /**
-     * Method which converts a PHP value to a value which can be inserted into a table. I.e. it truncates the value to
-     * the fitting length for the provided datatype
-     *
-     * @param mixed $value
-     * @param string $type
-     * @return mixed
+     * Convert a PHP value to a value, which can be inserted into a table. I.e. it truncates the value to
+     * the fitting length for the provided datatype.
      */
-    public function convertToDatabaseValue($value, string $type);
+    public function convertToDatabaseValue(mixed $value, DataType $type): mixed;
 
     /**
-     * Returns a LEAST() query expression which selects the minimum value of given columns.
+     * Returns a "LEAST()" query expression, which selects the minimum value of given columns.
      * <code>
      *  $connection->getLeastExpression(['column1','column2', ...])
      * </code>
-     *
-     * @param array $parts
-     * @return string
      */
     public function getLeastExpression(array $parts): string;
 
     /**
      * Builds a query expression to retrieve a substring of the given column name or value.
      *
-     * The offset of the substring inside of the value must be given as 1-based index. If a length is given, only up to
+     * The offset of the substring inside the value must be given as 1-based index. If a length is given, only up to
      * this number of characters are extracted; if no length is given, everything to the end of the value is extracted.
-     * *Note*: Negative offsets or lengths are not guaranteed to work across different database drivers.
+     * *Note*: It is not guaranteed that negative offsets or lengths work across different database drivers.
      */
     public function getSubstringExpression(string $value, int $offset, ?int $length): string;
 
     /**
      * Returns the database-specific string-length expression, e.g. LEN() or LENGTH().
-     * Pass the value to be counted (e.g. a column name) by param
-     *
+     * Pass the value to be counted (e.g. a column name) by param.
      */
     public function getStringLengthExpression(string $targetString): string;
 }
-
-

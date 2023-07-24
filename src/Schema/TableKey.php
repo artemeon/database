@@ -13,19 +13,15 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Schema;
 
+use JsonSerializable;
+
 /**
  * Base information about a tables primary key
- * @package Kajona\System\System\Db\Schema
- * @author stefan.idler@artemeon.de
  */
-class TableKey implements \JsonSerializable
+class TableKey implements JsonSerializable
 {
-    private $name = "";
+    private string $name;
 
-    /**
-     * TableKey constructor.
-     * @param string $name
-     */
     public function __construct(string $name)
     {
         $this->name = $name;
@@ -36,26 +32,18 @@ class TableKey implements \JsonSerializable
      */
     public function jsonSerialize(): array
     {
-        return ["name" => $this->getName()];
+        return ['name' => $this->getName()];
     }
 
-
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     */
-    public function setName(string $name)
+    public function setName(string $name): self
     {
         $this->name = $name;
+
+        return $this;
     }
-
-
-
 }

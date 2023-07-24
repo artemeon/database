@@ -13,9 +13,14 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Generator;
+
 /**
- * Interface which is compatible to the Doctrine DBAL Connection class {@link https://github.com/doctrine/dbal/blob/3.3.x/src/Connection.php}
- * If your service uses only those new methods it is recommended to type hint against this DoctrineConnectionInterface interface instead of the ConnectionInterface.
+ * Interface, which is compatible to the Doctrine DBAL Connection class
+ * {@link https://github.com/doctrine/dbal/blob/3.3.x/src/Connection.php}.
+ *
+ * If your service uses only those new methods it is recommended to type hint against this DoctrineConnectionInterface
+ * interface instead of the ConnectionInterface.
  */
 interface DoctrineConnectionInterface
 {
@@ -44,12 +49,12 @@ interface DoctrineConnectionInterface
      * Prepares and executes an SQL query and returns the result as an iterator over rows represented
      * as associative arrays.
      */
-    public function iterateAssociative(string $query, array $params = []): \Generator;
+    public function iterateAssociative(string $query, array $params = []): Generator;
 
     /**
      * Prepares and executes an SQL query and returns the result as an iterator over the first column values.
      */
-    public function iterateColumn(string $query, array $params = []): \Generator;
+    public function iterateColumn(string $query, array $params = []): Generator;
 
     /**
      * Executes an SQL statement with the given parameters and returns the number of affected rows.
@@ -65,17 +70,32 @@ interface DoctrineConnectionInterface
 
     /**
      * Creates a simple insert for a single row where the values parameter is an associative array with column names to
-     * value mapping
+     * value mapping.
      */
     public function insert(string $tableName, array $values, ?array $escapes = null): int;
 
     /**
-     * Updates a row on the provided table by the identifier columns
+     * Updates a row on the provided table by the identifier columns.
      */
     public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): int;
 
     /**
-     * Deletes a row on the provided table by the identifier columns
+     * Deletes a row on the provided table by the identifier columns.
      */
     public function delete(string $tableName, array $identifier): int;
+
+    /**
+     * Starts a transaction.
+     */
+    public function beginTransaction(): void;
+
+    /**
+     * Ends a transaction successfully.
+     */
+    public function commit(): void;
+
+    /**
+     * Rollback of the current transaction.
+     */
+    public function rollBack(): void;
 }

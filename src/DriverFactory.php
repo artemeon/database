@@ -16,15 +16,11 @@ namespace Artemeon\Database;
 use Artemeon\Database\Exception\DriverNotFoundException;
 
 /**
- * Factory to create a fitting driver based on the driver string
- *
- * @since 7.3
+ * Factory to create a fitting driver based on the driver string.
  */
 class DriverFactory
 {
     /**
-     * @param string $driver
-     * @return DriverInterface
      * @throws DriverNotFoundException
      */
     public function factory(string $driver): DriverInterface

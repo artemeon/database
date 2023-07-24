@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Exception;
 
-class CommitException extends \Exception
+use Exception;
+
+class CommitException extends Exception
 {
 }

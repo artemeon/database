@@ -13,58 +13,60 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Tests;
 
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
+use Artemeon\Database\Exception\TableNotFoundException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
 
 class ConnectionTableInformationTest extends ConnectionTestCase
 {
-    const TEST_TABLE_NAME = "agp_temp_tableinfotest";
+    public const TEST_TABLE_NAME = 'agp_temp_tableinfotest';
 
-    public function testTypeConversion()
+    /**
+     * @throws TableNotFoundException
+     * @throws ConnectionException
+     * @throws QueryException
+     */
+    public function testTypeConversion(): void
     {
-        $objDB = $this->getConnection();
+        $db = $this->getConnection();
 
-        if (in_array(self::TEST_TABLE_NAME, $this->getConnection()->getTables())) {
-            $strQuery = "DROP TABLE ".self::TEST_TABLE_NAME;
-            $this->getConnection()->_pQuery($strQuery, array());
+        if (in_array(self::TEST_TABLE_NAME, $this->getConnection()->getTables(), true)) {
+            $query = 'DROP TABLE ' . self::TEST_TABLE_NAME;
+            $this->getConnection()->_pQuery($query);
         }
 
-        $colDefinitions = array();
-        $colDefinitions["temp_int"] = array(DataType::STR_TYPE_INT, false);
-        $colDefinitions["temp_long"] = array(DataType::STR_TYPE_LONG, true);
-        $colDefinitions["temp_double"] = array(DataType::STR_TYPE_DOUBLE, true);
-        $colDefinitions["temp_char10"] = array(DataType::STR_TYPE_CHAR10, true);
-        $colDefinitions["temp_char20"] = array(DataType::STR_TYPE_CHAR20, true);
-        $colDefinitions["temp_char100"] = array(DataType::STR_TYPE_CHAR100, true);
-        $colDefinitions["temp_char254"] = array(DataType::STR_TYPE_CHAR254, true);
-        $colDefinitions["temp_char500"] = array(DataType::STR_TYPE_CHAR500, true);
-        $colDefinitions["temp_text"] = array(DataType::STR_TYPE_TEXT, true);
-        $colDefinitions["temp_longtext"] = array(DataType::STR_TYPE_LONGTEXT, true);
+        $colDefinitions = [
+            'temp_int' => [DataType::INT, false],
+            'temp_long' => [DataType::BIGINT, true],
+            'temp_double' => [DataType::FLOAT, true],
+            'temp_char10' => [DataType::CHAR10, true],
+            'temp_char20' => [DataType::CHAR20, true],
+            'temp_char100' => [DataType::CHAR100, true],
+            'temp_char254' => [DataType::CHAR254, true],
+            'temp_char500' => [DataType::CHAR500, true],
+            'temp_text' => [DataType::TEXT, true],
+            'temp_longtext' => [DataType::LONGTEXT, true],
+        ];
 
-        $this->assertTrue($objDB->createTable(self::TEST_TABLE_NAME, $colDefinitions, ["temp_int"]));
-        $this->assertTrue($objDB->createIndex(self::TEST_TABLE_NAME, "temp_double", ["temp_double"]));
-        $this->assertTrue($objDB->createIndex(self::TEST_TABLE_NAME, "temp_char500", ["temp_char500"]));
-        $this->assertTrue($objDB->createIndex(self::TEST_TABLE_NAME, "temp_combined", ["temp_double", "temp_char500"]));
+        $this->assertTrue($db->createTable(self::TEST_TABLE_NAME, $colDefinitions, ['temp_int']));
+        $this->assertTrue($db->createIndex(self::TEST_TABLE_NAME, 'temp_double', ['temp_double']));
+        $this->assertTrue($db->createIndex(self::TEST_TABLE_NAME, 'temp_char500', ['temp_char500']));
+        $this->assertTrue($db->createIndex(self::TEST_TABLE_NAME, 'temp_combined', ['temp_double', 'temp_char500']));
 
-        //load the schema info from the db
-        $info = $objDB->getTableInformation(self::TEST_TABLE_NAME);
+        // load the schema info from the db
+        $info = $db->getTableInformation(self::TEST_TABLE_NAME);
 
-        $arrKeyNames = array_map(function (TableKey $key) {
-            return $key->getName();
-        }, $info->getPrimaryKeys());
+        $keyNames = array_map(static fn (TableKey $key) => $key->getName(), $info->getPrimaryKeys());
 
-        $this->assertTrue(in_array("temp_int", $arrKeyNames));
+        $this->assertContains('temp_int', $keyNames);
 
-        $arrIndexNames = array_map(function (TableIndex $index) {
-            return $index->getName();
-        }, $info->getIndexes());
+        $indexNames = array_map(static fn (TableIndex $index) => $index->getName(), $info->getIndexes());
 
-        $this->assertTrue(in_array("temp_double", $arrIndexNames));
-        $this->assertTrue(in_array("temp_char500", $arrIndexNames));
-        $this->assertTrue(in_array("temp_combined", $arrIndexNames));
-
-
+        $this->assertContains('temp_double', $indexNames);
+        $this->assertContains('temp_char500', $indexNames);
+        $this->assertContains('temp_combined', $indexNames);
     }
-
 }

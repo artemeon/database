@@ -21,92 +21,79 @@ use Artemeon\Database\Exception\DriverNotFoundException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Exception\TableNotFoundException;
+use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use Generator;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
  * CHANGE WITH CARE!
- * Since version 3.4, prepared statments are supported. As a parameter-escaping, only the ? char is allowed,
+ * Since version 3.4, prepared statements are supported. As a parameter-escaping, only the ? char is allowed,
  * named params are not supported at the moment.
  * Old plain queries are still allows, but will be discontinued around kajona 3.5 / 4.0. Up from kajona > 3.4.0
  * a warning will be generated when using the old apis.
  * When using prepared statements, all escaping is done by the database layer.
  * When using the old, plain queries, you have to escape all embedded arguments yourself by using dbsafeString()
- *
- * @package module_system
- * @author sidler@mulchprod.de
  */
 class Connection implements ConnectionInterface
 {
-    private $arrQueryCache = array(); //Array to cache queries
-    private $arrTablesCache = [];
-    private $intNumber = 0; //Number of queries send to database
-    private $intNumberCache = 0; //Number of queries returned from cache
-
     /**
-     * @var ConnectionParameters
+     * Array to cache queries.
      */
-    private $connectionParams;
+    private array $queryCache = [];
+
+    private array $tablesCache = [];
 
     /**
-     * @var DriverFactory
+     * Number of queries sent to the database.
      */
-    private $driverFactory;
+    private int $number = 0;
 
     /**
-     * @var LoggerInterface
+     * Number of queries returned from cache.
      */
-    private $logger;
+    private int $numberCache = 0;
+
+    private ConnectionParameters $connectionParams;
+
+    private DriverFactory $driverFactory;
+
+    private ?LoggerInterface $logger;
+
+    private ?int $debugLevel;
 
     /**
-     * @var int
+     * Instance of the db-driver defined in the configs.
      */
-    private $debugLevel;
+    protected ?DriverInterface $dbDriver = null;
 
     /**
-     * Instance of the db-driver defined in the configs
-     *
-     * @var DriverInterface
+     * The number of transactions currently opened.
      */
-    protected $objDbDriver = null; //An object of the db-driver defined in the configs
+    private int $numberOfOpenTransactions = 0;
 
     /**
-     * The number of transactions currently opened
-     *
-     * @var int
+     * Set to true, if a rollback is requested, but there are still open transaction.
+     * In this case, the tx is rolled back, when the enclosing tx is finished.
      */
-    private $intNumberOfOpenTransactions = 0; //The number of transactions opened
+    private bool $currentTransactionIsDirty = false;
 
     /**
-     * Set to true, if a rollback is requested, but there are still open tx.
-     * In this case, the tx is rolled back, when the enclosing tx is finished
-     *
-     * @var bool
-     */
-    private $bitCurrentTxIsDirty = false;
-
-    /**
-     * Flag indicating if the internal connection was setup.
+     * Flag indicating if the internal connection was set up.
      * Needed to have a proper lazy-connection initialization.
-     *
-     * @var bool
      */
-    private $bitConnected = false;
+    private bool $connected = false;
 
     /**
-     * Enables or disables dbsafeString in total
-     * @var bool
+     * Enables or disables dbsafeString in total.
      * @internal
      */
-    public static $bitDbSafeStringEnabled = true;
+    public static bool $dbSafeStringEnabled = true;
 
     /**
-     * @param ConnectionParameters $connectionParams
-     * @param DriverFactory $driverFactory
-     * @param LoggerInterface|null $logger
-     * @param int|null $debugLevel
      * @throws Exception\DriverNotFoundException
      */
     public function __construct(
@@ -119,81 +106,78 @@ class Connection implements ConnectionInterface
         $this->driverFactory = $driverFactory;
         $this->logger = $logger;
         $this->debugLevel = $debugLevel;
-        $this->objDbDriver = $this->driverFactory->factory($this->connectionParams->getDriver());
+        $this->dbDriver = $this->driverFactory->factory($this->connectionParams->getDriver());
     }
 
     /**
      * Destructor.
-     * Handles the closing of remaining tx and closes the db-connection
+     * Handles the closing of remaining transactions and closes the DB connection.
      */
-    public function close()
+    public function close(): void
     {
-        if ($this->intNumberOfOpenTransactions != 0) {
-            //something bad happened. rollback, plz
-            $this->objDbDriver->transactionRollback();
-            if ($this->logger !== null) {
-                $this->logger->warning("Rolled back open transactions on deletion of current instance of Db!");
-            }
+        if ($this->numberOfOpenTransactions !== 0) {
+            $this->dbDriver->rollBack();
+            $this->logger?->warning('Rolled back open transactions on deletion of current instance of Db!');
         }
 
+        if ($this->dbDriver !== null && $this->connected) {
+            $this->logger?->info('closing database-connection');
 
-        if ($this->objDbDriver !== null && $this->bitConnected) {
-            if ($this->logger !== null) {
-                $this->logger->info("closing database-connection");
-            }
-
-            $this->objDbDriver->dbclose();
+            $this->dbDriver->dbclose();
         }
     }
 
     /**
-     * This method connects with the database
+     * This method connects with the database.
      *
-     * @return void
      * @throws ConnectionException
      */
-    protected function dbconnect()
+    protected function dbconnect(): void
     {
-        $this->bitConnected = $this->objDbDriver->dbconnect($this->connectionParams);
+        $this->connected = $this->dbDriver->dbconnect($this->connectionParams);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function multiInsert(string $strTable, array $arrColumns, array $arrValueSets, ?array $arrEscapes = null)
+    public function multiInsert(string $tableName, array $columns, array $valueSets, ?array $escapes = null): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if (count($arrValueSets) == 0) {
+        if (count($valueSets) === 0) {
             return true;
         }
 
-        //chunk columns down to less then 1000 params, could lead to errors on oracle and sqlite otherwise
-        $bitReturn = true;
-        $intSetsPerInsert = (int)floor(970 / count($arrColumns));
+        // chunk columns down to less than 1000 params, could lead to errors on Oracle and sqlite otherwise.
+        $output = true;
+        $setsPerInsert = (int) floor(970 / count($columns));
 
-        foreach (array_chunk($arrValueSets, $intSetsPerInsert) as $arrSingleValueSet) {
-            $bitReturn = $bitReturn && $this->objDbDriver->triggerMultiInsert(
-                    $strTable,
-                    $arrColumns,
-                    $arrSingleValueSet,
+        foreach (array_chunk($valueSets, $setsPerInsert) as $valueSet) {
+            $output = $output && $this->dbDriver->triggerMultiInsert(
+                    $tableName,
+                    $columns,
+                    $valueSet,
                     $this,
-                    $arrEscapes
+                    $escapes
                 );
         }
 
-        return $bitReturn;
+        return $output;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
     public function insert(string $tableName, array $values, ?array $escapes = null): int
     {
         $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
-        return $this->getIntAffectedRows();
+
+        return $this->getAffectedRowsCount();
     }
 
     /**
@@ -204,32 +188,32 @@ class Connection implements ConnectionInterface
         array $columns,
         array $identifiers,
         bool $cached = true,
-        ?array $escapes = []
+        ?array $escapes = [],
     ): ?array {
-        $query = \sprintf(
+        $query = sprintf(
             'SELECT %s FROM %s WHERE %s',
-            \implode(
+            implode(
                 ', ',
-                \array_map(
+                array_map(
                     function ($columnName): string {
                         return $this->encloseColumnName((string)$columnName);
                     },
-                    $columns
-                )
+                    $columns,
+                ),
             ),
             $this->encloseTableName($tableName),
-            \implode(
+            implode(
                 ' AND ',
-                \array_map(
+                array_map(
                     function (string $columnName): string {
                         return $this->encloseColumnName($columnName) . ' = ?';
                     },
-                    \array_keys($identifiers)
-                )
-            )
+                    array_keys($identifiers),
+                ),
+            ),
         );
 
-        $row = $this->getPRow($query, \array_values($identifiers), 0, $cached, $escapes);
+        $row = $this->getPRow($query, array_values($identifiers), 0, $cached, $escapes);
         if ($row === []) {
             return null;
         }
@@ -239,11 +223,12 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): int
     {
         if (empty($identifier)) {
-            throw new \InvalidArgumentException('Empty identifier for update statement');
+            throw new InvalidArgumentException('Empty identifier for update statement');
         }
 
         $columns = [];
@@ -262,16 +247,18 @@ class Connection implements ConnectionInterface
         $query = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $columns) . ' WHERE ' . implode(' AND ', $condition);
 
         $this->_pQuery($query, $params, $escapes ?? []);
-        return $this->getIntAffectedRows();
+
+        return $this->getAffectedRowsCount();
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
     public function delete(string $tableName, array $identifier): int
     {
         if (empty($identifier)) {
-            throw new \InvalidArgumentException('Empty identifier for delete statement');
+            throw new InvalidArgumentException('Empty identifier for delete statement');
         }
 
         $condition = [];
@@ -284,84 +271,91 @@ class Connection implements ConnectionInterface
         $query = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $condition);
 
         $this->_pQuery($query, $params);
-        return $this->getIntAffectedRows();
+
+        return $this->getAffectedRowsCount();
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
+    public function insertOrUpdate(string $tableName, array $columns, array $values, array $primaryColumns): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $bitReturn = $this->objDbDriver->insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns);
-        if (!$bitReturn) {
-            $this->getError("", array());
+        $output = $this->dbDriver->insertOrUpdate($tableName, $columns, $values, $primaryColumns);
+        if (!$output) {
+            $this->getError('', []);
         }
 
-        return $bitReturn;
+        return $output;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function _pQuery($strQuery, $arrParams = [], array $arrEscapes = [])
+    public function _pQuery(string $query, array $params = [], array $escapes = []): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $bitReturn = false;
+        $output = false;
 
-        $strQuery = $this->processQuery($strQuery);
+        $query = $this->processQuery($query);
 
-        //Increasing the counter
-        $this->intNumber++;
+        // Increasing the counter
+        $this->number++;
 
-        if ($this->objDbDriver != null) {
-            $bitReturn = $this->objDbDriver->_pQuery($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
+        if ($this->dbDriver !== null) {
+            $output = $this->dbDriver->_pQuery($query, $this->dbsafeParams($params, $escapes));
         }
 
-        if (!$bitReturn) {
-            $this->getError($strQuery, $arrParams);
+        if (!$output) {
+            $this->getError($query, $params);
         }
 
-        return $bitReturn;
+        return $output;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
     public function executeStatement(string $query, array $params = []): int
     {
         $this->_pQuery($query, $params);
-        return $this->objDbDriver->getIntAffectedRows();
+
+        return $this->dbDriver->getAffectedRowsCount();
     }
 
     /**
      * @inheritDoc
      */
-    public function getIntAffectedRows()
+    public function getAffectedRowsCount(): int
     {
-        return $this->objDbDriver->getIntAffectedRows();
+        return $this->dbDriver->getAffectedRowsCount();
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function getPRow($strQuery, $arrParams = [], $intNr = 0, $bitCache = true, array $arrEscapes = [])
+    public function getPRow(string $query, array $params = [], int $number = 0, bool $cache = true, array $escapes = []): array
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if ($intNr !== 0) {
-            trigger_error("The intNr parameter is deprecated", E_USER_DEPRECATED);
+        if ($number !== 0) {
+            trigger_error('The number parameter is deprecated', E_USER_DEPRECATED);
         }
 
-        $result = $this->objDbDriver->getPArray($strQuery, $arrParams);
+        $result = $this->dbDriver->getPArray($query, $params);
         foreach ($result as $row) {
             return $row;
         }
@@ -371,67 +365,68 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
     public function getPArray(
-        $strQuery,
-        $arrParams = [],
-        $intStart = null,
-        $intEnd = null,
-        $bitCache = true,
-        array $arrEscapes = []
-    ) {
-        if (!$this->bitConnected) {
+        string $query,
+        array $params = [],
+        ?int $start = null,
+        ?int $end = null,
+        bool $cache = true,
+        array $escapes = [],
+    ): array {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        //param validation
-        if ((int)$intStart < 0) {
-            $intStart = null;
+        // param validation
+        if ((int) $start < 0) {
+            $start = null;
         }
 
-        if ((int)$intEnd < 0) {
-            $intEnd = null;
+        if ((int) $end < 0) {
+            $end = null;
         }
 
+        $query = $this->processQuery($query);
+        // Increasing global counter
+        $this->number++;
 
-        $strQuery = $this->processQuery($strQuery);
-        //Increasing global counter
-        $this->intNumber++;
+        $queryMd5 = null;
+        if ($cache) {
+            $queryMd5 = md5($query . implode(',', $params) . $start . $end);
+            if (isset($this->queryCache[$queryMd5])) {
+                // Increasing Cache counter
+                $this->numberCache++;
 
-        $strQueryMd5 = null;
-        if ($bitCache) {
-            $strQueryMd5 = md5($strQuery . implode(",", $arrParams) . $intStart . $intEnd);
-            if (isset($this->arrQueryCache[$strQueryMd5])) {
-                //Increasing Cache counter
-                $this->intNumberCache++;
-                return $this->arrQueryCache[$strQueryMd5];
+                return $this->queryCache[$queryMd5];
             }
         }
 
-        if ($intStart !== null && $intEnd !== null && $intStart !== false && $intEnd !== false) {
-            $strQuery = $this->appendLimitExpression($strQuery, $intStart, $intEnd);
-            $arrReturn = $this->fetchAllAssociative($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
-        } else {
-            $arrReturn = $this->fetchAllAssociative($strQuery, $this->dbsafeParams($arrParams, $arrEscapes));
+        if ($start !== null && $end !== null) {
+            $query = $this->appendLimitExpression($query, $start, $end);
         }
 
-        if ($bitCache) {
-            $this->arrQueryCache[$strQueryMd5] = $arrReturn;
+        $output = $this->fetchAllAssociative($query, $this->dbsafeParams($params, $escapes));
+
+        if ($cache) {
+            $this->queryCache[$queryMd5] = $output;
         }
 
-        return $arrReturn;
+        return $output;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function getGenerator($query, array $params = [], $chunkSize = 2048, $paging = true)
+    public function getGenerator(string $query, array $params = [], int $chunkSize = 2048, bool $paging = true): Generator
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        $result = $this->dbDriver->getPArray($query, $this->dbsafeParams($params));
         $chunk = [];
 
         foreach ($result as $row) {
@@ -451,26 +446,30 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
     public function fetchAllAssociative(string $query, array $params = []): array
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        return iterator_to_array($this->objDbDriver->getPArray($query, $params), false);
+        return iterator_to_array($this->dbDriver->getPArray($query, $params), false);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function fetchAssociative(string $query, array $params = []): array|false
+    public function fetchAssociative(string $query, array $params = []): array | false
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $result = $this->objDbDriver->getPArray($query, $params);
+        $result = $this->dbDriver->getPArray($query, $params);
         foreach ($result as $row) {
             return $row;
         }
@@ -480,15 +479,17 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
     public function fetchFirstColumn(string $query, array $params = []): array
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
         $values = [];
-        $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        $result = $this->dbDriver->getPArray($query, $this->dbsafeParams($params, []));
         foreach ($result as $row) {
             $values[] = reset($row);
         }
@@ -498,10 +499,12 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
     public function fetchOne(string $query, array $params = []): mixed
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
@@ -515,160 +518,191 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function iterateAssociative(string $query, array $params = []): \Generator
+    public function iterateAssociative(string $query, array $params = []): Generator
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        yield from $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        yield from $this->dbDriver->getPArray($query, $this->dbsafeParams($params));
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function iterateColumn(string $query, array $params = []): \Generator
+    public function iterateColumn(string $query, array $params = []): Generator
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $result = $this->objDbDriver->getPArray($query, $this->dbsafeParams($params, []));
+        $result = $this->dbDriver->getPArray($query, $this->dbsafeParams($params));
         foreach ($result as $row) {
             yield reset($row);
         }
     }
 
     /**
-     * Writes the last DB-Error to the screen
+     * Writes the last DB-Error to the screen.
      *
-     * @param string $strQuery
-     * @return void
      * @throws QueryException
+     * @throws ConnectionException
      */
-    private function getError($strQuery, $arrParams)
+    private function getError(string $query, array $params): void
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $strError = "";
-        if ($this->objDbDriver != null) {
-            $strError = $this->objDbDriver->getError();
+        $error = '';
+        if ($this->dbDriver !== null) {
+            $error = $this->dbDriver->getError();
         }
 
-        //reprocess query
-        $strQuery = str_ireplace(
-            array(" from ", " where ", " and ", " group by ", " order by "),
-            array("\nFROM ", "\nWHERE ", "\n\tAND ", "\nGROUP BY ", "\nORDER BY "),
-            $strQuery
+        // reprocess query
+        $query = str_ireplace(
+            [' from ', ' where ', ' and ', ' group by ', ' order by '],
+            ["\nFROM ", "\nWHERE ", "\n\tAND ", "\nGROUP BY ", "\nORDER BY "],
+            $query,
         );
 
-        $strQuery = $this->prettifyQuery($strQuery, $arrParams);
+        $query = $this->prettifyQuery($query, $params);
 
-        $strErrorCode = "";
-        $strErrorCode .= "Error in query\n\n";
-        $strErrorCode .= "Error:\n";
-        $strErrorCode .= $strError . "\n\n";
-        $strErrorCode .= "Query:\n";
-        $strErrorCode .= $strQuery . "\n";
-        $strErrorCode .= "\n\n";
-        $strErrorCode .= "Params: " . implode(", ", $arrParams) . "\n";
-        $strErrorCode .= "Callstack:\n";
-        if (function_exists("debug_backtrace")) {
-            $arrStack = debug_backtrace();
+        $errorCode = "Error in query\n\n";
+        $errorCode .= "Error:\n";
+        $errorCode .= $error . "\n\n";
+        $errorCode .= "Query:\n";
+        $errorCode .= $query . "\n";
+        $errorCode .= "\n\n";
+        $errorCode .= 'Params: ' . implode(', ', $params) . "\n";
+        $errorCode .= "Callstack:\n";
+        if (function_exists('debug_backtrace')) {
+            $stack = debug_backtrace();
 
-            foreach ($arrStack as $intPos => $arrValue) {
-                $strErrorCode .= (isset($arrValue["file"]) ? $arrValue["file"] : "n.a.") . "\n\t Row " . (isset($arrValue["line"]) ? $arrValue["line"] : "n.a.") . ", function " . $arrStack[$intPos]["function"] . "\n";
+            foreach ($stack as $value) {
+                $errorCode .= ($value['file'] ?? 'n.a.') . "\n\t Row " . ($value['line'] ?? 'n.a.') . ', function ' . $value['function'] . "\n";
             }
         }
 
-        //send a warning to the logger
-        if ($this->logger !== null) {
-            $this->logger->error($strErrorCode);
-        }
+        // send a warning to the logger
+        $this->logger?->error($errorCode);
 
-        throw new QueryException($strError, $strQuery, $arrParams);
+        throw new QueryException($error, $query, $params);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function transactionBegin()
+    public function beginTransaction(): void
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if ($this->objDbDriver != null) {
-            //just start a new tx, if no other tx is open
-            if ($this->intNumberOfOpenTransactions == 0) {
-                $this->objDbDriver->transactionBegin();
-            }
-
-            //increase tx-counter
-            $this->intNumberOfOpenTransactions++;
+        if ($this->dbDriver === null) {
+            return;
         }
+
+        // just start a new transaction, if no other transaction is open.
+        if ($this->numberOfOpenTransactions === 0) {
+            $this->dbDriver->beginTransaction();
+        }
+
+        // increase transaction-counter
+        $this->numberOfOpenTransactions++;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function transactionCommit()
+    public function transactionBegin(): void
     {
-        if (!$this->bitConnected) {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws CommitException
+     * @throws ConnectionException
+     */
+    public function commit(): void
+    {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if ($this->objDbDriver != null) {
-            //check, if the current tx is allowed to be commited
-            if ($this->intNumberOfOpenTransactions == 1) {
-                //decrement counter
-                $this->intNumberOfOpenTransactions--;
+        if ($this->dbDriver === null) {
+            return;
+        }
 
-                //so, this is the last remaining tx. Commit or rollback?
-                if (!$this->bitCurrentTxIsDirty) {
-                    $this->objDbDriver->transactionCommit();
-                } else {
-                    $this->objDbDriver->transactionRollback();
-                    $this->bitCurrentTxIsDirty = false;
-                    throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction, because of this we have have executed a rollback on the complete outer transaction which may result in data loss');
-                }
+        // check, if the current tx is allowed to be committed.
+        if ($this->numberOfOpenTransactions === 1) {
+            $this->numberOfOpenTransactions--;
+
+            if (!$this->currentTransactionIsDirty) {
+                $this->dbDriver->commit();
             } else {
-                $this->intNumberOfOpenTransactions--;
+                $this->dbDriver->rollBack();
+                $this->currentTransactionIsDirty = false;
+                throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction, because of this we have have executed a rollback on the complete outer transaction which may result in data loss');
             }
+        } else {
+            $this->numberOfOpenTransactions--;
         }
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws CommitException
      */
-    public function transactionRollback()
+    public function transactionCommit(): void
     {
-        if (!$this->bitConnected) {
+        $this->commit();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws ConnectionException
+     */
+    public function rollBack(): void
+    {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if ($this->objDbDriver != null) {
-            if ($this->intNumberOfOpenTransactions == 1) {
-                //so, this is the last remaining tx. rollback anyway
-                $this->objDbDriver->transactionRollback();
-                $this->bitCurrentTxIsDirty = false;
-                //decrement counter
-                $this->intNumberOfOpenTransactions--;
-            } else {
-                //mark the current tx session a dirty
-                $this->bitCurrentTxIsDirty = true;
-                //decrement the number of open tx
-                $this->intNumberOfOpenTransactions--;
-            }
+        if ($this->dbDriver === null) {
+            return;
         }
+
+        if ($this->numberOfOpenTransactions === 1) {
+            $this->dbDriver->rollBack();
+            $this->currentTransactionIsDirty = false;
+        } else {
+            $this->currentTransactionIsDirty = true;
+        }
+        $this->numberOfOpenTransactions--;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws ConnectionException
+     */
+    public function transactionRollback(): void
+    {
+        $this->rollBack();
     }
 
     public function hasOpenTransactions(): bool
     {
-        return $this->intNumberOfOpenTransactions > 0;
+        return $this->numberOfOpenTransactions > 0;
     }
 
     /**
@@ -676,41 +710,42 @@ class Connection implements ConnectionInterface
      */
     public function hasDriver(string $class): bool
     {
-        return $this->objDbDriver instanceof $class;
+        return $this->dbDriver instanceof $class;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function getTables($prefix = null)
+    public function getTables(string $prefix = null): array
     {
         if ($prefix === null) {
-            $prefix = "agp_";
+            $prefix = 'agp_';
         }
 
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if (isset($this->arrTablesCache[$prefix])) {
-            return $this->arrTablesCache[$prefix];
+        if (isset($this->tablesCache[$prefix])) {
+            return $this->tablesCache[$prefix];
         }
 
-        $this->arrTablesCache[$prefix] = [];
+        $this->tablesCache[$prefix] = [];
 
-        if ($this->objDbDriver != null) {
+        if ($this->dbDriver !== null) {
             // increase global counter
-            $this->intNumber++;
-            $arrTemp = $this->objDbDriver->getTables();
+            $this->number++;
+            $tables = $this->dbDriver->getTables();
 
-            foreach ($arrTemp as $arrTable) {
-                if (substr($arrTable["name"], 0, strlen($prefix)) === $prefix) {
-                    $this->arrTablesCache[$prefix][] = $arrTable["name"];
+            foreach ($tables as $table) {
+                if (str_starts_with($table['name'], $prefix)) {
+                    $this->tablesCache[$prefix][] = $table['name'];
                 }
             }
         }
 
-        return $this->arrTablesCache[$prefix];
+        return $this->tablesCache[$prefix];
     }
 
     /**
@@ -718,28 +753,29 @@ class Connection implements ConnectionInterface
      * Should return an array for each row consisting of:
      * array ("columnName", "columnType")
      *
-     * @param string $strTableName
-     * @return array
+     * @throws QueryException
+     * @throws TableNotFoundException
+     * @throws ConnectionException
      * @deprecated
-     *
      */
-    public function getColumnsOfTable($strTableName)
+    public function getColumnsOfTable(string $tableName): array
     {
-        if (!$this->hasTable($strTableName)) {
-            throw new TableNotFoundException($strTableName);
+        if (!$this->hasTable($tableName)) {
+            throw new TableNotFoundException($tableName);
         }
 
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $table = $this->objDbDriver->getTableInformation($strTableName);
+        $table = $this->dbDriver->getTableInformation($tableName);
 
         $return = [];
         foreach ($table->getColumns() as $column) {
-            $return[$column->getName()] = [
-                "columnName" => $column->getName(),
-                "columnType" => $column->getInternalType()
+            $columnName = $column->getName();
+            $return[$columnName] = [
+                'columnName' => $columnName,
+                'columnType' => $column->getInternalType()
             ];
         }
 
@@ -748,72 +784,76 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws TableNotFoundException
+     * @throws ConnectionException
      */
-    public function getTableInformation($tableName): Table
+    public function getTableInformation(string $tableName): Table
     {
         if (!$this->hasTable($tableName)) {
             throw new TableNotFoundException($tableName);
         }
 
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->getTableInformation($tableName);
+        return $this->dbDriver->getTableInformation($tableName);
     }
 
     /**
      * @inheritDoc
      */
-    public function getDatatype($strType)
+    public function getDatatype(DataType $type): string
     {
-        return $this->objDbDriver->getDatatype($strType);
+        return $this->dbDriver->getDatatype($type);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function createTable($strName, $arrFields, $arrKeys, $arrIndices = array())
+    public function createTable(string $tableName, array $columns, array $keys, array $indices = []): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
         // always lower case the table name
-        $strName = strtolower($strName);
+        $tableName = strtolower($tableName);
 
         // check whether table already exists
-        $arrTables = $this->objDbDriver->getTables();
-        foreach ($arrTables as $arrTable) {
-            if ($arrTable["name"] == $strName) {
+        $tables = $this->dbDriver->getTables();
+        foreach ($tables as $table) {
+            if ($table['name'] === $tableName) {
                 return true;
             }
         }
 
         // create table
-        $bitReturn = $this->objDbDriver->createTable($strName, $arrFields, $arrKeys);
-        if (!$bitReturn) {
-            $this->getError("", array());
+        $output = $this->dbDriver->createTable($tableName, $columns, $keys);
+        if (!$output) {
+            $this->getError('', []);
         }
 
         // create index
-        if ($bitReturn && count($arrIndices) > 0) {
-            foreach ($arrIndices as $strOneIndex) {
-                if (is_array($strOneIndex)) {
-                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_" . uniqid(), $strOneIndex);
+        if ($output && count($indices) > 0) {
+            foreach ($indices as $index) {
+                if (is_array($index)) {
+                    $output = $output && $this->createIndex($tableName, 'ix_' . uniqid(), $index);
                 } else {
-                    $bitReturn = $bitReturn && $this->createIndex($strName, "ix_" . uniqid(), [$strOneIndex]);
+                    $output = $output && $this->createIndex($tableName, 'ix_' . uniqid(), [$index]);
                 }
             }
         }
 
         $this->flushTablesCache();
 
-        return $bitReturn;
+        return $output;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
     public function dropTable(string $tableName): void
     {
@@ -828,6 +868,7 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
     public function generateTableFromMetadata(Table $table): void
     {
@@ -850,70 +891,75 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function createIndex($strTable, $strName, array $arrColumns, $bitUnique = false)
+    public function createIndex(string $tableName, string $name, array $columns, bool $unique = false): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if ($this->objDbDriver->hasIndex($strTable, $strName)) {
+        if ($this->dbDriver->hasIndex($tableName, $name)) {
             return true;
         }
-        $bitReturn = $this->objDbDriver->createIndex($strTable, $strName, $arrColumns, $bitUnique);
-        if (!$bitReturn) {
-            $this->getError("", array());
+        $output = $this->dbDriver->createIndex($tableName, $name, $columns, $unique);
+        if (!$output) {
+            $this->getError('', []);
         }
 
-        return $bitReturn;
+        return $output;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
     public function deleteIndex(string $table, string $index): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->deleteIndex($table, $index);
+        return $this->dbDriver->deleteIndex($table, $index);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function addIndex(string $table, TableIndex $index)
+    public function addIndex(string $table, TableIndex $index): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->addIndex($table, $index);
+        return $this->dbDriver->addIndex($table, $index);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function hasIndex($strTable, $strName): bool
+    public function hasIndex(string $tableName, string $name): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        return $this->objDbDriver->hasIndex($strTable, $strName);
+        return $this->dbDriver->hasIndex($tableName, $name);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function renameTable($strOldName, $strNewName)
+    public function renameTable(string $oldName, string $newName): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $return = $this->objDbDriver->renameTable($strOldName, $strNewName);
+        $return = $this->dbDriver->renameTable($oldName, $newName);
 
         $this->flushTablesCache();
 
@@ -922,300 +968,275 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
+    public function changeColumn(string $tableName, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $return = $this->objDbDriver->changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype);
+        $return = $this->dbDriver->changeColumn($tableName, $oldColumnName, $newColumnName, $newDataType);
 
         if (!$return) {
-            $error = $this->objDbDriver->getError();
+            $error = $this->dbDriver->getError();
             throw new ChangeColumnException(
                 'Could not change column: ' . $error,
-                $strTable,
-                $strOldColumnName,
-                $strNewColumnName,
-                $strNewDatatype
+                $tableName,
+                $oldColumnName,
+                $newColumnName,
+                $newDataType,
             );
         }
 
         $this->flushTablesCache();
 
-        return $return;
+        return true;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
+     * @throws QueryException
      */
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
+    public function addColumn(string $table, string $column, DataType $dataType, ?bool $nullable = null, ?string $default = null): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if ($this->hasColumn($strTable, $strColumn)) {
+        if ($this->hasColumn($table, $column)) {
             return true;
         }
 
-        $return = $this->objDbDriver->addColumn($strTable, $strColumn, $strDatatype, $bitNull, $strDefault);
+        $return = $this->dbDriver->addColumn($table, $column, $dataType, $nullable, $default);
 
         if (!$return) {
-            $error = $this->objDbDriver->getError();
+            $error = $this->dbDriver->getError();
             throw new AddColumnException(
                 'Could not add column: ' . $error,
-                $strTable,
-                $strColumn,
-                $strDatatype,
-                $bitNull,
-                $strDefault
+                $table,
+                $column,
+                $dataType,
+                $nullable,
+                $default,
             );
         }
 
         $this->flushTablesCache();
 
-        return $return;
+        return true;
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function removeColumn($strTable, $strColumn)
+    public function removeColumn($tableName, $column): bool
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $return = $this->objDbDriver->removeColumn($strTable, $strColumn);
+        $return = $this->dbDriver->removeColumn($tableName, $column);
 
         if (!$return) {
-            $error = $this->objDbDriver->getError();
-            throw new RemoveColumnException('Could not remove column: ' . $error, $strTable, $strColumn);
+            $error = $this->dbDriver->getError();
+            throw new RemoveColumnException('Could not remove column: ' . $error, $tableName, $column);
         }
 
         $this->flushTablesCache();
 
-        return $return;
+        return true;
     }
 
     /**
      * @inheritDoc
      */
-    public function hasColumn($strTable, $strColumn)
+    public function hasColumn(string $tableName, string $column): bool
     {
-        return $this->objDbDriver->hasColumn($strTable, $strColumn);
+        return $this->dbDriver->hasColumn($tableName, $column);
     }
 
     /**
      * @inheritDoc
+     * @throws ConnectionException
      */
-    public function hasTable($strTable)
+    public function hasTable(string $tableName): bool
     {
-        return in_array($strTable, $this->getTables());
+        return in_array($tableName, $this->getTables(), true);
     }
 
     /**
-     * Parses a query to eliminate unnecessary characters such as whitespaces
-     *
-     * @param string $strQuery
-     *
-     * @return string
+     * Parses a query to eliminate unnecessary characters such as whitespaces.
      */
-    private function processQuery($strQuery)
+    private function processQuery(string $query): string
     {
-        $strQuery = trim($strQuery);
-        $arrSearch = array(
-            "    ",
-            "   ",
-            "  "
-        );
-        $arrReplace = array(
-            " ",
-            " ",
-            " "
-        );
+        $query = trim($query);
+        $search = ['    ', '   ', '  '];
+        $replace = [' ', ' ', ' '];
 
-        $strQuery = str_replace($arrSearch, $arrReplace, $strQuery);
-
-        return $strQuery;
+        return str_replace($search, $replace, $query);
     }
 
     /**
-     * Queries the current db-driver about common information
+     * Queries the current db-driver about common information.
      *
-     * @return mixed|string
+     * @throws ConnectionException
      */
-    public function getDbInfo()
+    public function getDbInfo(): array
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        if ($this->objDbDriver != null) {
-            return $this->objDbDriver->getDbInfo();
+        if (!$this->dbDriver === null) {
+            return [];
         }
 
-        return "";
+        return $this->dbDriver->getDbInfo();
     }
-
 
     /**
      * Returns the number of queries sent to the database
-     * including those solved by the cache
-     *
-     * @return int
+     * including those solved by the cache.
      */
-    public function getNumber()
+    public function getNumber(): int
     {
-        return $this->intNumber;
+        return $this->number;
     }
 
     /**
-     * Returns the number of queries solved by the cache
-     *
-     * @return int
+     * Returns the number of queries solved by the cache.
      */
-    public function getNumberCache()
+    public function getNumberCache(): int
     {
-        return $this->intNumberCache;
+        return $this->numberCache;
     }
 
     /**
-     * Returns the number of items currently in the query-cache
-     *
-     * @return  int
+     * Returns the number of items currently in the query-cache.
      */
-    public function getCacheSize()
+    public function getCacheSize(): int
     {
-        return count($this->arrQueryCache);
+        return count($this->queryCache);
     }
 
     /**
-     * Internal wrapper to dbsafeString, used to process a complete array of parameters
+     * An internal wrapper to dbsafeString, used to process a complete array of parameters
      * as used by prepared statements.
      *
-     * @param array $arrParams
-     * @param array $arrEscapes An array of boolean for each param, used to block the escaping of html-special chars.
+     * @param array $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                          If not passed, all params will be cleaned.
      *
-     * @return array
-     * @since 3.4
-     * @see Db::dbsafeString($strString, $bitHtmlSpecialChars = true)
+     * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
-    private function dbsafeParams($arrParams, $arrEscapes = array())
+    private function dbsafeParams(array $params, array $escapes = []): array
     {
         $replace = [];
-        foreach ($arrParams as $intKey => $strParam) {
-            if ($strParam instanceof EscapeableParameterInterface && !$strParam->isEscape()) {
-                $replace[$intKey] = $strParam->getValue();
+        foreach ($params as $key => $param) {
+            if ($param instanceof EscapeableParameterInterface && !$param->isEscape()) {
+                $replace[$key] = $param->getValue();
+
                 continue;
             }
 
-            if (isset($arrEscapes[$intKey])) {
-                $strParam = $this->dbsafeString($strParam, $arrEscapes[$intKey], false);
+            if (isset($escapes[$key])) {
+                $param = $this->dbsafeString($param, $escapes[$key], false);
             } else {
-                $strParam = $this->dbsafeString($strParam, true, false);
+                $param = $this->dbsafeString($param, true, false);
             }
-            $replace[$intKey] = $strParam;
+            $replace[$key] = $param;
         }
+
         return $replace;
     }
 
     /**
-     * Makes a string db-safe
-     *
-     * @param string $strString
-     * @param bool $bitHtmlSpecialChars
-     * @param bool $bitAddSlashes
+     * Makes a string db-safe.
      *
      * @return int|null|string
      * @deprecated we need to get rid of this
      */
-    public function dbsafeString($strString, $bitHtmlSpecialChars = true, $bitAddSlashes = true)
+    public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
     {
-        //skip for numeric values to avoid php type juggling/autoboxing
-        if (is_float($strString) || is_int($strString)) {
-            return $strString;
-        } else {
-            if (is_bool($strString)) {
-                return (int)$strString;
-            }
+        // skip for numeric values to avoid php type juggling/autoboxing
+        if (is_float($input) || is_int($input)) {
+            return $input;
         }
 
-        if ($strString === null) {
+        if (is_bool($input)) {
+            return (int) $input;
+        }
+
+        if ($input === null) {
             return null;
         }
 
-        if (!self::$bitDbSafeStringEnabled) {
-            return $strString;
+        if (!self::$dbSafeStringEnabled) {
+            return $input;
         }
 
-        //escape special chars
-        if ($bitHtmlSpecialChars) {
-            $strString = html_entity_decode((string)$strString, ENT_COMPAT, "UTF-8");
-            $strString = htmlspecialchars($strString, ENT_COMPAT, "UTF-8");
+        // escape special chars
+        if ($htmlSpecialChars) {
+            $input = html_entity_decode((string) $input, ENT_COMPAT, 'UTF-8');
+            $input = htmlspecialchars($input, ENT_COMPAT, 'UTF-8');
         }
 
-        if ($bitAddSlashes) {
-            $strString = addslashes($strString);
+        if ($addSlashes) {
+            $input = addslashes($input);
         }
 
-        return $strString;
+        return $input;
     }
 
     /**
-     * Method to flush the query-cache
-     *
-     * @return void
+     * Method to flush the query-cache.
      */
-    public function flushQueryCache()
+    public function flushQueryCache(): void
     {
-        $this->arrQueryCache = array();
+        $this->queryCache = [];
     }
 
     /**
      * Method to flush the table-cache.
      * Since the tables won't change during regular operations,
-     * flushing the tables cache is only required during package updates / installations
-     *
-     * @return void
+     * flushing the tables cache is only required during package updates / installations.
      */
-    public function flushTablesCache()
+    public function flushTablesCache(): void
     {
-        $this->arrTablesCache = [];
+        $this->tablesCache = [];
     }
 
     /**
      * Helper to flush the precompiled queries stored at the db-driver.
      * Use this method with great care!
      *
-     * @return void
+     * @throws ConnectionException
      */
-    public function flushPreparedStatementsCache()
+    public function flushPreparedStatementsCache(): void
     {
-        if (!$this->bitConnected) {
+        if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $this->objDbDriver->flushQueryCache();
+        $this->dbDriver->flushQueryCache();
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseColumnName($strColumn)
+    public function encloseColumnName(string $column): string
     {
-        return $this->objDbDriver->encloseColumnName($strColumn);
+        return $this->dbDriver->encloseColumnName($column);
     }
 
     /**
      * @inheritDoc
      */
-    public function encloseTableName($strTable)
+    public function encloseTableName(string $tableName): string
     {
-        return $this->objDbDriver->encloseTableName($strTable);
+        return $this->dbDriver->encloseTableName($tableName);
     }
 
     /**
@@ -1223,109 +1244,92 @@ class Connection implements ConnectionInterface
      * May be used by other classes in order to test some credentials,
      * e.g. the installer.
      * The connection established will be closed directly and is not usable by other modules.
-     *
-     * @param ConnectionParameters $objCfg
-     * @return bool
      */
-    public function validateDbCxData(ConnectionParameters $objCfg)
+    public function validateDatabaseConnectionData(ConnectionParameters $config): bool
     {
         try {
-            $this->driverFactory->factory($objCfg->getDriver())->dbconnect($objCfg);
+            $this->driverFactory->factory($config->getDriver())->dbconnect($config);
 
             return true;
-        } catch (ConnectionException $objEx) {
-        } catch (DriverNotFoundException $objEx) {
+        } catch (ConnectionException | DriverNotFoundException) {
         }
 
         return false;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getBitConnected()
+    public function isConnected(): bool
     {
-        return $this->bitConnected;
+        return $this->connected;
     }
 
     /**
      * For some database vendors we need to escape the backslash character even if we are using prepared statements. This
-     * method unifies the behaviour. In order to select a column which contains a backslash you need to escape the value
-     * with this method
-     *
-     * @param string $strValue
-     *
-     * @return mixed
+     * method unifies the behaviour. In order to select a column, which contains a backslash you need to escape the value
+     * with this method.
      */
-    public function escape($strValue)
+    public function escape(mixed $value): mixed
     {
-        return $this->objDbDriver->escape($strValue);
+        return $this->dbDriver->escape($value);
     }
 
     /**
      * @inheritDoc
      */
-    public function prettifyQuery($strQuery, $arrParams)
+    public function prettifyQuery(string $query, array $params): string
     {
-        foreach ($arrParams as $strOneParam) {
-            if (!is_numeric($strOneParam) && $strOneParam !== null) {
-                $strOneParam = "'{$strOneParam}'";
+        foreach ($params as $param) {
+            if (!is_numeric($param) && $param !== null) {
+                $param = "'$param'";
             }
 
-            if ($strOneParam === null) {
-                $strOneParam = 'null';
-            } elseif (is_int($strOneParam) || is_float($strOneParam)) {
-                $strOneParam = (string) $strOneParam;
+            if ($param === null) {
+                $param = 'null';
+            } elseif (is_int($param) || is_float($param)) {
+                $param = (string) $param;
             }
 
-            $intPos = strpos($strQuery, '?');
-            if ($intPos !== false) {
-                $strQuery = substr_replace($strQuery, $strOneParam, $intPos, 1);
+            $pos = strpos($query, '?');
+            if ($pos !== false) {
+                $query = substr_replace($query, $param, $pos, 1);
             }
         }
 
-        return $strQuery;
+        return $query;
     }
 
     /**
      * @inheritDoc
      */
-    public function appendLimitExpression($strQuery, $intStart, $intEnd)
+    public function appendLimitExpression(string $query, int $start, int $end): string
     {
-        return $this->objDbDriver->appendLimitExpression($strQuery, $intStart, $intEnd);
+        return $this->dbDriver->appendLimitExpression($query, $start, $end);
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getConcatExpression(array $parts)
+    public function getConcatExpression(array $parts): string
     {
-        return $this->objDbDriver->getConcatExpression($parts);
+        return $this->dbDriver->getConcatExpression($parts);
     }
 
     /**
      * @inheritDoc
      */
-    public function convertToDatabaseValue($value, string $type)
+    public function convertToDatabaseValue(mixed $value, DataType $type): mixed
     {
-        return $this->objDbDriver->convertToDatabaseValue($value, $type);
+        return $this->dbDriver->convertToDatabaseValue($value, $type);
     }
 
-    /**
-     * @inheritDoc
-     */
     public function getLeastExpression(array $parts): string
     {
-        return $this->objDbDriver->getLeastExpression($parts);
+        return $this->dbDriver->getLeastExpression($parts);
     }
 
     public function getSubstringExpression(string $value, int $offset, ?int $length): string
     {
-        return $this->objDbDriver->getSubstringExpression($value, $offset, $length);
+        return $this->dbDriver->getSubstringExpression($value, $offset, $length);
     }
 
     public function getStringLengthExpression(string $targetString): string
     {
-        return $this->objDbDriver->getStringLengthExpression($targetString);
+        return $this->dbDriver->getStringLengthExpression($targetString);
     }
 }

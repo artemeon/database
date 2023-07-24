@@ -22,248 +22,276 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use Generator;
 use Symfony\Component\Process\ExecutableFinder;
 
+use UnexpectedValueException;
+
+use const OCI_COMMIT_ON_SUCCESS;
+use const OCI_NO_AUTO_COMMIT;
+
 /**
- * db-driver for oracle using the ovi8-interface
- *
- * @package module_system
- * @author sidler@mulchprod.de
- * @since 3.4.1
+ * DB-driver for Oracle using the ovi8-interface.
  */
 class Oci8Driver extends DriverAbstract
 {
+    /** @var resource | false */
+    private $linkDB;
 
-    private $linkDB; //DB-Link
-    /** @var ConnectionParameters  */
-    private $objCfg = null;
+    private ConnectionParameters $config;
 
-    private $strDumpBin = "exp"; // Binary to dump db (if not in path, add the path here)
+    private string $dumpBin = 'exp'; // Binary to dump db (if not in path, add the path here)
     // /usr/lib/oracle/xe/app/oracle/product/10.2.0/server/bin/
-    private $strRestoreBin = "imp"; //Binary to restore db (if not in path, add the path here)
+    private string $restoreBin = 'imp'; // Binary to restore db (if not in path, add the path here)
 
-    private $bitTxOpen = false;
+    private bool $txOpen = false;
 
-    private $objErrorStmt = null;
+    private $errorStmt;
 
     /**
-     * Flag whether the sring comparison method (case sensitive / insensitive) should be reset back to default after the current query
-     *
-     * @var bool
+     * Flag whether the string comparison method (case sensitive / insensitive) should be reset back to default after the current query.
      */
-    private $bitResetOrder = false;
+    private bool $resetOrder = false;
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function dbconnect(ConnectionParameters $objParams)
+    public function dbconnect(ConnectionParameters $params): bool
     {
-        $port = $objParams->getPort();
+        $port = $params->getPort();
         if (empty($port)) {
             $port = 1521;
         }
-        $this->objCfg = $objParams;
+        $this->config = $params;
 
-        //try to set the NLS_LANG env attribute
-        putenv("NLS_LANG=American_America.UTF8");
+        // Try to set the NLS_LANG env attribute
+        putenv('NLS_LANG=American_America.UTF8');
 
-        $this->linkDB = oci_pconnect($this->objCfg->getUsername(), $this->objCfg->getPassword(), $this->objCfg->getHost().":".$port."/".$this->objCfg->getDatabase(), "AL32UTF8");
+        $this->linkDB = oci_pconnect(
+            $this->config->getUsername(),
+            $this->config->getPassword(),
+            $this->config->getHost() . ':' . $port . '/' . $this->config->getDatabase(),
+            'AL32UTF8',
+        );
 
         if ($this->linkDB !== false) {
-            oci_set_client_info($this->linkDB, "ARTEMEON AGP");
-            oci_set_client_identifier($this->linkDB, "ARTEMEON AGP");
+            oci_set_client_info($this->linkDB, 'ARTEMEON AGP');
+            oci_set_client_identifier($this->linkDB, 'ARTEMEON AGP');
             $this->_pQuery("ALTER SESSION SET NLS_NUMERIC_CHARACTERS='.,'", []);
-            $this->_pQuery("ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI", []);
+            $this->_pQuery('ALTER SESSION SET DEFAULT_COLLATION=BINARY_CI', []);
+
             return true;
         }
 
-        throw new ConnectionException("Error connecting to database");
+        throw new ConnectionException('Error connecting to database');
     }
 
     /**
      * @inheritDoc
      */
-    public function dbclose()
+    public function dbclose(): void
     {
-        //do n.th. to keep the persistent connection
-        //oci_close($this->linkDB);
+        // Do n.th. to keep the persistent connection
+        // oci_close($this->linkDB);
     }
 
     /**
      * @inheritDoc
      */
-    public function triggerMultiInsert($strTable, $arrColumns, $arrValueSets, ConnectionInterface $objDb, ?array $arrEscapes): bool
-    {
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $arrColumns);
+    public function triggerMultiInsert(
+        string $table,
+        array $columns,
+        array $valueSets,
+        ConnectionInterface $database,
+        ?array $escapes
+    ): bool {
+        $safeColumns = array_map(function ($column) {
+            return $this->encloseColumnName($column);
+        }, $columns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $columnNames = ' (' . implode(',', $safeColumns) . ') ';
 
         $params = [];
         $escapeValues = [];
         $insertStatement = 'INSERT ALL ';
-        foreach ($arrValueSets as $valueSet) {
+        foreach ($valueSets as $valueSet) {
             $params[] = array_values($valueSet);
-            if ($arrEscapes !== null) {
-                $escapeValues[] = $arrEscapes;
+            if ($escapes !== null) {
+                $escapeValues[] = $escapes;
             }
-            $insertStatement .= ' INTO ' . $this->encloseTableName($strTable) . ' ' . $columnNames . ' VALUES ' . $paramsPlaceholder . ' ';
+            $insertStatement .= ' INTO ' . $this->encloseTableName(
+                    $table
+                ) . ' ' . $columnNames . ' VALUES ' . $paramsPlaceholder . ' ';
         }
         $insertStatement .= ' SELECT * FROM dual';
 
-        return $objDb->_pQuery($insertStatement, array_merge(...$params), $escapeValues !== [] ? array_merge(...$escapeValues) : []);
+        return $database->_pQuery(
+            $insertStatement,
+            array_merge(...$params),
+            $escapeValues !== [] ? array_merge(...$escapeValues) : []
+        );
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function _pQuery($strQuery, $arrParams)
+    public function _pQuery(string $query, array $params): bool
     {
-        $strQuery = $this->processQuery($strQuery);
-        $objStatement = $this->getParsedStatement($strQuery);
-        if ($objStatement === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
+        $query = $this->processQuery($query);
+        $statement = $this->getParsedStatement($query);
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
-        foreach ($arrParams as $intPos => $strValue) {
-            if (!oci_bind_by_name($objStatement, ":".($intPos + 1), $arrParams[$intPos])) {
-                //echo "oci_bind_by_name failed to bind at pos >".$intPos."<, \n value: ".$strValue."\nquery: ".$strQuery;
+        foreach ($params as $pos => $value) {
+            if (!oci_bind_by_name($statement, ':' . ($pos + 1), $params[$pos])) {
+                // echo 'oci_bind_by_name failed to bind at pos >' . $pos . "<, \n value: " . $value . "\nquery: " . $query;
                 return false;
             }
         }
 
-        $bitAddon = \OCI_COMMIT_ON_SUCCESS;
-        if ($this->bitTxOpen) {
-            $bitAddon = \OCI_NO_AUTO_COMMIT;
+        $addon = OCI_COMMIT_ON_SUCCESS;
+        if ($this->txOpen) {
+            $addon = OCI_NO_AUTO_COMMIT;
         }
-        $bitResult = oci_execute($objStatement, $bitAddon);
+        $result = oci_execute($statement, $addon);
 
-        if (!$bitResult) {
-            $this->objErrorStmt = $objStatement;
-            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
-        }
-
-        $this->intAffectedRows = oci_num_rows($objStatement);
-
-        oci_free_statement($objStatement);
-        return $bitResult;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns)
-    {
-
-        //return parent::insertOrUpdate($strTable, $arrColumns, $arrValues, $arrPrimaryColumns);
-
-        $arrPlaceholder = array();
-        $arrMappedColumns = array();
-        $arrKeyValuePairs = array();
-
-
-        $arrParams = array();
-        $arrPrimaryCompares = array();
-
-        foreach ($arrColumns as $intKey => $strOneCol) {
-            $arrPlaceholder[] = "?";
-            $arrMappedColumns[] = $this->encloseColumnName($strOneCol);
-
-            if (in_array($strOneCol, $arrPrimaryColumns)) {
-                $arrPrimaryCompares[] = $strOneCol." = ? ";
-                $arrParams[] = $arrValues[$intKey];
-            }
+        if (!$result) {
+            $this->errorStmt = $statement;
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
-        $arrParams = array_merge($arrParams, $arrValues);
+        $this->affectedRowsCount = oci_num_rows($statement);
 
+        oci_free_statement($statement);
 
-        foreach ($arrColumns as $intKey => $strOneCol) {
-            if (!in_array($strOneCol, $arrPrimaryColumns)) {
-                $arrKeyValuePairs[] = $this->encloseColumnName($strOneCol)." = ?";
-                $arrParams[] = $arrValues[$intKey];
-            }
-        }
-
-        if (empty($arrKeyValuePairs)) {
-            $strQuery = "MERGE INTO ".$this->encloseTableName($strTable)." using dual on (".implode(" AND ", $arrPrimaryCompares).") 
-                       WHEN NOT MATCHED THEN INSERT (".implode(", ", $arrMappedColumns).") values (".implode(", ", $arrPlaceholder).")";
-        } else {
-            $strQuery = "MERGE INTO ".$this->encloseTableName($strTable)." using dual on (".implode(" AND ", $arrPrimaryCompares).") 
-                       WHEN NOT MATCHED THEN INSERT (".implode(", ", $arrMappedColumns).") values (".implode(", ", $arrPlaceholder).")
-                       WHEN MATCHED then update set ".implode(", ", $arrKeyValuePairs)."";
-        }
-        return $this->_pQuery($strQuery, $arrParams);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getPArray($strQuery, $arrParams): \Generator
-    {
-        $strQuery = $this->processQuery($strQuery, $arrParams);
-        $objStatement = $this->getParsedStatement($strQuery);
-
-        if ($objStatement === false) {
-            throw new QueryException('Could not prepare statement: ' . $this->getError(), $strQuery, $arrParams);
-        }
-
-        $index = 0;
-        foreach ($arrParams as $intPos => $strValue) {
-            oci_bind_by_name($objStatement, ":".(++$index), $arrParams[$intPos]);
-        }
-
-        $bitAddon = OCI_COMMIT_ON_SUCCESS;
-        if ($this->bitTxOpen) {
-            $bitAddon = OCI_NO_AUTO_COMMIT;
-        }
-
-        oci_set_prefetch($objStatement, 300);
-        $resultSet = oci_execute($objStatement, $bitAddon);
-
-        if (!$resultSet) {
-            $this->objErrorStmt = $objStatement;
-            throw new QueryException('Could not execute statement: ' . $this->getError(), $strQuery, $arrParams);
-        }
-
-        //this was the old way, we're now no longer loading LOBS by default
-        //while ($arrRow = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
-        while ($arrRow = oci_fetch_assoc($objStatement)) {
-            yield $this->parseResultRow($arrRow);
-        }
-
-        oci_free_statement($objStatement);
-
-        if ($this->bitResetOrder) {
-            $this->setCaseSensitiveSort();
-            $this->bitResetOrder = false;
-        }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getError()
-    {
-        $strError = oci_error($this->objErrorStmt != null ? $this->objErrorStmt : $this->linkDB);
-        $this->objErrorStmt = null;
-        return print_r($strError, true);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getTables(): array
-    {
-        $generator = $this->getPArray("SELECT table_name AS name FROM ALL_TABLES WHERE owner = ?", [$this->objCfg->getUsername()]);
-        $result = [];
-        foreach ($generator as $row) {
-            $result[] = ['name' => strtolower($row['name'])];
-        }
         return $result;
     }
 
     /**
      * @inheritDoc
+     */
+    public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
+    {
+        $placeholders = [];
+        $mappedColumns = [];
+        $keyValuePairs = [];
+
+        $params = [];
+        $primaryCompares = [];
+
+        foreach ($columns as $key => $column) {
+            $placeholders[] = '?';
+            $mappedColumns[] = $this->encloseColumnName($column);
+
+            if (in_array($column, $primaryColumns, true)) {
+                $primaryCompares[] = "$column = ? ";
+                $params[] = $values[$key];
+            }
+        }
+
+        $params = array_merge($params, $values);
+
+        foreach ($columns as $key => $column) {
+            if (!in_array($column, $primaryColumns, true)) {
+                $keyValuePairs[] = $this->encloseColumnName($column) . ' = ?';
+                $params[] = $values[$key];
+            }
+        }
+
+        $enclosedTableName = $this->encloseTableName($table);
+
+        $query = "MERGE INTO $enclosedTableName using dual on (" . implode(' AND ', $primaryCompares) . ') 
+                       WHEN NOT MATCHED THEN INSERT (' . implode(', ', $mappedColumns) . ') values (' . implode(
+                ', ',
+                $placeholders
+            ) . ')';
+
+        if (!empty($keyValuePairs)) {
+            $query .= 'WHEN MATCHED then update set ' . implode(', ', $keyValuePairs);
+        }
+
+        return $this->_pQuery($query, $params);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPArray(string $query, array $params): Generator
+    {
+        $query = $this->processQuery($query);
+        $statement = $this->getParsedStatement($query);
+
+        if ($statement === false) {
+            throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
+        }
+
+        $index = 0;
+        foreach ($params as $pos => $value) {
+            oci_bind_by_name($statement, ':' . ++$index, $params[$pos]);
+        }
+
+        $addon = OCI_COMMIT_ON_SUCCESS;
+        if ($this->txOpen) {
+            $addon = OCI_NO_AUTO_COMMIT;
+        }
+
+        oci_set_prefetch($statement, 300);
+        $resultSet = oci_execute($statement, $addon);
+
+        if (!$resultSet) {
+            $this->errorStmt = $statement;
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
+        }
+
+        // this was the old way, we're now no longer loading LOBS by default
+        // while ($row = oci_fetch_array($objStatement, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
+        while ($row = oci_fetch_assoc($statement)) {
+            yield $this->parseResultRow($row);
+        }
+
+        oci_free_statement($statement);
+
+        if ($this->resetOrder) {
+            $this->setCaseSensitiveSort();
+            $this->resetOrder = false;
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getError(): string
+    {
+        $error = oci_error($this->errorStmt ?? $this->linkDB);
+        $this->errorStmt = null;
+
+        return print_r($error, true);
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function getTables(): array
+    {
+        $generator = $this->getPArray(
+            'SELECT table_name AS name FROM ALL_TABLES WHERE owner = ?',
+            [$this->config->getUsername()]
+        );
+        $result = [];
+        foreach ($generator as $row) {
+            $result[] = ['name' => strtolower($row['name'])];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
      */
     public function getTableInformation(string $tableName): Table
     {
@@ -271,42 +299,49 @@ class Oci8Driver extends DriverAbstract
 
         $tableName = strtoupper($tableName);
 
-        //fetch all columns
-        $columnInfo = $this->getPArray("SELECT * FROM user_tab_columns WHERE table_name = ?", [$tableName]) ?: [];
-        foreach ($columnInfo as $arrOneColumn) {
-            $col = new TableColumn(strtolower($arrOneColumn["column_name"]));
-            $col->setInternalType($this->getCoreTypeForDbType($arrOneColumn));
-            $col->setDatabaseType($this->getDatatype($col->getInternalType()));
-            $col->setNullable($arrOneColumn["nullable"] == "Y");
-            $table->addColumn($col);
+        // fetch all columns
+        $columnInfo = $this->getPArray('SELECT * FROM user_tab_columns WHERE table_name = ?', [$tableName]) ?: [];
+        foreach ($columnInfo as $column) {
+            $table->addColumn(
+                TableColumn::make(strtolower($column['column_name']))
+                    ->setInternalType($this->getCoreTypeForDbType($column))
+                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column)))
+                    ->setNullable($column['nullable'] === 'Y'),
+            );
         }
 
-        //fetch all indexes
-        $indexes = $this->getPArray("
+        // fetch all indexes
+        $indexes = $this->getPArray(
+            '
             select b.uniqueness, a.index_name, a.table_name, a.column_name
             from all_ind_columns a, all_indexes b
             where a.index_name=b.index_name
               and a.table_name = ?
-            order by a.index_name, a.column_position", [$tableName]) ?: [];
+            order by a.index_name, a.column_position',
+            [$tableName]
+        ) ?: [];
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
-            $indexAggr[$indexInfo["index_name"]] = $indexAggr[$indexInfo["index_name"]] ?? [];
-            $indexAggr[$indexInfo["index_name"]][] = $indexInfo["column_name"];
+            $indexAggr[$indexInfo['index_name']] = $indexAggr[$indexInfo['index_name']] ?? [];
+            $indexAggr[$indexInfo['index_name']][] = $indexInfo['column_name'];
         }
         foreach ($indexAggr as $key => $desc) {
             $index = new TableIndex(strtolower($key));
-            $index->setDescription(implode(", ", $desc));
+            $index->setDescription(implode(', ', $desc));
             $table->addIndex($index);
         }
 
-        //fetch all keys
-        $keys = $this->getPArray("SELECT cols.table_name, cols.column_name, cols.position, cons.status, cons.owner 
+        // fetch all keys
+        $keys = $this->getPArray(
+            "SELECT cols.table_name, cols.column_name, cols.position, cons.status, cons.owner 
             FROM all_constraints cons, all_cons_columns cols
             WHERE cols.table_name = ?
               AND cons.constraint_type = 'P'
               AND cons.constraint_name = cols.constraint_name
               AND cons.owner = cols.owner
-          ", [$tableName]) ?: [];
+          ",
+            [$tableName]
+        ) ?: [];
         foreach ($keys as $keyInfo) {
             $key = new TableKey(strtolower($keyInfo['column_name']));
             $table->addPrimaryKey($key);
@@ -318,227 +353,289 @@ class Oci8Driver extends DriverAbstract
 
 
     /**
-     * Tries to convert a column provided by the database back to the Kajona internal type constant
-     * @param $infoSchemaRow
-     * @return null|string
+     * Tries to convert a column provided by the database back to the Kajona internal type constant.
      */
-    private function getCoreTypeForDbType($infoSchemaRow)
+    private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
-        if ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
-            return DataType::STR_TYPE_LONG;
-        } elseif ($infoSchemaRow["data_type"] == "NUMBER" && $infoSchemaRow["data_precision"] == 19) {
-            return DataType::STR_TYPE_LONG;
-        } elseif ($infoSchemaRow["data_type"] == "FLOAT" && $infoSchemaRow["data_precision"] == 24) {
-            return DataType::STR_TYPE_DOUBLE;
-        } elseif ($infoSchemaRow["data_type"] == "VARCHAR2") {
-            if ($infoSchemaRow["data_length"] == "10") {
-                return DataType::STR_TYPE_CHAR10;
-            } elseif ($infoSchemaRow["data_length"] == "20") {
-                return DataType::STR_TYPE_CHAR20;
-            } elseif ($infoSchemaRow["data_length"] == "100") {
-                return DataType::STR_TYPE_CHAR100;
-            } elseif ($infoSchemaRow["data_length"] == "254") {
-                return DataType::STR_TYPE_CHAR254;
-            } elseif ($infoSchemaRow["data_length"] == "280") {
-                return DataType::STR_TYPE_CHAR254;
-            } elseif ($infoSchemaRow["data_length"] == "500") {
-                return DataType::STR_TYPE_CHAR500;
-            } elseif ($infoSchemaRow["data_length"] == "4000") {
-                return DataType::STR_TYPE_TEXT;
-            } elseif ($infoSchemaRow["data_length"] == "32767") {
-                return DataType::STR_TYPE_TEXT;
-            }
-        } elseif ($infoSchemaRow["data_type"] == "CLOB") {
-            return DataType::STR_TYPE_LONGTEXT;
+        if ($infoSchemaRow['data_type'] === 'NUMBER' && $infoSchemaRow['data_precision'] == 19) {
+            return DataType::BIGINT;
         }
+
+        if ($infoSchemaRow['data_type'] === 'FLOAT' && $infoSchemaRow['data_precision'] == 24) {
+            return DataType::FLOAT;
+        }
+
+        if ($infoSchemaRow['data_type'] === 'VARCHAR2') {
+            if ($infoSchemaRow['data_length'] == '10') {
+                return DataType::CHAR10;
+            }
+
+            if ($infoSchemaRow['data_length'] == '20') {
+                return DataType::CHAR20;
+            }
+
+            if ($infoSchemaRow['data_length'] == '100') {
+                return DataType::CHAR100;
+            }
+
+            if ($infoSchemaRow['data_length'] == '254') {
+                return DataType::CHAR254;
+            }
+
+            if ($infoSchemaRow['data_length'] == '280') {
+                return DataType::CHAR254;
+            }
+
+            if ($infoSchemaRow['data_length'] == '500') {
+                return DataType::CHAR500;
+            }
+
+            if ($infoSchemaRow['data_length'] == '4000') {
+                return DataType::TEXT;
+            }
+
+            if ($infoSchemaRow['data_length'] == '32767') {
+                return DataType::TEXT;
+            }
+        } elseif ($infoSchemaRow['data_type'] === 'CLOB') {
+            return DataType::LONGTEXT;
+        }
+
         return null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getDatatype($strType)
+    public function getDatatype(DataType $type): string
     {
-        $strReturn = "";
+        return match ($type) {
+            DataType::INT, DataType::BIGINT => ' NUMBER(19, 0) ',
+            DataType::FLOAT => ' FLOAT (24) ',
+            DataType::CHAR10 => ' VARCHAR2( 10 ) ',
+            DataType::CHAR20 => ' VARCHAR2( 20 ) ',
+            DataType::CHAR100 => ' VARCHAR2( 100 ) ',
+            DataType::CHAR500 => ' VARCHAR2( 500 ) ',
+            DataType::TEXT => ' VARCHAR2( 32767 ) ',
+            DataType::LONGTEXT => ' CLOB ',
+            default => ' VARCHAR2( 280 ) ',
+        };
+    }
 
-        if ($strType == DataType::STR_TYPE_INT) {
-            $strReturn .= " NUMBER(19, 0) ";
-        } elseif ($strType == DataType::STR_TYPE_LONG) {
-            $strReturn .= " NUMBER(19, 0) ";
-        } elseif ($strType == DataType::STR_TYPE_DOUBLE) {
-            $strReturn .= " FLOAT (24) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR10) {
-            $strReturn .= " VARCHAR2( 10 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR20) {
-            $strReturn .= " VARCHAR2( 20 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR100) {
-            $strReturn .= " VARCHAR2( 100 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR254) {
-            $strReturn .= " VARCHAR2( 280 ) ";
-        } elseif ($strType == DataType::STR_TYPE_CHAR500) {
-            $strReturn .= " VARCHAR2( 500 ) ";
-        } elseif ($strType == DataType::STR_TYPE_TEXT) {
-            $strReturn .= " VARCHAR2( 32767 ) ";
-        } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
-            $strReturn .= " CLOB ";
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function changeColumn(
+        string $table,
+        string $oldColumnName,
+        string $newColumnName,
+        DataType $newDataType,
+    ): bool {
+        $enclosedTableName = $this->encloseTableName($table);
+        $enclosedNewColumnName = $this->encloseColumnName($newColumnName);
+
+        if ($oldColumnName !== $newColumnName) {
+            $enclosedOldColumnName = $this->encloseColumnName($oldColumnName);
+
+            $output = $this->_pQuery(
+                "ALTER TABLE $enclosedTableName RENAME COLUMN $enclosedOldColumnName TO $enclosedNewColumnName",
+                [],
+            );
         } else {
-            $strReturn .= " VARCHAR2( 280 ) ";
+            $output = true;
         }
 
-        return $strReturn;
+        $mappedDataType = $this->getDatatype($newDataType);
+
+        return $output && $this->_pQuery(
+                "ALTER TABLE $enclosedTableName MODIFY ( $enclosedNewColumnName $mappedDataType )",
+                [],
+            );
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function changeColumn($strTable, $strOldColumnName, $strNewColumnName, $strNewDatatype)
+    public function addColumn(string $table, string $column, DataType $dataType, bool $nullable = null, string $default = null): bool
     {
-        if ($strOldColumnName != $strNewColumnName) {
-            $bitReturn = $this->_pQuery("ALTER TABLE ".($this->encloseTableName($strTable))." RENAME COLUMN ".($this->encloseColumnName($strOldColumnName)." TO ".$this->encloseColumnName($strNewColumnName)), array());
-        } else {
-            $bitReturn = true;
+        $enclosedTableName = $this->encloseTableName($table);
+        $enclosedColumnName = $this->encloseColumnName($column);
+        $mappedDataType = $this->getDatatype($dataType);
+
+        $query = "ALTER TABLE $enclosedTableName ADD $enclosedColumnName $mappedDataType";
+
+        if ($default !== null) {
+            $query .= " DEFAULT $default";
         }
 
-        return $bitReturn && $this->_pQuery("ALTER TABLE ".$this->encloseTableName($strTable)." MODIFY ( ".$this->encloseColumnName($strNewColumnName)." ".$this->getDatatype($strNewDatatype)." )", array());
+        if ($nullable !== null) {
+            $query .= $nullable ? ' NULL' : ' NOT NULL';
+        }
+
+        return $this->_pQuery($query, []);
     }
 
     /**
      * @inheritDoc
+     * @throws QueryException
      */
-    public function addColumn($strTable, $strColumn, $strDatatype, $bitNull = null, $strDefault = null)
+    public function createTable(string $name, array $columns, array $primaryKeys): bool
     {
-        $strQuery = "ALTER TABLE ".($this->encloseTableName($strTable))." ADD ".($this->encloseColumnName($strColumn)." ".$this->getDatatype($strDatatype));
+        $query = "CREATE TABLE $name ( \n";
 
-        if ($strDefault !== null) {
-            $strQuery .= " DEFAULT ".$strDefault;
-        }
+        // loop the fields
+        foreach ($columns as $fieldName => $columnSettings) {
+            $query .= " $fieldName ";
 
-        if ($bitNull !== null) {
-            $strQuery .= $bitNull ? " NULL" : " NOT NULL";
-        }
+            $query .= $this->getDatatype($columnSettings[0]);
 
-        return $this->_pQuery($strQuery, array());
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function createTable($strName, $arrFields, $arrKeys)
-    {
-        $strQuery = "";
-
-        //build the oracle code
-        $strQuery .= "CREATE TABLE ".$strName." ( \n";
-
-        //loop the fields
-        foreach ($arrFields as $strFieldName => $arrColumnSettings) {
-            $strQuery .= " ".$strFieldName." ";
-
-            $strQuery .= $this->getDatatype($arrColumnSettings[0]);
-
-            //any default?
-            if (isset($arrColumnSettings[2])) {
-                $strQuery .= "DEFAULT ".$arrColumnSettings[2]." ";
+            // any default?
+            if (isset($columnSettings[2])) {
+                $query .= 'DEFAULT ' . $columnSettings[2] . ' ';
             }
 
-            //nullable?
-            if ($arrColumnSettings[1] === true) {
-                $strQuery .= " NULL ";
+            // nullable?
+            if ($columnSettings[1] === true) {
+                $query .= ' NULL ';
             } else {
-                $strQuery .= " NOT NULL ";
+                $query .= ' NOT NULL ';
             }
 
-            $strQuery .= " , \n";
-
+            $query .= " , \n";
         }
 
-        //primary keys
-        $strQuery .= " CONSTRAINT pk_".uniqid()." primary key ( ".implode(" , ", $arrKeys)." ) \n";
-        $strQuery .= ") ";
-        $strQuery .= "DEFAULT COLLATION BINARY_CI ";
+        // primary keys
+        $query .= ' CONSTRAINT pk_' . uniqid() . ' primary key ( ' . implode(' , ', $primaryKeys) . " ) \n";
+        $query .= ') ';
+        $query .= 'DEFAULT COLLATION BINARY_CI ';
 
-        return $this->_pQuery($strQuery, array());
+        return $this->_pQuery($query, []);
     }
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
-    public function hasIndex($strTable, $strName): bool
+    public function hasIndex($table, $name): bool
     {
-        $arrIndex = iterator_to_array($this->getPArray("SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?", [strtoupper($strTable), strtoupper($strName)]), false);
-        return count($arrIndex) > 0;
+        $index = iterator_to_array(
+            $this->getPArray(
+                'SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = ? AND INDEX_NAME = ?',
+                [strtoupper($table), strtoupper($name)],
+            ),
+            false,
+        );
+
+        return count($index) > 0;
     }
 
     /**
      * @inheritdoc
+     * @throws QueryException
      */
     public function hasColumn(string $tableName, string $columnName): bool
     {
-        $columnInfo = $this->getPArray("SELECT column_name FROM user_tab_columns WHERE table_name = ? AND column_name = ?", [strtoupper($tableName), strtoupper($columnName)]);
+        $columnInfo = $this->getPArray(
+            'SELECT column_name FROM user_tab_columns WHERE table_name = ? AND column_name = ?',
+            [strtoupper($tableName), strtoupper($columnName)],
+        );
+
         return !empty($columnInfo);
     }
 
     /**
      * @inheritDoc
      */
-    public function transactionBegin()
+    public function beginTransaction(): void
     {
-        $this->bitTxOpen = true;
+        $this->txOpen = true;
     }
 
     /**
      * @inheritDoc
      */
-    public function transactionCommit()
+    public function transactionBegin(): void
+    {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function commit(): void
     {
         oci_commit($this->linkDB);
-        $this->bitTxOpen = false;
+        $this->txOpen = false;
     }
 
     /**
      * @inheritDoc
      */
-    public function transactionRollback()
+    public function transactionCommit(): void
+    {
+        $this->commit();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function rollBack(): void
     {
         oci_rollback($this->linkDB);
-        $this->bitTxOpen = false;
+        $this->txOpen = false;
     }
 
     /**
      * @inheritDoc
      */
-    public function getDbInfo()
+    public function transactionRollback(): void
     {
-        $contextSort = iterator_to_array($this->getPArray("select sys_context ('userenv', 'nls_sort') val1 from sys.dual", []), false);
-        $contextComp = iterator_to_array($this->getPArray("select sys_context ('userenv', 'nls_comp') val1 from sys.dual", []), false);
-
-        $arrReturn = [];
-        $arrReturn["version"] = $this->getServerVersion();
-        $arrReturn["dbserver"] = oci_server_version($this->linkDB);
-        $arrReturn["dbclient"] = function_exists("oci_client_version") ? oci_client_version() : "";
-        $arrReturn["nls_sort"] = $contextSort[0]["val1"] ?? '-';
-        $arrReturn["nls_comp"] = $contextComp[0]["val1"] ?? '-';
-        return $arrReturn;
+        $this->rollBack();
     }
 
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function getDbInfo(): array
+    {
+        $contextSort = iterator_to_array(
+            $this->getPArray("select sys_context ('userenv', 'nls_sort') val1 from sys.dual", []),
+            false,
+        );
+        $contextComp = iterator_to_array(
+            $this->getPArray("select sys_context ('userenv', 'nls_comp') val1 from sys.dual", []),
+            false,
+        );
+
+        return [
+            'version' => $this->getServerVersion(),
+            'dbserver' => oci_server_version($this->linkDB),
+            'dbclient' => function_exists('oci_client_version') ? oci_client_version() : '',
+            'nls_sort' => $contextSort[0]['val1'] ?? '-',
+            'nls_comp' => $contextComp[0]['val1'] ?? '-',
+        ];
+    }
 
     /**
-     * parses the version out of the server info string.
+     * Parses the version out of the server info string.
      * @see https://github.com/doctrine/dbal/blob/master/lib/Doctrine/DBAL/Driver/OCI8/OCI8Connection.php
-     * @return string
      */
-    private function getServerVersion()
+    private function getServerVersion(): string
     {
-        if (! preg_match('/\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+/', oci_server_version($this->linkDB), $version)) {
-            throw new \UnexpectedValueException(oci_server_version($this->linkDB));
+        if (!preg_match('/\s+(\d+\.\d+\.\d+\.\d+\.\d+)\s+/', oci_server_version($this->linkDB), $version)) {
+            throw new UnexpectedValueException(oci_server_version($this->linkDB));
         }
+
         return $version[1];
     }
 
     /**
      * @inheritdoc
      */
-    public function handlesDumpCompression()
+    public function handlesDumpCompression(): bool
     {
         return false;
     }
@@ -546,14 +643,15 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function dbExport(&$strFilename, $arrTables)
+    public function dbExport(string &$fileName, array $tables): bool
     {
-        $strTables = implode(",", $arrTables);
+        $tablesString = implode(',', $tables);
 
-        $dumpBin = (new ExecutableFinder())->find($this->strDumpBin);
-        $strCommand = $dumpBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." CONSISTENT=n TABLES=".$strTables." FILE='".$strFilename."'";
+        $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
+        $command = $dumpBin . ' ' . $this->config->getUsername() . '/' . $this->config->getPassword(
+            ) . ' CONSISTENT=n TABLES=' . $tablesString . " FILE='" . $fileName . "'";
 
-        $this->runCommand($strCommand);
+        $this->runCommand($command);
 
         return true;
     }
@@ -561,12 +659,13 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function dbImport($strFilename)
+    public function dbImport($fileName): bool
     {
-        $restoreBin = (new ExecutableFinder())->find($this->strRestoreBin);
-        $strCommand = $restoreBin." ".$this->objCfg->getUsername()."/".$this->objCfg->getPassword()." FILE='".$strFilename."'";
+        $restoreBin = (new ExecutableFinder())->find($this->restoreBin);
+        $command = $restoreBin . ' ' . $this->config->getUsername() . '/' . $this->config->getPassword(
+            ) . " FILE='" . $fileName . "'";
 
-        $this->runCommand($strCommand);
+        $this->runCommand($command);
 
         return true;
     }
@@ -574,151 +673,137 @@ class Oci8Driver extends DriverAbstract
     /**
      * Transforms the prepared statement into a valid oracle syntax.
      * This is done by replying the ?-chars by :x entries.
-     *
-     * @param string $strQuery
-     *
-     * @return string
      */
-    private function processQuery($strQuery, $params = null)
+    private function processQuery(string $query): string
     {
-        $strQuery = preg_replace_callback('/\?/', static function($value): string {
+        return preg_replace_callback('/\?/', static function (): string {
             static $i = 0;
             $i++;
             return ':' . $i;
-        }, $strQuery);
-
-        return $strQuery;
+        }, $query);
     }
 
     /**
      * Does as cache-lookup for prepared statements.
      * Reduces the number of recompiles at the db-side.
      *
-     * @param string $strQuery
-     *
-     * @return resource
-     * @since 3.4
+     * @return resource | false
      */
-    private function getParsedStatement($strQuery)
+    private function getParsedStatement(string $query)
     {
-
-        if (stripos($strQuery, "select") !== false) {
-            $strQuery = str_replace(array(" as ", " AS "), array(" ", " "), $strQuery);
+        if (stripos($query, 'select') !== false) {
+            $query = str_replace([' as ', ' AS '], [' ', ' '], $query);
         }
 
-        $objStatement = oci_parse($this->linkDB, $strQuery);
-        return $objStatement;
+        return oci_parse($this->linkDB, $query);
     }
 
     /**
-     * converts a result-row. changes all keys to lower-case keys again
-     *
-     * @param array $arrRow
-     * @return array
+     * Converts a result-row. Changes all keys to lower-case keys again.
      */
-    private function parseResultRow(array $arrRow)
+    private function parseResultRow(array $row): array
     {
-        $arrRow = array_change_key_case($arrRow, CASE_LOWER);
-        if (isset($arrRow["count(*)"])) {
-            $arrRow["COUNT(*)"] = $arrRow["count(*)"];
+        $row = array_change_key_case($row);
+        if (isset($row['count(*)'])) {
+            $row['COUNT(*)'] = $row['count(*)'];
         }
 
-        foreach ($arrRow as $key => $val) {
-            if (is_object($val) && get_class($val) == "OCILob") {
-                //inject an anonymous lazy loader
-                $arrRow[$key] = new class($val)   {
-                    private $val;
+        foreach ($row as $key => $val) {
+            if (is_object($val) && get_class($val) === 'OCILob') {
+                // Inject an anonymous lazy loader
+                $row[$key] = new class($val) implements \Stringable {
+                    private \OCILob $val;
 
-                    public function __construct($val)
+                    public function __construct(\OCILob $val)
                     {
                         $this->val = $val;
                     }
 
-                    public function __toString()
+                    public function __toString(): string
                     {
-                        return (string)$this->val->load();
+                        return (string) $this->val->load();
                     }
                 };
             }
         }
 
-        return $arrRow;
+        return $row;
     }
 
     /**
      * @inheritDoc
      */
-    public function flushQueryCache()
+    public function flushQueryCache(): void
     {
     }
 
 
-    /** @var bool caching the version parse & compare  */
-    private static $is12c = null;
+    /** @var bool caching the version parse & compare */
+    private static bool $is12c = false;
 
     /**
      * @inheritdoc
      */
-    public function appendLimitExpression($strQuery, $intStart, $intEnd)
+    public function appendLimitExpression(string $query, int $start, int $end): string
     {
-
         if (self::$is12c === null) {
-            self::$is12c = version_compare($this->getServerVersion(), "12.1", "ge");
+            self::$is12c = version_compare($this->getServerVersion(), '12.1', 'ge');
         }
 
         if (self::$is12c) {
-            //TODO: 12c has a new offset syntax - lets see if it's really faster
-            $intDelta = $intEnd - $intStart + 1;
-            return $strQuery . " OFFSET {$intStart} ROWS FETCH NEXT {$intDelta} ROWS ONLY";
+            // TODO: 12c has a new offset syntax - lets see if it's really faster
+            $delta = $end - $start + 1;
+            return $query . " OFFSET $start ROWS FETCH NEXT $delta ROWS ONLY";
         }
 
-        $intStart++;
-        $intEnd++;
+        $start++;
+        $end++;
 
-        return "SELECT * FROM (
+        return 'SELECT * FROM (
                      SELECT a.*, ROWNUM rnum FROM
-                        ( ".$strQuery.") a
-                     WHERE ROWNUM <= ".$intEnd."
+                        ( ' . $query . ') a
+                     WHERE ROWNUM <= ' . $end . '
                 )
-                WHERE rnum >= ".$intStart;
+                WHERE rnum >= ' . $start;
     }
 
     /**
      * @inheritdoc
      */
-    public function getConcatExpression(array $parts)
+    public function getConcatExpression(array $parts): string
     {
-        return implode(" || ", $parts);
+        return implode(' || ', $parts);
     }
 
     /**
      * @inheritDoc
      */
-    public function convertToDatabaseValue($value, string $type)
+    public function convertToDatabaseValue(mixed $value, DataType $type): mixed
     {
-        if ($type === DataType::STR_TYPE_TEXT) {
-            return mb_substr($value, 0, 4000);
-        } else {
-            return parent::convertToDatabaseValue($value, $type);
-        }
+        return match ($type) {
+            DataType::TEXT => mb_substr($value, 0, 4000),
+            default => parent::convertToDatabaseValue($value, $type),
+        };
     }
 
     /**
      * Sets the sorting and comparison of strings to case insensitive
+     * @throws QueryException
      */
-    private function setCaseInsensitiveSort()
+    private function setCaseInsensitiveSort(): void
     {
-        $this->_pQuery("alter session set nls_sort=binary_ci", array());
-        $this->_pQuery("alter session set nls_comp=LINGUISTIC", array());
+        $this->_pQuery('alter session set nls_sort=binary_ci', []);
+        $this->_pQuery('alter session set nls_comp=LINGUISTIC', []);
     }
 
     /**
      * Sets the sorting and comparison of strings to case sensitive
+     * @throws QueryException
      */
-    private function setCaseSensitiveSort()
+    private function setCaseSensitiveSort(): void
     {
-        $this->_pQuery("alter session set nls_sort=binary", array());
-        $this->_pQuery("alter session set nls_comp=ANSI", array());
+        $this->_pQuery('alter session set nls_sort=binary', []);
+        $this->_pQuery('alter session set nls_comp=ANSI', []);
     }
 
     public function getSubstringExpression(string $value, int $offset, ?int $length): string

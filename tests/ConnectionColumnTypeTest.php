@@ -13,9 +13,18 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Tests;
 
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
+use Artemeon\Database\Exception\TableNotFoundException;
+
 class ConnectionColumnTypeTest extends ConnectionTestCase
 {
-    public function testTypeConversion()
+    /**
+     * @throws QueryException
+     * @throws ConnectionException
+     * @throws TableNotFoundException
+     */
+    public function testTypeConversion(): void
     {
         $connection = $this->getConnection();
         $columns = $this->getTestTableColumns();
@@ -24,11 +33,10 @@ class ConnectionColumnTypeTest extends ConnectionTestCase
         $columnsFromDb = $connection->getColumnsOfTable(self::TEST_TABLE_NAME);
 
         foreach ($columnsFromDb as $columnName => $details) {
-
-            //compare both internal types converted to db-based types, those need to match
+            // compare both internal types converted to db-based types, those need to match.
             $this->assertEquals(
-                $this->getConnection()->getDatatype(trim($columns[$columnName][0])),
-                $this->getConnection()->getDatatype(trim($details["columnType"]))
+                $this->getConnection()->getDatatype($columns[$columnName][0]),
+                $this->getConnection()->getDatatype($details['columnType']),
             );
         }
     }

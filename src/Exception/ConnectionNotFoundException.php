@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Exception;
 
-class ConnectionNotFoundException extends \Exception
+use Exception;
+
+class ConnectionNotFoundException extends Exception
 {
 }

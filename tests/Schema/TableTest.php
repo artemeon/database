@@ -11,17 +11,21 @@
 
 declare(strict_types=1);
 
-namespace Artemeon\Database\Schema\Tests;
+namespace Artemeon\Database\Tests\Schema;
 
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableColumn;
 use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
+use JsonException;
 use PHPUnit\Framework\TestCase;
 
 class TableTest extends TestCase
 {
-    public function testTable()
+    /**
+     * @throws JsonException
+     */
+    public function testTable(): void
     {
         $table = new Table('foo');
         $table->addColumn(new TableColumn('bar'));
@@ -52,7 +56,7 @@ class TableTest extends TestCase
   ]
 }
 JSON;
-        $actual = json_encode($table);
+        $actual = json_encode($table, JSON_THROW_ON_ERROR);
         $this->assertJsonStringEqualsJsonString($expect, $actual, $actual);
     }
 }
