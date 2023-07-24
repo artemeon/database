@@ -14,10 +14,17 @@ declare(strict_types=1);
 namespace Artemeon\Database\Tests;
 
 use Artemeon\Database\Exception\CommitException;
+use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 
 class ConnectionTxTest extends ConnectionTestCase
 {
+    /**
+     * @throws ConnectionException
+     * @throws CommitException
+     * @throws QueryException
+     */
     public function test(): void
     {
         $connection = $this->getConnection();
@@ -48,7 +55,7 @@ class ConnectionTxTest extends ConnectionTestCase
 
         $query = 'SELECT * FROM agp_temp_autotest_tx ORDER BY temp_long ASC';
         $rows = $connection->getPArray($query);
-        $this->assertEquals(1, count($rows), 'testDataBase getRow count');
+        $this->assertCount(1, $rows, 'testDataBase getRow count');
         $this->assertEquals('1', $rows[0]['temp_char10'], 'testTx getRow content');
 
         $connection->flushQueryCache();
@@ -62,7 +69,7 @@ class ConnectionTxTest extends ConnectionTestCase
 
         $this->assertTrue($connection->_pQuery($query), 'testTx insert');
 
-        $connection->rollbackTransaction();
+        $connection->rollBack();
         $count = $connection->getPRow('SELECT COUNT(*) AS cnt FROM agp_temp_autotest_tx');
         $this->assertEquals(1, $count['cnt'], 'testTx rollback');
 
@@ -70,7 +77,7 @@ class ConnectionTxTest extends ConnectionTestCase
 
         $connection->beginTransaction();
         $this->assertTrue($connection->_pQuery($query), 'testTx insert');
-        $connection->commitTransaction();
+        $connection->commit();
 
         $count = $connection->getPRow('SELECT COUNT(*) AS cnt FROM agp_temp_autotest_tx');
         $this->assertEquals(2, $count['cnt'], 'testTx rollback');
@@ -81,15 +88,18 @@ class ConnectionTxTest extends ConnectionTestCase
         $this->assertTrue($connection->_pQuery($query), 'testTx dropTable');
     }
 
-    public function testRollbackOnCommit()
+    /**
+     * @throws ConnectionException
+     */
+    public function testRollbackOnCommit(): void
     {
         $this->expectException(CommitException::class);
 
         $connection = $this->getConnection();
         $connection->beginTransaction();
         $connection->beginTransaction();
-        $connection->rollbackTransaction();
-        $connection->commitTransaction();
+        $connection->rollBack();
+        $connection->commit();
     }
 }
 

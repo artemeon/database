@@ -116,7 +116,7 @@ class Connection implements ConnectionInterface
     public function close(): void
     {
         if ($this->numberOfOpenTransactions !== 0) {
-            $this->dbDriver->rollbackTransaction();
+            $this->dbDriver->rollBack();
             $this->logger?->warning('Rolled back open transactions on deletion of current instance of Db!');
         }
 
@@ -621,9 +621,18 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      * @throws ConnectionException
-     * @throws CommitException
      */
-    public function commitTransaction(): void
+    public function transactionBegin(): void
+    {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws CommitException
+     * @throws ConnectionException
+     */
+    public function commit(): void
     {
         if (!$this->connected) {
             $this->dbconnect();
@@ -638,9 +647,9 @@ class Connection implements ConnectionInterface
             $this->numberOfOpenTransactions--;
 
             if (!$this->currentTransactionIsDirty) {
-                $this->dbDriver->commitTransaction();
+                $this->dbDriver->commit();
             } else {
-                $this->dbDriver->rollbackTransaction();
+                $this->dbDriver->rollBack();
                 $this->currentTransactionIsDirty = false;
                 throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction, because of this we have have executed a rollback on the complete outer transaction which may result in data loss');
             }
@@ -652,8 +661,18 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      * @throws ConnectionException
+     * @throws CommitException
      */
-    public function rollbackTransaction(): void
+    public function transactionCommit(): void
+    {
+        $this->commit();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws ConnectionException
+     */
+    public function rollBack(): void
     {
         if (!$this->connected) {
             $this->dbconnect();
@@ -664,12 +683,21 @@ class Connection implements ConnectionInterface
         }
 
         if ($this->numberOfOpenTransactions === 1) {
-            $this->dbDriver->rollbackTransaction();
+            $this->dbDriver->rollBack();
             $this->currentTransactionIsDirty = false;
         } else {
             $this->currentTransactionIsDirty = true;
         }
         $this->numberOfOpenTransactions--;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws ConnectionException
+     */
+    public function transactionRollback(): void
+    {
+        $this->rollBack();
     }
 
     public function hasOpenTransactions(): bool

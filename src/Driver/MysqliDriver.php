@@ -448,7 +448,15 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function commitTransaction(): void
+    public function transactionBegin(): void
+    {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function commit(): void
     {
         $this->linkDB->commit();
     }
@@ -456,9 +464,22 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function rollbackTransaction(): void
+    public function transactionCommit(): void
+    {
+        $this->commit();
+    }
+
+    public function rollBack(): void
     {
         $this->linkDB->rollback();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function transactionRollback(): void
+    {
+        $this->rollBack();
     }
 
     /**

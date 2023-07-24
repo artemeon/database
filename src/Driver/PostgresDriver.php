@@ -409,7 +409,16 @@ class PostgresDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
-    public function commitTransaction(): void
+    public function transactionBegin(): void
+    {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function commit(): void
     {
         $this->_pQuery('COMMIT', []);
     }
@@ -418,9 +427,27 @@ class PostgresDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
-    public function rollbackTransaction(): void
+    public function transactionCommit(): void
+    {
+        $this->commit();
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function rollBack(): void
     {
         $this->_pQuery('ROLLBACK', []);
+    }
+
+    /**
+     * @inheritDoc
+     * @throws QueryException
+     */
+    public function transactionRollback(): void
+    {
+        $this->rollBack();
     }
 
     /**

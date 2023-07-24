@@ -556,7 +556,15 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function commitTransaction(): void
+    public function transactionBegin(): void
+    {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function commit(): void
     {
         oci_commit($this->linkDB);
         $this->txOpen = false;
@@ -565,10 +573,26 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function rollbackTransaction(): void
+    public function transactionCommit(): void
+    {
+        $this->commit();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function rollBack(): void
     {
         oci_rollback($this->linkDB);
         $this->txOpen = false;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function transactionRollback(): void
+    {
+        $this->rollBack();
     }
 
     /**

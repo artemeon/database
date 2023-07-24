@@ -83,4 +83,19 @@ interface DoctrineConnectionInterface
      * Deletes a row on the provided table by the identifier columns.
      */
     public function delete(string $tableName, array $identifier): int;
+
+    /**
+     * Starts a transaction.
+     */
+    public function beginTransaction(): void;
+
+    /**
+     * Ends a transaction successfully.
+     */
+    public function commit(): void;
+
+    /**
+     * Rollback of the current transaction.
+     */
+    public function rollBack(): void;
 }

@@ -3,12 +3,12 @@
 ## 3.0.0
 
 - Bumps the minimum required PHP version to `8.1`.
-- Renames `ConnectionInterface::transactionBegin()` to `ConnectionInterface::beginTransaction()`.
-- Renames `ConnectionInterface::transactionCommit()` to `ConnectionInterface::commitTransaction()`.
-- Renames `ConnectionInterface::transactionRollback()` to `ConnectionInterface::rollbackTransaction()`.
-- Renames `DriverInterface::transactionBegin()` to `DriverInterface::beginTransaction()`.
-- Renames `DriverInterface::transactionCommit()` to `DriverInterface::commitTransaction()`.
-- Renames `DriverInterface::transactionRollback()` to `DriverInterface::rollbackTransaction()`.
+- Deprecates `ConnectionInterface::transactionBegin()` in favor of `DoctrineConnectionInterface::beginTransaction()`.
+- Deprecates `ConnectionInterface::transactionCommit()` in favor of `DoctrineConnectionInterface::commit()`.
+- Deprecates `ConnectionInterface::transactionRollback()` in favor of `DoctrineConnectionInterface::rollBack()`.
+- Deprecates `DriverInterface::transactionBegin()` in favor of `DriverInterface::beginTransaction()`.
+- Deprecates `DriverInterface::transactionCommit()` in favor of `DriverInterface::commit()`.
+- Deprecates `DriverInterface::transactionRollback()` in favor of `DriverInterface::rollBack()`.
 - `DataType` is a (PHP 8.1) enum now.
   - The deprecated `DataType::STR_TYPE_LONG` is removed.
   - The deprecated `DataType::STR_TYPE_DOUBLE` is removed.

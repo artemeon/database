@@ -159,14 +159,35 @@ interface DriverInterface
     public function beginTransaction(): void;
 
     /**
+     * Starts a transaction.
+     *
+     * @deprecated Use {@see DriverInterface::beginTransaction()} instead.
+     */
+    public function transactionBegin(): void;
+
+    /**
      * Ends a successful operation by committing the transaction.
      */
-    public function commitTransaction(): void;
+    public function commit(): void;
+
+    /**
+     * Ends a successful operation by committing the transaction.
+     *
+     * @deprecated Use {@see DriverInterface::commit()} instead.
+     */
+    public function transactionCommit(): void;
 
     /**
      * Ends a non-successful transaction by using a rollback.
      */
-    public function rollbackTransaction(): void;
+    public function rollBack(): void;
+
+    /**
+     * Ends a non-successful transaction by using a rollback.
+     *
+     * @deprecated Use {@see DriverInterface::rollBack()} instead.
+     */
+    public function transactionRollback(): void;
 
     /**
      * Returns an array of key value pairs with infos about the current database

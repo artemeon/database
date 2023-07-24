@@ -453,7 +453,15 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function commitTransaction(): void
+    public function transactionBegin(): void
+    {
+        $this->beginTransaction();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function commit(): void
     {
         sqlsrv_commit($this->linkDB);
     }
@@ -461,9 +469,25 @@ class SqlsrvDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function rollbackTransaction(): void
+    public function transactionCommit(): void
+    {
+        $this->commit();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function rollBack(): void
     {
         sqlsrv_rollback($this->linkDB);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function transactionRollback(): void
+    {
+        $this->rollBack();
     }
 
     /**

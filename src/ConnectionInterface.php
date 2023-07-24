@@ -125,18 +125,24 @@ interface ConnectionInterface extends DoctrineConnectionInterface
 
     /**
      * Starts a transaction.
+     *
+     * @deprecated Use {@see DoctrineConnectionInterface::beginTransaction()} instead.
      */
-    public function beginTransaction(): void;
+    public function transactionBegin(): void;
 
     /**
      * Ends a transaction successfully.
+     *
+     * @deprecated Use {@see DoctrineConnectionInterface::commit()} instead.
      */
-    public function commitTransaction(): void;
+    public function transactionCommit(): void;
 
     /**
      * Rollback of the current transaction.
+     *
+     * @deprecated Use {@see DoctrineConnectionInterface::rollBack()} instead.
      */
-    public function rollbackTransaction(): void;
+    public function transactionRollback(): void;
 
     /**
      * Returns whether this connection uses a specific driver. In general please don't use this method

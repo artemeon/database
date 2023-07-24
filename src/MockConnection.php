@@ -169,11 +169,23 @@ class MockConnection implements ConnectionInterface
     {
     }
 
-    public function commitTransaction(): void
+    public function transactionBegin(): void
     {
     }
 
-    public function rollbackTransaction(): void
+    public function commit(): void
+    {
+    }
+
+    public function transactionCommit(): void
+    {
+    }
+
+    public function rollBack(): void
+    {
+    }
+
+    public function transactionRollback(): void
     {
     }
 
