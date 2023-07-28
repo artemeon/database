@@ -1,6 +1,7 @@
 {
   "name": "artemeon/database",
-  "description": "",
+  "description": "Database access layer for the AGP@ARTEMEON software suite.",
+  "homepage": "https://github.com/artemeon/database#readme",
   "license": "MIT",
   "type": "library",
   "authors": [
