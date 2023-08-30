@@ -325,4 +325,29 @@ class MockConnection implements ConnectionInterface
     {
         return (string) $value;
     }
+
+    public function getDbInfo(): array
+    {
+        return [];
+    }
+
+    public function getQueries(): array
+    {
+        return [];
+    }
+
+    public function getNumber(): int
+    {
+        return 0;
+    }
+
+    public function getNumberCache(): int
+    {
+        return 0;
+    }
+
+    public function getCacheSize(): int
+    {
+        return 0;
+    }
 }

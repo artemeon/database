@@ -52,6 +52,8 @@ class Connection implements ConnectionInterface
      */
     private int $number = 0;
 
+    private  array $queries = [];
+
     /**
      * Number of queries returned from cache.
      */
@@ -379,6 +381,8 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        $startTime = microtime(true);
+
         // param validation
         if ((int) $start < 0) {
             $start = null;
@@ -399,6 +403,8 @@ class Connection implements ConnectionInterface
                 // Increasing Cache counter
                 $this->numberCache++;
 
+                $this->addQueryToList($query, $params, true, $startTime);
+
                 return $this->queryCache[$queryMd5];
             }
         }
@@ -408,6 +414,8 @@ class Connection implements ConnectionInterface
         }
 
         $output = $this->fetchAllAssociative($query, $this->dbsafeParams($params, $escapes));
+
+        $this->addQueryToList($query, $params, false, $startTime);
 
         if ($cache) {
             $this->queryCache[$queryMd5] = $output;
@@ -455,7 +463,14 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        return iterator_to_array($this->dbDriver->getPArray($query, $params), false);
+        $this->number++;
+        $startTime = microtime(true);
+
+        $output = iterator_to_array($this->dbDriver->getPArray($query, $params), false);
+
+        $this->addQueryToList($query, $params, false, $startTime);
+
+        return $output;
     }
 
     /**
@@ -469,7 +484,13 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        $this->number++;
+        $startTime = microtime(true);
+
         $result = $this->dbDriver->getPArray($query, $params);
+
+        $this->addQueryToList($query, $params, false, $startTime);
+
         foreach ($result as $row) {
             return $row;
         }
@@ -1079,6 +1100,15 @@ class Connection implements ConnectionInterface
         return str_replace($search, $replace, $query);
     }
 
+    private function addQueryToList(string $query, array $params, bool $cached, float $startTime): void
+    {
+        $this->queries[] = [
+            'query' => $this->prettifyQuery($query, $params),
+            'cached' => $cached,
+            'time' => round((microtime(true) - $startTime), 6),
+        ];
+    }
+
     /**
      * Queries the current db-driver about common information.
      *
@@ -1095,6 +1125,14 @@ class Connection implements ConnectionInterface
         }
 
         return $this->dbDriver->getDbInfo();
+    }
+
+    /**
+     * Returns an array of all queries.
+     */
+    public function getQueries(): array
+    {
+        return $this->queries;
     }
 
     /**
