@@ -52,7 +52,7 @@ class Connection implements ConnectionInterface
      */
     private int $number = 0;
 
-    private  array $queries = [];
+    private array $queries = [];
 
     /**
      * Number of queries returned from cache.
