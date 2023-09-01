@@ -330,4 +330,29 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * the fitting length for the provided datatype.
      */
     public function convertToDatabaseValue(mixed $value, DataType $type): mixed;
+
+    /**
+     * Queries the current db-driver about common information.
+     */
+    public function getDbInfo(): array;
+
+    /**
+     * Returns an array of all queries.
+     */
+    public function getQueries(): array;
+
+    /**
+     * Returns the number of queries sent to the database including those solved by the cache.
+     */
+    public function getNumber(): int;
+
+    /**
+     * Returns the number of queries solved by the cache.
+     */
+    public function getNumberCache(): int;
+
+    /**
+     * Returns the number of items currently in the query-cache.
+     */
+    public function getCacheSize(): int;
 }
