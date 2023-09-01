@@ -1102,6 +1102,10 @@ class Connection implements ConnectionInterface
 
     private function addQueryToList(string $query, array $params, bool $cached, float $startTime): void
     {
+        if ($this->debugLevel !== 100) {
+            return;
+        }
+
         $this->queries[] = [
             'query' => $this->prettifyQuery($query, $params),
             'cached' => $cached,
