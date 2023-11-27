@@ -349,7 +349,7 @@ class MysqliDriver extends DriverAbstract
         } elseif ($strType == DataType::STR_TYPE_CHAR500) {
             $strReturn .= " VARCHAR( 500 ) ";
         } elseif ($strType == DataType::STR_TYPE_TEXT) {
-            $strReturn .= " TEXT ";
+            $strReturn .= " MEDIUMTEXT ";
         } elseif ($strType == DataType::STR_TYPE_LONGTEXT) {
             $strReturn .= " LONGTEXT ";
         } else {
