@@ -364,7 +364,7 @@ class MysqliDriver extends DriverAbstract
             DataType::CHAR20 => ' VARCHAR( 20 ) ',
             DataType::CHAR100 => ' VARCHAR( 100 ) ',
             DataType::CHAR500 => ' VARCHAR( 500 ) ',
-            DataType::TEXT => ' TEXT ',
+            DataType::TEXT => ' MEDIUMTEXT ',
             DataType::LONGTEXT => ' LONGTEXT ',
             default => ' VARCHAR( 254 ) ',
         };
