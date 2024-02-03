@@ -25,34 +25,40 @@ use Generator;
 interface DoctrineConnectionInterface
 {
     /**
-     * Prepares and executes an SQL query and returns the result as an array of associative arrays.
+     * Prepares and executes an SQL query and returns the result as an array of associative arrays
+     * Attention: No caching!
      */
     public function fetchAllAssociative(string $query, array $params = []): array;
 
     /**
      * Prepares and executes an SQL query and returns the first row of the result
      * as an associative array.
+     * Attention: No caching!
      */
     public function fetchAssociative(string $query, array $params = []): array|false;
 
     /**
      * Prepares and executes an SQL query and returns the result as an array of the first column values.
+     * Attention: No caching!
      */
     public function fetchFirstColumn(string $query, array $params = []): array;
 
     /**
      * Prepares and executes an SQL query and returns the value of a single column of the first row of the result.
+     * Attention: No caching!
      */
     public function fetchOne(string $query, array $params = []): mixed;
 
     /**
      * Prepares and executes an SQL query and returns the result as an iterator over rows represented
      * as associative arrays.
+     * Attention: No caching!
      */
     public function iterateAssociative(string $query, array $params = []): Generator;
 
     /**
      * Prepares and executes an SQL query and returns the result as an iterator over the first column values.
+     * Attention: No caching!
      */
     public function iterateColumn(string $query, array $params = []): Generator;
 
