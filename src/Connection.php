@@ -811,8 +811,19 @@ class Connection implements ConnectionInterface
      */
     public function getTableInformation(string $tableName): Table
     {
+        if (isset(self::$schemaCache[$tableName])) {
+            echo "loaded {$tableName} from schema cache" . PHP_EOL;
+            $value = self::$schemaCache[$tableName];
+            if ($value instanceof TableNotFoundException){
+                throw $value;
+            }
+            return $value;
+        }
+        
+        
         if (!$this->hasTable($tableName)) {
-            throw new TableNotFoundException($tableName);
+            self::$schemaCache[$tableName] = new TableNotFoundException($tableName);
+            throw self::$schemaCache[$tableName];
         }
 
         if (!$this->connected) {
