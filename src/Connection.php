@@ -47,7 +47,7 @@ class Connection implements ConnectionInterface
 
     private array $tablesCache = [];
     
-    private array $schemaCache = [];
+    private static array $schemaCache = [];
 
     /**
      * Number of queries sent to the database.
@@ -111,6 +111,8 @@ class Connection implements ConnectionInterface
         $this->logger = $logger;
         $this->debugLevel = $debugLevel;
         $this->dbDriver = $this->driverFactory->factory($this->connectionParams->getDriver());
+
+        echo 'Connection::new instance' . PHP_EOL;
     }
 
     /**
@@ -138,6 +140,7 @@ class Connection implements ConnectionInterface
      */
     protected function dbconnect(): void
     {
+        echo 'Connection::dbconnect' . PHP_EOL;
         $this->connected = $this->dbDriver->dbconnect($this->connectionParams);
     }
 
@@ -816,15 +819,15 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
         
-        if (isset($this->schemaCache[$tableName])) {
+        if (isset(self::$schemaCache[$tableName])) {
             echo "loaded {$tableName} from schema cache" . PHP_EOL;
-            return $this->schemaCache[$tableName];
+            return self::$schemaCache[$tableName];
         }
 
         echo "{$tableName} not found in schema cache" . PHP_EOL;
 
-        $this->schemaCache[$tableName] = $this->dbDriver->getTableInformation($tableName);
-        return $this->schemaCache[$tableName];
+        self::$schemaCache[$tableName] = $this->dbDriver->getTableInformation($tableName);
+        return self::$schemaCache[$tableName];
     }
 
     /**
@@ -872,6 +875,8 @@ class Connection implements ConnectionInterface
                 }
             }
         }
+        
+        unset(self::$schemaCache[$tableName]);
 
         $this->flushTablesCache();
 
@@ -887,7 +892,7 @@ class Connection implements ConnectionInterface
         if (!$this->hasTable($tableName)) {
             return;
         }
-        unset($this->schemaCache[$tableName]);
+        unset(self::$schemaCache[$tableName]);
 
         $this->_pQuery('DROP TABLE ' . $tableName);
 
@@ -935,7 +940,7 @@ class Connection implements ConnectionInterface
             $this->getError('', []);
         }
 
-        unset($this->schemaCache[$tableName]);
+        unset(self::$schemaCache[$tableName]);
 
         return $output;
     }
@@ -950,7 +955,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        unset($this->schemaCache[$table]);
+        unset(self::$schemaCache[$table]);
 
         return $this->dbDriver->deleteIndex($table, $index);
     }
@@ -965,7 +970,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        unset($this->schemaCache[$table]);
+        unset(self::$schemaCache[$table]);
         
         return $this->dbDriver->addIndex($table, $index);
     }
@@ -995,8 +1000,8 @@ class Connection implements ConnectionInterface
 
         $return = $this->dbDriver->renameTable($oldName, $newName);
 
-        $this->schemaCache[$newName] = $this->schemaCache[$oldName];
-        unset($this->schemaCache[$oldName]);
+        self::$schemaCache[$newName] = self::$schemaCache[$oldName];
+        unset(self::$schemaCache[$oldName]);
 
         $this->flushTablesCache();
 
@@ -1014,7 +1019,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->changeColumn($tableName, $oldColumnName, $newColumnName, $newDataType);
-        unset($this->schemaCache[$tableName]);
+        unset(self::$schemaCache[$tableName]);
 
         if (!$return) {
             $error = $this->dbDriver->getError();
@@ -1061,7 +1066,7 @@ class Connection implements ConnectionInterface
             );
         }
 
-        unset($this->schemaCache[$table]);
+        unset(self::$schemaCache[$table]);
 
         return true;
     }
@@ -1077,7 +1082,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->removeColumn($tableName, $column);
-        unset($this->schemaCache[$tableName]);
+        unset(self::$schemaCache[$tableName]);
 
         if (!$return) {
             $error = $this->dbDriver->getError();
