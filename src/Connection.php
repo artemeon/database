@@ -817,8 +817,11 @@ class Connection implements ConnectionInterface
         }
         
         if (isset($this->schemaCache[$tableName])) {
+            echo "loaded {$tableName} from schema cache" . PHP_EOL;
             return $this->schemaCache[$tableName];
         }
+
+        echo "{$tableName} not found in schema cache" . PHP_EOL;
 
         $this->schemaCache[$tableName] = $this->dbDriver->getTableInformation($tableName);
         return $this->schemaCache[$tableName];
