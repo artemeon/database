@@ -46,6 +46,8 @@ class Connection implements ConnectionInterface
     private array $queryCache = [];
 
     private array $tablesCache = [];
+    
+    private array $schemaCache = [];
 
     /**
      * Number of queries sent to the database.
@@ -781,15 +783,11 @@ class Connection implements ConnectionInterface
      */
     public function getColumnsOfTable(string $tableName): array
     {
-        if (!$this->hasTable($tableName)) {
-            throw new TableNotFoundException($tableName);
-        }
-
         if (!$this->connected) {
             $this->dbconnect();
         }
 
-        $table = $this->dbDriver->getTableInformation($tableName);
+        $table = $this->getTableInformation($tableName);
 
         $return = [];
         foreach ($table->getColumns() as $column) {
@@ -802,7 +800,7 @@ class Connection implements ConnectionInterface
 
         return $return;
     }
-
+    
     /**
      * @inheritDoc
      * @throws TableNotFoundException
@@ -817,8 +815,13 @@ class Connection implements ConnectionInterface
         if (!$this->connected) {
             $this->dbconnect();
         }
+        
+        if (isset($this->schemaCache[$tableName])) {
+            return $this->schemaCache[$tableName];
+        }
 
-        return $this->dbDriver->getTableInformation($tableName);
+        $this->schemaCache[$tableName] = $this->dbDriver->getTableInformation($tableName);
+        return $this->schemaCache[$tableName];
     }
 
     /**
@@ -881,6 +884,7 @@ class Connection implements ConnectionInterface
         if (!$this->hasTable($tableName)) {
             return;
         }
+        unset($this->schemaCache[$tableName]);
 
         $this->_pQuery('DROP TABLE ' . $tableName);
 
@@ -928,6 +932,8 @@ class Connection implements ConnectionInterface
             $this->getError('', []);
         }
 
+        unset($this->schemaCache[$tableName]);
+
         return $output;
     }
 
@@ -940,6 +946,8 @@ class Connection implements ConnectionInterface
         if (!$this->connected) {
             $this->dbconnect();
         }
+
+        unset($this->schemaCache[$table]);
 
         return $this->dbDriver->deleteIndex($table, $index);
     }
@@ -954,6 +962,8 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        unset($this->schemaCache[$table]);
+        
         return $this->dbDriver->addIndex($table, $index);
     }
 
@@ -982,6 +992,9 @@ class Connection implements ConnectionInterface
 
         $return = $this->dbDriver->renameTable($oldName, $newName);
 
+        $this->schemaCache[$newName] = $this->schemaCache[$oldName];
+        unset($this->schemaCache[$oldName]);
+
         $this->flushTablesCache();
 
         return $return;
@@ -998,6 +1011,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->changeColumn($tableName, $oldColumnName, $newColumnName, $newDataType);
+        unset($this->schemaCache[$tableName]);
 
         if (!$return) {
             $error = $this->dbDriver->getError();
@@ -1044,7 +1058,7 @@ class Connection implements ConnectionInterface
             );
         }
 
-        $this->flushTablesCache();
+        unset($this->schemaCache[$table]);
 
         return true;
     }
@@ -1060,6 +1074,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->removeColumn($tableName, $column);
+        unset($this->schemaCache[$tableName]);
 
         if (!$return) {
             $error = $this->dbDriver->getError();
@@ -1076,7 +1091,9 @@ class Connection implements ConnectionInterface
      */
     public function hasColumn(string $tableName, string $column): bool
     {
-        return $this->dbDriver->hasColumn($tableName, $column);
+        $tableInfo = $this->getTableInformation($tableName);
+        return in_array($column, $tableInfo->getColumnNames());
+        //return $this->dbDriver->hasColumn($tableName, $column);
     }
 
     /**
