@@ -821,7 +821,9 @@ class Connection implements ConnectionInterface
         }
         
         
+        echo "{$tableName} not found in schema cache" . PHP_EOL;
         if (!$this->hasTable($tableName)) {
+            echo "{$tableName} not yet existing" . PHP_EOL;
             self::$schemaCache[$tableName] = new TableNotFoundException($tableName);
             throw self::$schemaCache[$tableName];
         }
@@ -829,15 +831,10 @@ class Connection implements ConnectionInterface
         if (!$this->connected) {
             $this->dbconnect();
         }
-        
-        if (isset(self::$schemaCache[$tableName])) {
-            echo "loaded {$tableName} from schema cache" . PHP_EOL;
-            return self::$schemaCache[$tableName];
-        }
 
-        echo "{$tableName} not found in schema cache" . PHP_EOL;
 
         self::$schemaCache[$tableName] = $this->dbDriver->getTableInformation($tableName);
+        echo "{$tableName} added to schema cache" . PHP_EOL;
         return self::$schemaCache[$tableName];
     }
 
@@ -887,7 +884,7 @@ class Connection implements ConnectionInterface
             }
         }
         
-        unset(self::$schemaCache[$tableName]);
+        $this->flushSchemaCache($tableName);
 
         $this->flushTablesCache();
 
@@ -903,7 +900,7 @@ class Connection implements ConnectionInterface
         if (!$this->hasTable($tableName)) {
             return;
         }
-        unset(self::$schemaCache[$tableName]);
+        $this->flushSchemaCache($tableName);
 
         $this->_pQuery('DROP TABLE ' . $tableName);
 
@@ -951,7 +948,7 @@ class Connection implements ConnectionInterface
             $this->getError('', []);
         }
 
-        unset(self::$schemaCache[$tableName]);
+        $this->flushSchemaCache($tableName);
 
         return $output;
     }
@@ -966,7 +963,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        unset(self::$schemaCache[$table]);
+        $this->flushSchemaCache($table);
 
         return $this->dbDriver->deleteIndex($table, $index);
     }
@@ -981,7 +978,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        unset(self::$schemaCache[$table]);
+        $this->flushSchemaCache($table);
         
         return $this->dbDriver->addIndex($table, $index);
     }
@@ -1012,7 +1009,7 @@ class Connection implements ConnectionInterface
         $return = $this->dbDriver->renameTable($oldName, $newName);
 
         self::$schemaCache[$newName] = self::$schemaCache[$oldName];
-        unset(self::$schemaCache[$oldName]);
+        $this->flushSchemaCache($oldName);
 
         $this->flushTablesCache();
 
@@ -1030,7 +1027,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->changeColumn($tableName, $oldColumnName, $newColumnName, $newDataType);
-        unset(self::$schemaCache[$tableName]);
+        $this->flushSchemaCache($tableName);
 
         if (!$return) {
             $error = $this->dbDriver->getError();
@@ -1077,7 +1074,7 @@ class Connection implements ConnectionInterface
             );
         }
 
-        unset(self::$schemaCache[$table]);
+        $this->flushSchemaCache($table);
 
         return true;
     }
@@ -1093,7 +1090,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->removeColumn($tableName, $column);
-        unset(self::$schemaCache[$tableName]);
+        $this->flushSchemaCache($tableName);
 
         if (!$return) {
             $error = $this->dbDriver->getError();
@@ -1284,6 +1281,12 @@ class Connection implements ConnectionInterface
     public function flushTablesCache(): void
     {
         $this->tablesCache = [];
+    }
+
+    private function flushSchemaCache(string $table)
+    {
+        echo "flush {$table} from schema cache" . PHP_EOL;
+        unset(self::$schemaCache[$table]);
     }
 
     /**
