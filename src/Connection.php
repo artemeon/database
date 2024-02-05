@@ -46,7 +46,7 @@ class Connection implements ConnectionInterface
     private array $queryCache = [];
 
     private array $tablesCache = [];
-    
+
     private static array $schemaCache = [];
 
     /**
@@ -803,7 +803,7 @@ class Connection implements ConnectionInterface
 
         return $return;
     }
-    
+
     /**
      * @inheritDoc
      * @throws TableNotFoundException
@@ -819,8 +819,8 @@ class Connection implements ConnectionInterface
             }
             return $value;
         }
-        
-        
+
+
         echo "{$tableName} not found in schema cache" . PHP_EOL;
         if (!$this->hasTable($tableName)) {
             echo "{$tableName} not yet existing" . PHP_EOL;
@@ -883,10 +883,9 @@ class Connection implements ConnectionInterface
                 }
             }
         }
-        
-        $this->flushSchemaCache($tableName);
 
-        $this->flushTablesCache();
+
+        $this->tablesCache[] = $tableName;
 
         return $output;
     }
@@ -900,6 +899,7 @@ class Connection implements ConnectionInterface
         if (!$this->hasTable($tableName)) {
             return;
         }
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($tableName);
 
         $this->_pQuery('DROP TABLE ' . $tableName);
@@ -948,6 +948,7 @@ class Connection implements ConnectionInterface
             $this->getError('', []);
         }
 
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($tableName);
 
         return $output;
@@ -963,6 +964,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($table);
 
         return $this->dbDriver->deleteIndex($table, $index);
@@ -978,8 +980,9 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($table);
-        
+
         return $this->dbDriver->addIndex($table, $index);
     }
 
@@ -1009,6 +1012,7 @@ class Connection implements ConnectionInterface
         $return = $this->dbDriver->renameTable($oldName, $newName);
 
         self::$schemaCache[$newName] = self::$schemaCache[$oldName];
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($oldName);
 
         $this->flushTablesCache();
@@ -1027,6 +1031,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->changeColumn($tableName, $oldColumnName, $newColumnName, $newDataType);
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($tableName);
 
         if (!$return) {
@@ -1074,6 +1079,7 @@ class Connection implements ConnectionInterface
             );
         }
 
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($table);
 
         return true;
@@ -1090,6 +1096,7 @@ class Connection implements ConnectionInterface
         }
 
         $return = $this->dbDriver->removeColumn($tableName, $column);
+        echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($tableName);
 
         if (!$return) {
