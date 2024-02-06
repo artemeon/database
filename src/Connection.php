@@ -1109,7 +1109,11 @@ class Connection implements ConnectionInterface
      */
     public function hasColumn(string $tableName, string $column): bool
     {
-        $tableInfo = $this->getTableInformation($tableName);
+        try {
+            $tableInfo = $this->getTableInformation($tableName);
+        } catch (TableNotFoundException $ex) {
+            return false;
+        }
         return in_array($column, $tableInfo->getColumnNames());
         //return $this->dbDriver->hasColumn($tableName, $column);
     }
