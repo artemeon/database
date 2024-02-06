@@ -47,7 +47,7 @@ class Connection implements ConnectionInterface
 
     private array $tablesCache = [];
 
-    private static array $schemaCache = [];
+    private array $schemaCache = [];
 
     /**
      * Number of queries sent to the database.
@@ -811,21 +811,16 @@ class Connection implements ConnectionInterface
      */
     public function getTableInformation(string $tableName): Table
     {
-        if (isset(self::$schemaCache[$tableName])) {
+        if (isset($this->schemaCache[$tableName])) {
             echo "loaded {$tableName} from schema cache" . PHP_EOL;
-            $value = self::$schemaCache[$tableName];
-            if ($value instanceof TableNotFoundException){
-                throw $value;
-            }
-            return $value;
+            return $this->schemaCache[$tableName];
         }
 
 
         echo "{$tableName} not found in schema cache" . PHP_EOL;
         if (!$this->hasTable($tableName)) {
             echo "{$tableName} not yet existing" . PHP_EOL;
-            self::$schemaCache[$tableName] = new TableNotFoundException($tableName);
-            throw self::$schemaCache[$tableName];
+            throw new TableNotFoundException($tableName);
         }
 
         if (!$this->connected) {
@@ -833,9 +828,9 @@ class Connection implements ConnectionInterface
         }
 
 
-        self::$schemaCache[$tableName] = $this->dbDriver->getTableInformation($tableName);
+        $this->schemaCache[$tableName] = $this->dbDriver->getTableInformation($tableName);
         echo "{$tableName} added to schema cache" . PHP_EOL;
-        return self::$schemaCache[$tableName];
+        return $this->schemaCache[$tableName];
     }
 
     /**
@@ -1011,7 +1006,7 @@ class Connection implements ConnectionInterface
 
         $return = $this->dbDriver->renameTable($oldName, $newName);
 
-        self::$schemaCache[$newName] = self::$schemaCache[$oldName];
+        $this->schemaCache[$newName] = $this->schemaCache[$oldName];
         echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($oldName);
 
@@ -1293,7 +1288,7 @@ class Connection implements ConnectionInterface
     private function flushSchemaCache(string $table)
     {
         echo "flush {$table} from schema cache" . PHP_EOL;
-        unset(self::$schemaCache[$table]);
+        unset($this->schemaCache[$table]);
     }
 
     /**
