@@ -1006,7 +1006,6 @@ class Connection implements ConnectionInterface
 
         $return = $this->dbDriver->renameTable($oldName, $newName);
 
-        $this->schemaCache[$newName] = $this->schemaCache[$oldName];
         echo 'flush from ' . __METHOD__ . PHP_EOL;
         $this->flushSchemaCache($oldName);
 
