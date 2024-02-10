@@ -285,7 +285,7 @@ class MockConnection implements ConnectionInterface
     public function prettifyQuery($query, $params): string
     {
         foreach ($params as $param) {
-            $query = preg_replace('/\?/', isset($param) ? '"' . $param . '"' : 'NULL', $query, 1);
+            $query = (string) preg_replace('/\?/', isset($param) ? '"' . $param . '"' : 'NULL', $query, 1);
         }
 
         return $query;

@@ -146,7 +146,7 @@ class Oci8Driver extends DriverAbstract
         }
 
         foreach ($params as $pos => $value) {
-            if (!oci_bind_by_name($statement, ':' . ($pos + 1), $params[$pos])) {
+            if (!oci_bind_by_name($statement, ':' . ((int) $pos + 1), $params[$pos])) {
                 // echo 'oci_bind_by_name failed to bind at pos >' . $pos . "<, \n value: " . $value . "\nquery: " . $query;
                 return false;
             }
@@ -300,7 +300,7 @@ class Oci8Driver extends DriverAbstract
         $tableName = strtoupper($tableName);
 
         // fetch all columns
-        $columnInfo = $this->getPArray('SELECT * FROM user_tab_columns WHERE table_name = ?', [$tableName]) ?: [];
+        $columnInfo = $this->getPArray('SELECT * FROM user_tab_columns WHERE table_name = ?', [$tableName]);
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make(strtolower($column['column_name']))
@@ -319,7 +319,7 @@ class Oci8Driver extends DriverAbstract
               and a.table_name = ?
             order by a.index_name, a.column_position',
             [$tableName]
-        ) ?: [];
+        );
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
             $indexAggr[$indexInfo['index_name']] = $indexAggr[$indexInfo['index_name']] ?? [];
@@ -341,7 +341,7 @@ class Oci8Driver extends DriverAbstract
               AND cons.owner = cols.owner
           ",
             [$tableName]
-        ) ?: [];
+        );
         foreach ($keys as $keyInfo) {
             $key = new TableKey(strtolower($keyInfo['column_name']));
             $table->addPrimaryKey($key);
@@ -739,7 +739,7 @@ class Oci8Driver extends DriverAbstract
 
 
     /** @var bool caching the version parse & compare */
-    private static bool $is12c = false;
+    private static bool | null $is12c = false;
 
     /**
      * @inheritdoc
