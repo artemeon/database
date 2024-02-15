@@ -72,7 +72,7 @@ class PostgresDriver extends DriverAbstract
      */
     public function dbclose(): void
     {
-        if (is_resource($this->linkDB)) {
+        if ($this->linkDB instanceof Connection) {
             pg_close($this->linkDB);
             $this->linkDB = null;
         }
@@ -214,8 +214,7 @@ class PostgresDriver extends DriverAbstract
         $table = new Table($tableName);
 
         // fetch all columns
-        $columnInfo = $this->getPArray('SELECT * FROM information_schema.columns WHERE table_name = ?', [$tableName]
-        ) ?: [];
+        $columnInfo = $this->getPArray('SELECT * FROM information_schema.columns WHERE table_name = ?', [$tableName]);
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make($column['column_name'])
@@ -229,7 +228,7 @@ class PostgresDriver extends DriverAbstract
         $indexes = $this->getPArray(
             "select * from pg_indexes where tablename  = ? AND indexname NOT LIKE '%_pkey'",
             [$tableName],
-        ) ?: [];
+        );
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['indexname']);
             //scrape the columns from the indexdef
@@ -257,7 +256,7 @@ class PostgresDriver extends DriverAbstract
                      AND t.relname LIKE ?
                 ORDER BY t.relname, i.relname";
 
-        $keys = $this->getPArray($query, [$tableName]) ?: [];
+        $keys = $this->getPArray($query, [$tableName]);
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['column_name']);
             $table->addPrimaryKey($key);

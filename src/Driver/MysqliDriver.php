@@ -188,7 +188,7 @@ class MysqliDriver extends DriverAbstract
             return [];
         }
 
-        while ($metadata && $field = $metadata->fetch_field()) {
+        while ($field = $metadata->fetch_field()) {
             $params[] = &$row[$field->name];
         }
 
@@ -266,7 +266,7 @@ class MysqliDriver extends DriverAbstract
         $table = new Table($tableName);
 
         // fetch all columns
-        $columnInfo = $this->getPArray("SHOW COLUMNS FROM $tableName", []) ?: [];
+        $columnInfo = $this->getPArray("SHOW COLUMNS FROM $tableName", []);
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make($column['Field'])
@@ -277,7 +277,7 @@ class MysqliDriver extends DriverAbstract
         }
 
         //fetch all indexes
-        $indexes = $this->getPArray("SHOW INDEX FROM $tableName WHERE Key_name != 'PRIMARY'", []) ?: [];
+        $indexes = $this->getPArray("SHOW INDEX FROM $tableName WHERE Key_name != 'PRIMARY'", []);
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
             $indexAggr[$indexInfo['Key_name']] = $indexAggr[$indexInfo['Key_name']] ?? [];
@@ -290,7 +290,7 @@ class MysqliDriver extends DriverAbstract
         }
 
         //fetch all keys
-        $keys = $this->getPArray("SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'", []) ?: [];
+        $keys = $this->getPArray("SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'", []);
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['Column_name']);
             $table->addPrimaryKey($key);

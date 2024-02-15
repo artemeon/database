@@ -1,7 +1,13 @@
 name: Psalm
 on:
-  - pull_request
-  - push
+  pull_request:
+  push:
+    branches:
+      - master
+      - 3.0.x
+      - 2.0.x
+      - 1.0.x
+      - 0.2.x
 jobs:
   psalm:
     name: Psalm

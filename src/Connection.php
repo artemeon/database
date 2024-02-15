@@ -1124,7 +1124,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        if (!$this->dbDriver === null) {
+        if (!$this->dbDriver) {
             return [];
         }
 
@@ -1197,7 +1197,7 @@ class Connection implements ConnectionInterface
     /**
      * Makes a string db-safe.
      *
-     * @return int|null|string
+     * @return int|float|null|string
      * @deprecated we need to get rid of this
      */
     public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed

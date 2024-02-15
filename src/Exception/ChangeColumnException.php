@@ -29,10 +29,7 @@ class ChangeColumnException extends \Exception
      */
     private $newColumnName;
 
-    /**
-     * @var string
-     */
-    private $newDataType;
+    private DataType $newDataType;
 
     public function __construct(string $message, string $table, string $oldColumnName, string $newColumnName, DataType $newDataType, ?\Throwable $previous = null)
     {
@@ -68,10 +65,7 @@ class ChangeColumnException extends \Exception
         return $this->newColumnName;
     }
 
-    /**
-     * @return string
-     */
-    public function getNewDataType(): string
+    public function getNewDataType(): DataType
     {
         return $this->newDataType;
     }

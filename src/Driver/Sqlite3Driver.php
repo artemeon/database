@@ -353,7 +353,7 @@ class Sqlite3Driver extends DriverAbstract
         $table = new Table($tableName);
 
         // fetch all columns
-        $columnInfo = $this->getPArray("PRAGMA table_info('$tableName')", []) ?: [];
+        $columnInfo = $this->getPArray("PRAGMA table_info('$tableName')", []);
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make($column['name'])
@@ -368,7 +368,7 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         // fetch all indexes
-        $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?", [$tableName]) ?: [];
+        $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?", [$tableName]);
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['name']);
             $index->setDescription($indexInfo['sql'] ?? '');
