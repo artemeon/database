@@ -357,7 +357,9 @@ class Connection implements ConnectionInterface
             trigger_error('The number parameter is deprecated', E_USER_DEPRECATED);
         }
 
+        $params = $this->dbsafeParams($params, false);
         $result = $this->dbDriver->getPArray($query, $params);
+
         foreach ($result as $row) {
             return $row;
         }
@@ -434,7 +436,8 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        $result = $this->dbDriver->getPArray($query, $this->dbsafeParams($params));
+        $params = $this->dbsafeParams($params);
+        $result = $this->dbDriver->getPArray($query, $params);
         $chunk = [];
 
         foreach ($result as $row) {
@@ -466,6 +469,7 @@ class Connection implements ConnectionInterface
         $this->number++;
         $startTime = microtime(true);
 
+        $params = $this->dbsafeParams($params, false);
         $output = iterator_to_array($this->dbDriver->getPArray($query, $params), false);
 
         $this->addQueryToList($query, $params, false, $startTime);
@@ -487,6 +491,7 @@ class Connection implements ConnectionInterface
         $this->number++;
         $startTime = microtime(true);
 
+        $params = $this->dbsafeParams($params, false);
         $result = $this->dbDriver->getPArray($query, $params);
 
         $this->addQueryToList($query, $params, false, $startTime);
@@ -509,8 +514,10 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        $params = $this->dbsafeParams($params, false);
+        $result = $this->dbDriver->getPArray($query, $params);
+
         $values = [];
-        $result = $this->dbDriver->getPArray($query, $this->dbsafeParams($params, []));
         foreach ($result as $row) {
             $values[] = reset($row);
         }
@@ -548,7 +555,9 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        yield from $this->dbDriver->getPArray($query, $this->dbsafeParams($params));
+        $params = $this->dbsafeParams($params, false);
+
+        yield from $this->dbDriver->getPArray($query, $params);
     }
 
     /**
@@ -562,7 +571,9 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        $result = $this->dbDriver->getPArray($query, $this->dbsafeParams($params));
+        $params = $this->dbsafeParams($params, false);
+        $result = $this->dbDriver->getPArray($query, $params);
+
         foreach ($result as $row) {
             yield reset($row);
         }
@@ -1168,26 +1179,35 @@ class Connection implements ConnectionInterface
      * An internal wrapper to dbsafeString, used to process a complete array of parameters
      * as used by prepared statements.
      *
-     * @param array $escapes An array of boolean for each param, used to block the escaping of html-special chars.
+     * @param array|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                          If not passed, all params will be cleaned.
      *
      * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
-    private function dbsafeParams(array $params, array $escapes = []): array
+    private function dbsafeParams(array $params, array|false $escapes = []): array
     {
         $replace = [];
         foreach ($params as $key => $param) {
+            if ($param instanceof \BackedEnum) {
+                $replace[$key] = $param->value;
+
+                continue;
+            }
+
             if ($param instanceof EscapeableParameterInterface && !$param->isEscape()) {
                 $replace[$key] = $param->getValue();
 
                 continue;
             }
 
-            if (isset($escapes[$key])) {
-                $param = $this->dbsafeString($param, $escapes[$key], false);
-            } else {
-                $param = $this->dbsafeString($param, true, false);
+            if ($escapes !== false) {
+                if (isset($escapes[$key])) {
+                    $param = $this->dbsafeString($param, $escapes[$key], false);
+                } else {
+                    $param = $this->dbsafeString($param, true, false);
+                }
             }
+
             $replace[$key] = $param;
         }
 
