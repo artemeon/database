@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.1
+## 3.2.1
 
 - Automatically convert backend enums to the value so that a user can provide an enum class as parameter
 - Streamline params handling, all new fetch* and iterate* methods are without auto-escaping
