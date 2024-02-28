@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.1
+
+- Automatically convert backend enums to the value so that a user can provide an enum class as parameter
+- Streamline params handling, all new fetch* and iterate* methods are without auto-escaping
+
 ## 3.0.0
 
 - Bumps the minimum required PHP version to `8.1`.
