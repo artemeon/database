@@ -785,16 +785,6 @@ class Oci8Driver extends DriverAbstract
     }
 
     /**
-     * Sets the sorting and comparison of strings to case insensitive
-     * @throws QueryException
-     */
-    private function setCaseInsensitiveSort(): void
-    {
-        $this->_pQuery('alter session set nls_sort=binary_ci', []);
-        $this->_pQuery('alter session set nls_comp=LINGUISTIC', []);
-    }
-
-    /**
      * Sets the sorting and comparison of strings to case sensitive
      * @throws QueryException
      */

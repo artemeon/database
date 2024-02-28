@@ -42,7 +42,7 @@ class TableColumn implements JsonSerializable
     {
         return [
             'name' => $this->getName(),
-            'internalType' => $this->getInternalType()?->value ?? '',
+            'internalType' => $this->getInternalType()->value ?? '',
             'databaseType' => $this->getDatabaseType(),
             'nullable' => $this->isNullable(),
         ];
