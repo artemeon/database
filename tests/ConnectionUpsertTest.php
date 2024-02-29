@@ -226,22 +226,4 @@ class ConnectionUpsertTest extends ConnectionTestCase
             $objDb->_pQuery($query, [$int, $text, $id, $id2]);
         }
     }
-
-    // this approach is not feasible! in an update matches a row with the same data, at least mysql returns 0.
-    // where not matching: 0 affected, where matching but update not required: 0 affected
-    /**
-     * @throws ConnectionException
-     * @throws QueryException
-     */
-    private function runInsertAndUpdateChangedRows($id, $id2, $int, $text)
-    {
-        $objDb = $this->getConnection();
-
-        $query = 'UPDATE agp_temp_upserttest3 SET temp_int = ?, temp_text = ? WHERE temp_id = ? AND temp_id2 = ?';
-        $objDb->_pQuery($query, [$int, $text, $id, $id2]);
-        if($objDb->getAffectedRowsCount() == 0) {
-            $query = 'INSERT INTO agp_temp_upserttest3 (temp_id, temp_id2, temp_int, temp_text) VALUES (?, ?, ?, ?)';
-            $objDb->_pQuery($query, [$id, $id2, $int, $text]);
-        }
-    }
 }
