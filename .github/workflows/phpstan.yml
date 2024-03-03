@@ -3,30 +3,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
       - 3.0.x
-      - 2.0.x
-      - 1.0.x
-      - 0.2.x
 jobs:
   phpstan:
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ ubuntu-latest ]
-        php: [ 8.3, 8.2, 8.1 ]
-        stability: [ prefer-stable ]
-    name: P${{ matrix.php }} - ${{ matrix.stability }} - ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Install PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          coverage: none
-      - name: Composer install
-        run: composer install --no-interaction --no-ansi --no-progress
-      - name: Run PHPStan
-        run: composer run phpstan
+    uses: artemeon/.shared/.github/workflows/phpstan.yml@main
