@@ -355,4 +355,17 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Returns the number of items currently in the query-cache.
      */
     public function getCacheSize(): int;
+
+    /**
+     * Creates an db-dump using the given filename. The filename is relative to _realpath_
+     * The dump must include, and ONLY include the pass tables.
+     *
+     * @param string &$fileName passed by reference so that the driver is able to update the filename, e.g. in order to add a .gz suffix.
+     */
+    public function dbExport(string &$fileName, array $tables): bool;
+
+    /**
+     * Imports the given db-dump file to the database. The filename ist relative to _realpath_.
+     */
+    public function dbImport(string $fileName): bool;
 }

@@ -1394,4 +1394,14 @@ class Connection implements ConnectionInterface
     {
         return $this->dbDriver->getStringLengthExpression($targetString);
     }
+
+    public function dbExport(string &$fileName, array $tables): bool
+    {
+        return $this->dbDriver->dbExport($fileName, $tables);
+    }
+
+    public function dbImport(string $fileName): bool
+    {
+        return $this->dbDriver->dbImport($fileName);
+    }
 }

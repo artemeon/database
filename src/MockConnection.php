@@ -350,4 +350,14 @@ class MockConnection implements ConnectionInterface
     {
         return 0;
     }
+
+    public function dbExport(string &$fileName, array $tables): bool
+    {
+        return false;
+    }
+
+    public function dbImport(string $fileName): bool
+    {
+        return false;
+    }
 }
