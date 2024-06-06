@@ -232,7 +232,7 @@ interface DriverInterface
      * This could get important in case of schema updates since precompiled queries may get invalid due
      * to updated table definitions.
      */
-    public function flushQueryCache(): void;
+    public function flushQueryCache(bool $hasOpenTransactions): void;
 
     public function escape(mixed $value): mixed;
 

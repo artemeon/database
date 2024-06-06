@@ -606,10 +606,14 @@ class PostgresDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
-    public function flushQueryCache(): void
+    public function flushQueryCache(bool $hasOpenTransactions): void
     {
-        $this->_pQuery('DISCARD ALL', []);
+        if (!$hasOpenTransactions) {
+            // DISCARD ALL cannot be executed inside a transaction block s.
+            // https://www.postgresql.org/docs/current/sql-discard.html
+            $this->_pQuery('DISCARD ALL', []);
+        }
 
-        parent::flushQueryCache();
+        parent::flushQueryCache($hasOpenTransactions);
     }
 }
