@@ -608,7 +608,8 @@ class PostgresDriver extends DriverAbstract
      */
     public function flushQueryCache(): void
     {
-        $this->_pQuery('DISCARD ALL', []);
+        // s. https://www.postgresql.org/docs/current/sql-deallocate.html
+        $this->_pQuery('DEALLOCATE ALL', []);
 
         parent::flushQueryCache();
     }
