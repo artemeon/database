@@ -733,7 +733,7 @@ class Oci8Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
-    public function flushQueryCache(bool $hasOpenTransactions): void
+    public function flushQueryCache(): void
     {
     }
 

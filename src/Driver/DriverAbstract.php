@@ -240,7 +240,7 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
-    public function flushQueryCache(bool $hasOpenTransactions): void
+    public function flushQueryCache(): void
     {
         $this->statementsCache = [];
     }
