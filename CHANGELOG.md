@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.2
+
+- Improved postgres flushQueryCache use `DEALLOCATE ALL` instead of `DISCARD ALL`
+
 ## 3.2.1
 
 - Automatically convert backend enums to the value so that a user can provide an enum class as parameter
