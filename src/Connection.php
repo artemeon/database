@@ -1262,7 +1262,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        $this->dbDriver->flushQueryCache($this->numberOfOpenTransactions > 0);
+        $this->dbDriver->flushQueryCache();
     }
 
     /**
