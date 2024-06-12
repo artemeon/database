@@ -293,4 +293,39 @@ interface DriverInterface
      * Pass the value to be counted (e.g. a column name) by param.
      */
     public function getStringLengthExpression(string $targetString): string;
+
+    /**
+     * Generates a SQL snippet that extracts a value from a JSON string or returns the string itself.
+     *
+     * Given a column that contains either JSON data or simple strings, this method creates a SQL snippet
+     * that extracts the value associated with a specified key from the JSON data if the column contains
+     * JSON. If the column contains a simple string, it returns the string itself.
+     *
+     * Example Usage:
+     * $snippet = $this->getJsonColumnExpression('data', 'de');
+     * "SELECT $snippet AS translation FROM $table;"
+     *
+     *   - For a column 'data' with JSON content '{"de":"Translation a","en":"Translation b"}'
+     *   - and key 'de', the snippet will extract the value 'Translation a'.
+     *   - If the column contains a simple string 'Translation', the snippet will return it directly.
+     *
+     * @param string $column The name of the column containing JSON data or simple strings.
+     * @param string $key The key to extract from the JSON data.
+     * @return string The SQL snippet for extracting the value.
+     */
+    public function getJsonColumnExpression(string $column, string $key): string;
+
+    /**
+     * Generates the SQL snippet to extract the nth element from the end
+     * of a slash-separated string in the specified column.
+     *
+     *  Example usage:
+     *  $snippet = $this->getNthLastElementFromSlug('slug_column', 3);
+     *  "LEFT JOIN table ON table.id = $slugSnippet"
+     *
+     * @param string $column The name of the column containing the slash-separated string.
+     * @param int $position The position from the end of the string (e.g., 3 for the third last element).
+     * @return string The generated SQL snippet.
+     */
+    public function getNthLastElementFromSlug(string $column, int $position): string;
 }

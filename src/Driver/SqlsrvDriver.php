@@ -623,4 +623,19 @@ class SqlsrvDriver extends DriverAbstract
 
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return "CASE
+                    WHEN ISJSON($column) > 0 THEN
+                        JSON_VALUE($column, '$.$key')
+                    ELSE
+                        $column
+                END";
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return "SUBSTRING($column, CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + $position - 1) + 1), LEN($column) - CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + $position - 1) + 1)";
+    }
 }

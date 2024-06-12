@@ -626,4 +626,19 @@ class MysqliDriver extends DriverAbstract
     {
         return str_replace("\\", "\\\\", (string) $value);
     }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return "CASE
+                    WHEN JSON_VALID($column) THEN
+                        JSON_UNQUOTE(JSON_EXTRACT($column, '$.$key'))
+                    ELSE
+                        $column
+                END";
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return "SUBSTRING_INDEX(SUBSTRING_INDEX($column, '/', -$position), '/', 1)";
+    }
 }

@@ -803,5 +803,23 @@ class Oci8Driver extends DriverAbstract
 
         return 'SUBSTR(' . implode(', ', $parameters) . ')';
     }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return "CASE
+                    WHEN REGEXP_LIKE($column, '^\{') THEN
+                        COALESCE(
+                            json_value($column, '$.$key'),
+                            $column
+                        )
+                    ELSE
+                        $column
+                END";
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return "SUBSTR($column, INSTR($column, '/', -$position) + 1, INSTR($column, '/', -(($position) - 1)) - INSTR($column, '/', -$position) - 1)";
+    }
 }
 

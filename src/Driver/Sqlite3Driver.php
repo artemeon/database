@@ -624,4 +624,19 @@ class Sqlite3Driver extends DriverAbstract
 
         return 'SUBSTR(' . implode(', ', $parameters) . ')';
     }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return "CASE
+                    WHEN json_valid($column) THEN
+                        json_extract($column, '$.$key')
+                    ELSE
+                        $column
+                END";
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return "SUBSTR($column, LENGTH($column) - INSTR(REVERSE($column), '/', $position) + 2, INSTR(REVERSE($column), '/', $position) - INSTR(REVERSE($column), '/', $position - 1) - 1)";
+    }
 }
