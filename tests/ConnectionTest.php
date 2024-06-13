@@ -812,6 +812,39 @@ class ConnectionTest extends ConnectionTestCase
         $connection->_pQuery('DROP TABLE ' . $tableName);
     }
 
+    public function testGetJsonColumnExpression(): void
+    {
+        $connection = $this->getConnection();
+
+        $tableName = 'agp_test_get_json_column';
+        $fields = [
+            'test_id' => [DataType::CHAR20, false],
+            'column_1'  => [DataType::TEXT, true],
+        ];
+
+        $connection->createTable($tableName, $fields, ['test_id']);
+
+        $testData = [
+            ['test_id' => 'testa', 'column_1' => '{"de":"Translation a","en":"Translation b"}'],
+            ['test_id' => 'testb', 'column_1' => 'Translation c'],
+        ];
+        $connection->multiInsert($tableName, array_keys($fields), $testData);
+
+        $testCases = [
+            ['test_id' => 'testa', 'expectedResult' => 'Translation a'],
+            ['test_id' => 'testb', 'expectedResult' => 'Translation c'],
+        ];
+
+        foreach ($testCases as $testCase) {
+            $query = sprintf('SELECT %s AS translation FROM %s WHERE test_id = ?', $connection->getJsonColumnExpression('column_1', 'de'), $tableName);
+            $row = $connection->getPRow($query, [$testCase['test_id']]);
+
+            $this->assertEquals($testCase['expectedResult'], $row['translation']);
+        }
+
+        $connection->_pQuery('DROP TABLE ' . $tableName);
+    }
+
     /**
      * @throws ConnectionException
      * @throws QueryException
