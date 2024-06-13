@@ -825,7 +825,10 @@ class ConnectionTest extends ConnectionTestCase
         $connection->createTable($tableName, $fields, ['test_id']);
 
         $testData = [
-            ['test_id' => 'testa', 'column_1' => '{"de":"Translation a","en":"Translation b"}'],
+            ['test_id' => 'testa', 'column_1' => json_encode([
+                'de' => 'Translation a',
+                'en' => 'Translation b',
+            ])],
             ['test_id' => 'testb', 'column_1' => 'Translation c'],
         ];
         $connection->multiInsert($tableName, array_keys($fields), $testData);
