@@ -825,11 +825,11 @@ class ConnectionTest extends ConnectionTestCase
         $connection->createTable($tableName, $fields, ['id']);
 
         $testData = [
-            ['json_column' => '{"key1": "value1", "key2": "value2"}'],
-            ['json_column' => '{"key1": "another_value", "key3": "value3"}'],
-            ['json_column' => '{"key2": "value4"}'],
-            ['json_column' => '{"key1": 42, "key4": true}'],
-            ['json_column' => 'invalid_json'],
+            ['id' => 'a', 'json_column' => '{"key1": "value1", "key2": "value2"}'],
+            ['id' => 'b', 'json_column' => '{"key1": "another_value", "key3": "value3"}'],
+            ['id' => 'c', 'json_column' => '{"key2": "value4"}'],
+            ['id' => 'd', 'json_column' => '{"key1": 42, "key4": true}'],
+            ['id' => 'e', 'json_column' => 'invalid_json'],
         ];
         $connection->multiInsert($tableName, array_keys($fields), $testData);
 
@@ -842,7 +842,7 @@ class ConnectionTest extends ConnectionTestCase
         ];
 
         $query = sprintf('SELECT ? AS extracted_value FROM ?');
-        $results = $connection->getPArray($query, [$connection->getJsonColumnExpression('json_column', 'de'), $tableName]);
+        $results = $connection->getPArray($query, [$connection->getJsonColumnExpression('json_column', 'key1'), $tableName]);
         $this->assertEquals($expected, $results);
 
         $connection->_pQuery('DROP TABLE ' . $tableName);
