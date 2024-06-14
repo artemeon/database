@@ -636,6 +636,14 @@ class SqlsrvDriver extends DriverAbstract
 
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
-        return "SUBSTRING($column, CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + $position - 1) + 1), LEN($column) - CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + $position - 1) + 1)";
+        return "
+            REVERSE(
+                SUBSTRING(
+                    REVERSE($column), 
+                    CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + 1) + 1, 
+                    CHARINDEX('/', REVERSE($column)) - CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + 1) - 1
+                )
+            )
+        ";
     }
 }
