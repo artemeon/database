@@ -639,9 +639,9 @@ class SqlsrvDriver extends DriverAbstract
         return "
             REVERSE(
                 SUBSTRING(
-                    REVERSE($column), 
-                    CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + 1) + 1, 
-                    CHARINDEX('/', REVERSE($column)) - CHARINDEX('/', REVERSE($column), CHARINDEX('/', REVERSE($column)) + 1) - 1
+                    REVERSE('/' + $column + '/'), 
+                    CHARINDEX('/', REVERSE('/' + $column + '/'), CHARINDEX('/', REVERSE('/' + $column + '/')) + 1) + 1, 
+                    CHARINDEX('/', REVERSE('/' + $column + '/')) - CHARINDEX('/', REVERSE('/' + $column + '/'), CHARINDEX('/', REVERSE('/' + $column + '/')) + 1) - 1
                 )
             )
         ";
