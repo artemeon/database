@@ -818,32 +818,32 @@ class ConnectionTest extends ConnectionTestCase
 
         $tableName = 'agp_test_get_json_column';
         $fields = [
-            'test_id' => [DataType::CHAR20, false],
-            'column_1'  => [DataType::TEXT, true],
+            'id' => [DataType::CHAR20, false],
+            'json_column'  => [DataType::TEXT, true],
         ];
 
-        $connection->createTable($tableName, $fields, ['test_id']);
+        $connection->createTable($tableName, $fields, ['id']);
 
         $testData = [
-            ['test_id' => 'testa', 'column_1' => json_encode([
-                'de' => 'Translation a',
-                'en' => 'Translation b',
-            ])],
-            ['test_id' => 'testb', 'column_1' => 'Translation c'],
+            ['json_column' => '{"key1": "value1", "key2": "value2"}'],
+            ['json_column' => '{"key1": "another_value", "key3": "value3"}'],
+            ['json_column' => '{"key2": "value4"}'],
+            ['json_column' => '{"key1": 42, "key4": true}'],
+            ['json_column' => 'invalid_json'],
         ];
         $connection->multiInsert($tableName, array_keys($fields), $testData);
 
-        $testCases = [
-            ['test_id' => 'testa', 'expectedResult' => 'Translation a'],
-            ['test_id' => 'testb', 'expectedResult' => 'Translation c'],
+        $expected = [
+            ['extracted_value' => 'value1'],
+            ['extracted_value' => 'another_value'],
+            ['extracted_value' => null],
+            ['extracted_value' => '42'],
+            ['extracted_value' => 'invalid_json']
         ];
 
-        foreach ($testCases as $testCase) {
-            $query = sprintf('SELECT %s AS translation FROM %s WHERE test_id = ?', $connection->getJsonColumnExpression('column_1', 'de'), $tableName);
-            $row = $connection->getPRow($query, [$testCase['test_id']]);
-
-            $this->assertEquals($testCase['expectedResult'], $row['translation']);
-        }
+        $query = sprintf('SELECT ? AS extracted_value FROM ?');
+        $results = $connection->getPArray($query, [$connection->getJsonColumnExpression('json_column', 'de'), $tableName]);
+        $this->assertEquals($expected, $results);
 
         $connection->_pQuery('DROP TABLE ' . $tableName);
     }
