@@ -817,14 +817,12 @@ class ConnectionTest extends ConnectionTestCase
         $connection = $this->getConnection();
         $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
 
-        $testData = [
-            ['temp_id' => 'a', 'temp_text' => '{"key1": "value1", "key2": "value2"}'],
-            ['temp_id' => 'b', 'temp_text' => '{"key1": "another_value", "key3": "value3"}'],
-            ['temp_id' => 'c', 'temp_text' => '{"key2": "value4"}'],
-            ['temp_id' => 'd', 'temp_text' => '{"key1": 42, "key4": true}'],
-            ['temp_id' => 'e', 'temp_text' => 'invalid_json'],
-        ];
-        $connection->multiInsert(self::TEST_TABLE_NAME, ['temp_id'], $testData);
+        $connection->_pQuery('INSERT INTO ' . self::TEST_TABLE_NAME . ' (temp_id, temp_text) VALUES
+            (\'a\', \'{"key1": "value1", "key2": "value2"}\'),
+            (\'b\', \'{"key1": "another_value", "key3": "value3"}\'),
+            (\'c\', \'{"key2": "value4"}\'),
+            (\'d\', \'{"key1": 42, "key4": true}\'),
+            (\'e\', \'invalid_json\')');
 
         $expected = [
             'a' => 'value1',
@@ -836,6 +834,7 @@ class ConnectionTest extends ConnectionTestCase
 
         $query = 'SELECT temp_id, ' . $connection->getJsonColumnExpression('temp_text', 'key1') . ' AS extracted_value FROM ' . self::TEST_TABLE_NAME;
         $results = $connection->getPArray($query);
+
         foreach ($results as $result) {
             $this->assertEquals($expected[$result['temp_id']], $result['extracted_value']);
         }
