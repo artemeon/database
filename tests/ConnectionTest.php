@@ -834,8 +834,8 @@ class ConnectionTest extends ConnectionTestCase
             ['extracted_value' => 'invalid_json']
         ];
 
-        $query = sprintf('SELECT ? AS extracted_value FROM ' . self::TEST_TABLE_NAME);
-        $results = $connection->getPArray($query, [$connection->getJsonColumnExpression('temp_text', 'key1')]);
+        $query = 'SELECT ' . $connection->getJsonColumnExpression('temp_text', 'key1') . ' AS extracted_value FROM ' . self::TEST_TABLE_NAME;
+        $results = $connection->getPArray($query);
         $this->assertEquals($expected, $results);
     }
 
