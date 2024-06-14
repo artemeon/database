@@ -815,23 +815,16 @@ class ConnectionTest extends ConnectionTestCase
     public function testGetJsonColumnExpression(): void
     {
         $connection = $this->getConnection();
-
-        $tableName = 'agp_test_get_json_column';
-        $fields = [
-            'id' => [DataType::CHAR20, false],
-            'json_column'  => [DataType::TEXT, true],
-        ];
-
-        $connection->createTable($tableName, $fields, ['id']);
+        $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
 
         $testData = [
-            ['id' => 'a', 'json_column' => '{"key1": "value1", "key2": "value2"}'],
-            ['id' => 'b', 'json_column' => '{"key1": "another_value", "key3": "value3"}'],
-            ['id' => 'c', 'json_column' => '{"key2": "value4"}'],
-            ['id' => 'd', 'json_column' => '{"key1": 42, "key4": true}'],
-            ['id' => 'e', 'json_column' => 'invalid_json'],
+            ['temp_id' => 'a', 'temp_text' => '{"key1": "value1", "key2": "value2"}'],
+            ['temp_id' => 'b', 'temp_text' => '{"key1": "another_value", "key3": "value3"}'],
+            ['temp_id' => 'c', 'temp_text' => '{"key2": "value4"}'],
+            ['temp_id' => 'd', 'temp_text' => '{"key1": 42, "key4": true}'],
+            ['temp_id' => 'e', 'temp_text' => 'invalid_json'],
         ];
-        $connection->multiInsert($tableName, array_keys($fields), $testData);
+        $connection->multiInsert(self::TEST_TABLE_NAME, ['temp_id'], $testData);
 
         $expected = [
             ['extracted_value' => 'value1'],
@@ -841,11 +834,9 @@ class ConnectionTest extends ConnectionTestCase
             ['extracted_value' => 'invalid_json']
         ];
 
-        $query = sprintf('SELECT ? AS extracted_value FROM ?');
-        $results = $connection->getPArray($query, [$connection->getJsonColumnExpression('json_column', 'key1'), $tableName]);
+        $query = sprintf('SELECT ? AS extracted_value FROM ' . self::TEST_TABLE_NAME);
+        $results = $connection->getPArray($query, [$connection->getJsonColumnExpression('temp_text', 'key1')]);
         $this->assertEquals($expected, $results);
-
-        $connection->_pQuery('DROP TABLE ' . $tableName);
     }
 
     /**
