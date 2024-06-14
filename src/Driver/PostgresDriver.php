@@ -617,11 +617,13 @@ class PostgresDriver extends DriverAbstract
     public function getJsonColumnExpression(string $column, string $key): string
     {
         return "CASE
-                    WHEN $column::jsonb ? '$key' THEN
-                        $column::jsonb ->> '$key'
-                    ELSE
-                        $column
-                END";
+        WHEN 
+            $column ~ '^{.*}$' 
+        THEN
+            jsonb_extract_path_text($column::jsonb, '$key')::text
+        ELSE
+            $column
+        END";
     }
 
     public function getNthLastElementFromSlug(string $column, int $position): string
