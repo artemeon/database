@@ -827,16 +827,18 @@ class ConnectionTest extends ConnectionTestCase
         $connection->multiInsert(self::TEST_TABLE_NAME, ['temp_id'], $testData);
 
         $expected = [
-            ['extracted_value' => 'value1'],
-            ['extracted_value' => 'another_value'],
-            ['extracted_value' => null],
-            ['extracted_value' => '42'],
-            ['extracted_value' => 'invalid_json']
+            'a' => 'value1',
+            'b' => 'another_value',
+            'c' => null,
+            'd' => '42',
+            'e' => 'invalid_json'
         ];
 
-        $query = 'SELECT ' . $connection->getJsonColumnExpression('temp_text', 'key1') . ' AS extracted_value FROM ' . self::TEST_TABLE_NAME;
+        $query = 'SELECT temp_id, ' . $connection->getJsonColumnExpression('temp_text', 'key1') . ' AS extracted_value FROM ' . self::TEST_TABLE_NAME;
         $results = $connection->getPArray($query);
-        $this->assertEquals($expected, $results);
+        foreach ($results as $result) {
+            $this->assertEquals($expected[$result['temp_id']], $result['extracted_value']);
+        }
     }
 
     /**
