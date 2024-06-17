@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.3.0
+
+- Remove unused SqlsrvDriver #68
+- Add JsonColumnExpression and slug id separation #67
+- Improved query functions, removed obsolete refValues function #66
+
 ## 3.2.1
 
 - Improved postgres flushQueryCache use `DEALLOCATE ALL` instead of `DISCARD ALL`
