@@ -1,6 +1,2 @@
 parameters:
 	ignoreErrors:
-		-
-			message: "#^Empty array passed to foreach\\.$#"
-			count: 1
-			path: src/Driver/MysqliDriver.php
