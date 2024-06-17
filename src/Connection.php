@@ -1394,4 +1394,14 @@ class Connection implements ConnectionInterface
     {
         return $this->dbDriver->getStringLengthExpression($targetString);
     }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return $this->dbDriver->getJsonColumnExpression($column, $key);
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return $this->dbDriver->getNthLastElementFromSlug($column, $position);
+    }
 }

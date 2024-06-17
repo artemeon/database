@@ -812,6 +812,74 @@ class ConnectionTest extends ConnectionTestCase
         $connection->_pQuery('DROP TABLE ' . $tableName);
     }
 
+    public function testGetJsonColumnExpression(): void
+    {
+        $connection = $this->getConnection();
+        $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
+
+        $connection->_pQuery('INSERT INTO ' . self::TEST_TABLE_NAME . " (temp_id, temp_text) VALUES
+            ('a', '{\"key1\": \"value1\", \"key2\": \"value2\"}'),
+            ('b', '{\"key1\": \"another_value\", \"key3\": \"value3\"}'),
+            ('c', '{\"key2\": \"value4\"}'),
+            ('d', '{\"key1\": 42, \"key4\": true}'),
+            ('e', 'invalid_json')");
+
+        $expected = [
+            'a' => 'value1',
+            'b' => 'another_value',
+            'c' => null,
+            'd' => '42',
+            'e' => 'invalid_json'
+        ];
+
+        $query = 'SELECT temp_id, ' . $connection->getJsonColumnExpression('temp_text', 'key1') . ' AS extracted_value FROM ' . self::TEST_TABLE_NAME;
+        $results = $connection->getPArray($query);
+
+        foreach ($results as $result) {
+            $this->assertEquals($expected[$result['temp_id']], $result['extracted_value']);
+        }
+    }
+
+    public function testGetNthLastElementFromSlug()
+    {
+        $connection = $this->getConnection();
+        $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
+
+        $connection->_pQuery('INSERT INTO ' . self::TEST_TABLE_NAME . " (temp_id, temp_text) VALUES
+        ('a','/segment1/segment2/segment3'),
+        ('b','0/63775705bac9fe5a7455/713d5735bac9fe5c6497/c7875495fa57c49dac6c/c5dbf71618ecdf3d2544/segment1/segment2/segment3'),
+        ('c','/segment1'),
+        ('d', '');");
+
+        $query = 'SELECT temp_id, ' . $connection->getNthLastElementFromSlug('temp_text', 1) . 'AS temp_text FROM ' . self::TEST_TABLE_NAME;
+        $results = $connection->getPArray($query);
+
+        $expected = [
+            'a' => 'segment3',
+            'b' => 'segment3',
+            'c' => 'segment1',
+            'd' => '',
+        ];
+
+        foreach ($results as $result) {
+            $this->assertEquals($expected[$result['temp_id']], $result['temp_text']);
+        }
+
+        $query = 'SELECT temp_id, ' . $connection->getNthLastElementFromSlug('temp_text', 2) . 'AS temp_text FROM ' . self::TEST_TABLE_NAME;
+        $results = $connection->getPArray($query);
+
+        $expected = [
+            'a' => 'segment2',
+            'b' => 'segment2',
+            'c' => '',
+            'd' => '',
+        ];
+
+        foreach ($results as $result) {
+            $this->assertEquals($expected[$result['temp_id']], $result['temp_text']);
+        }
+    }
+
     /**
      * @throws ConnectionException
      * @throws QueryException

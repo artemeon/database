@@ -350,4 +350,14 @@ class MockConnection implements ConnectionInterface
     {
         return 0;
     }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return '';
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return '';
+    }
 }

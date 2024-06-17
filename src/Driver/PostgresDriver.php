@@ -613,4 +613,21 @@ class PostgresDriver extends DriverAbstract
 
         parent::flushQueryCache();
     }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return "CASE
+        WHEN 
+            $column ~ '^{.*}$' 
+        THEN
+            jsonb_extract_path_text($column::jsonb, '$key')::text
+        ELSE
+            $column
+        END";
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return "SPLIT_PART(REVERSE(SPLIT_PART(REVERSE($column), '/', $position)), '/', 1)";
+    }
 }

@@ -58,6 +58,13 @@ class Sqlite3Driver extends DriverAbstract
             $this->_pQuery('PRAGMA journal_mode = WAL', []);
             $this->linkDB->busyTimeout(5000);
 
+            // Benutzerdefinierte Funktion zum Extrahieren des n-ten letzten Segments
+            $this->linkDB->createFunction('extract_nth_last_slug_segment', function($string, $position) {
+                $segments = explode('/', trim($string, '/'));
+                $index = count($segments) - $position;
+                return ($index >= 0 && $index < count($segments)) ? $segments[$index] : '';
+            }, 2);
+
             return true;
         } catch (Throwable $e) {
             throw new ConnectionException('Error connecting to database', 0, $e);
@@ -623,5 +630,20 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         return 'SUBSTR(' . implode(', ', $parameters) . ')';
+    }
+
+    public function getJsonColumnExpression(string $column, string $key): string
+    {
+        return "CASE
+                    WHEN json_valid($column) THEN
+                        json_extract($column, '$.$key')
+                    ELSE
+                        $column
+                END";
+    }
+
+    public function getNthLastElementFromSlug(string $column, int $position): string
+    {
+        return "extract_nth_last_slug_segment($column, $position)";
     }
 }
