@@ -76,13 +76,9 @@ class MysqliDriver extends DriverAbstract
             throw new ConnectionException('Error connecting to database: ' . $this->linkDB->connect_error);
         }
 
-        // erst ab mysql-client-bib > 4
-        // mysqli_set_charset($this->linkDB, "utf8");
         $this->_pQuery("SET NAMES 'utf8mb4'", []);
         $this->_pQuery('SET CHARACTER SET utf8mb4', []);
         $this->_pQuery("SET character_set_connection ='utf8mb4'", []);
-        // $this->_pQuery("SET character_set_database ='utf8mb4'", []);
-        // $this->_pQuery("SET character_set_server ='utf8mb4'", []);
 
         $this->connected = true;
 
@@ -110,12 +106,14 @@ class MysqliDriver extends DriverAbstract
     public function _pQuery($query, $params): bool
     {
         $statement = $this->getPreparedStatement($query);
+
         if ($statement === false) {
             throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
         $output = false;
         $types = '';
+
         foreach ($params as $param) {
             if (is_float($param)) {
                 $types .= 'd';
@@ -127,11 +125,11 @@ class MysqliDriver extends DriverAbstract
         }
 
         if (count($params) > 0) {
-            $params = array_merge([$types], $params);
-            call_user_func_array([$statement, 'bind_param'], $this->refValues($params));
+            $statement->bind_param($types, ...$params);
         }
 
         $count = 0;
+
         while ($count < self::MAX_DEADLOCK_RETRY_COUNT) {
             $output = $statement->execute();
             if ($output === false && $statement->errno === 1213) {
@@ -148,6 +146,7 @@ class MysqliDriver extends DriverAbstract
         }
 
         $this->affectedRowsCount = $statement->affected_rows;
+        $statement->free_result();
 
         return $output;
     }
@@ -158,51 +157,31 @@ class MysqliDriver extends DriverAbstract
     public function getPArray(string $query, array $params): Generator
     {
         $statement = $this->getPreparedStatement($query);
+        $types = '';
+
         if ($statement === false) {
             throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
-        $types = '';
         foreach ($params as $param) {
             $types .= 's';
         }
 
         if (count($params) > 0) {
-            $params = array_merge([$types], $params);
-            call_user_func_array([$statement, 'bind_param'], $this->refValues($params));
+            $statement->bind_param($types, ...$params);
         }
 
         if (!$statement->execute()) {
             throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
-        //should remain here due to the bug http://bugs.php.net/bug.php?id=47928
-        $statement->store_result();
+        $result = $statement->get_result();
 
-        $metadata = $statement->result_metadata();
-        $params = [];
-        $row = [];
-
-        if ($metadata === false) {
-            $statement->free_result();
-            return [];
+        while ($row = $result->fetch_assoc()) {
+            yield $row;
         }
 
-        while ($field = $metadata->fetch_field()) {
-            $params[] = &$row[$field->name];
-        }
-
-        call_user_func_array([$statement, 'bind_result'], $params);
-
-        while ($statement->fetch()) {
-            $singleRow = [];
-            foreach ($row as $key => $val) {
-                $singleRow[$key] = $val;
-            }
-            yield $singleRow;
-        }
-
-        $statement->free_result();
+        $result->free_result();
     }
 
     /**
@@ -572,22 +551,6 @@ class MysqliDriver extends DriverAbstract
         $this->runCommand($command);
 
         return true;
-    }
-
-    /**
-     * Converts a simple array into an array of references.
-     * Required for PHP > 5.3.
-     */
-    private function refValues(array $values): array
-    {
-        if (strnatcmp(PHP_VERSION, '5.3') >= 0) { // Reference is required for PHP 5.3+
-            $refs = [];
-            foreach ($values as $key => $value) {
-                $refs[$key] = &$values[$key];
-            }
-            return $refs;
-        }
-        return $values;
     }
 
     /**

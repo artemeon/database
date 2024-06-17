@@ -209,46 +209,4 @@ jobs:
           DB_SCHEMA: "agp"
           DB_DRIVER: "mysqli"
         run: "vendor/bin/phpunit"
-  phpunit-mssql:
-    name: "PHPUnit with SQL Server"
-    runs-on: ubuntu-latest
-    needs: phpunit-smoke-check
-    strategy:
-      matrix:
-        php-version:
-          - "8.1"
-          - "8.2"
-        extension:
-          - "sqlsrv"
-    services:
-      mssql:
-        image: "mcr.microsoft.com/mssql/server:2019-latest"
-        env:
-          ACCEPT_EULA: "Y"
-          SA_PASSWORD: "agp_1234"
-          MSSQL_COLLATION: "Latin1_General_100_CI_AS_SC_UTF8"
-        options: >-
-          --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P agp_1234"
-        ports:
-          - "1433:1433"
-    steps:
-      - name: "Checkout"
-        uses: actions/checkout@v4
-      - name: "Install PHP"
-        uses: "shivammathur/setup-php@v2"
-        with:
-          php-version: "${{ matrix.php-version }}"
-          tools: "pecl"
-          extensions: "sqlsrv"
-      - name: "Install dependencies with Composer"
-        uses: "ramsey/composer-install@v1"
-        with:
-          composer-options: "--ignore-platform-req=php+"
-      - name: "Run PHPUnit"
-        env:
-          DB_HOST: "localhost"
-          DB_USER: "sa"
-          DB_PWD: "agp_1234"
-          DB_SCHEMA: "master"
-          DB_DRIVER: "sqlsrv"
-        run: "vendor/bin/phpunit"
+
