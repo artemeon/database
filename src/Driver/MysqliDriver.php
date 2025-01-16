@@ -506,23 +506,31 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbExport(string &$fileName, array $tables): bool
     {
-        $tablesString = implode(' ', $tables);
-        $paramPass = '';
-
-        if ($this->config->getPassword() !== '') {
-            $paramPass = " -p\"" . $this->config->getPassword() . "\"";
-        }
-
         $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
+        $dumpParams = [
+            $dumpBin,
+            '-h', escapeshellarg($this->config->getHost()),
+            '-u', escapeshellarg($this->config->getUsername()),
+            ($this->config->getPassword() === '') ? '': '-p' . escapeshellarg($this->config->getPassword()),
+            '-P', $this->config->getPort(),
+            escapeshellarg($this->config->getDatabase()),
+            implode(' ', array_map('escapeshellarg', $tables))
+        ];
 
+        $mysqldumpCommand = implode(' ', $dumpParams);
         if ($this->handlesDumpCompression()) {
             $fileName .= '.gz';
-            $command = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername() . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase() . ' ' . $tablesString . " | gzip > \"" . $fileName . "\"";
+            $pattern = '%s | gzip > %s';
         } else {
-            $command = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername() . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase() . ' ' . $tablesString . " > \"" . $fileName . "\"";
+            $pattern = '%s > %s';
         }
 
-        $this->runCommand($command);
+        $process = new Process([
+            'bash', '-c',
+            sprintf($pattern, $mysqldumpCommand, $fileName)
+        ]);
+
+        $this->runProcess($process, 'Database import failed:');
 
         return true;
     }
@@ -542,7 +550,7 @@ class MysqliDriver extends DriverAbstract
             $restoreBin,
             '-h', escapeshellarg($this->config->getHost()),
             '-u', escapeshellarg($this->config->getUsername()),
-            '-p' . escapeshellarg($this->config->getPassword()),
+            ($this->config->getPassword() === '') ? '': '-p' . escapeshellarg($this->config->getPassword()),
             '-P', $this->config->getPort(),
             escapeshellarg($this->config->getDatabase()),
         ];
@@ -561,7 +569,7 @@ class MysqliDriver extends DriverAbstract
             sprintf('%s | %s', $fileCommand, $mysqlCommand)
         ]);
 
-        $this->runProcess($process, 'Database import faild:');
+        $this->runProcess($process, 'Database import failed:');
 
         return true;
     }
@@ -569,7 +577,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * Prepares a statement or uses an instance from the cache.
      */
-    private function getPreparedStatement(string $query): mysqli_stmt | false
+    private function getPreparedStatement(string $query): mysqli_stmt|false
     {
         $name = md5($query);
 
@@ -600,7 +608,7 @@ class MysqliDriver extends DriverAbstract
 
     public function escape(mixed $value): string
     {
-        return str_replace("\\", "\\\\", (string) $value);
+        return str_replace("\\", "\\\\", (string)$value);
     }
 
     public function getJsonColumnExpression(string $column, string $key): string

@@ -27,29 +27,91 @@ final class MysqliDriverTest extends TestCase
         self::assertEquals('SUBSTRING("test value", 1, 1)', $mysqliDriver->getSubstringExpression('"test value"', 1, 1));
     }
 
-    private static function provideValidFilenameAndExpectedCommandLine()
+    private static function provideValidExportFilenameAndPasswordAndExpectedCommandLine()
     {
         return [
             [
-                '/path/to/dump.sql',
+                '/path/to/dump.sql', [],
+                'securepassword',
+                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\''  | gzip > /path/to/dump.sql.gz'"
+            ],
+            [
+                '/path/to/dump.sql', ['agp_user', 'agp_tours'],
+                'securepassword',
+                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'' '\''agp_user'\'' '\''agp_tours'\'' | gzip > /path/to/dump.sql.gz'"
+            ],
+        ];
+    }
+
+
+    /**
+     * @param string $fileName
+     * @param array $tables
+     * @param string $password
+     * @param string $expectedCommandLine
+     * @dataProvider provideValidExportFilenameAndPasswordAndExpectedCommandLine
+     */
+    public function testDbExportWillRunProcess(string $fileName, array $tables, string $password, string $expectedCommandLine): void
+    {
+        $host = 'localhost';
+        $user = 'sebastian_bergmann';
+        $database = 'testdb';
+        $port = 3306;
+        $driver = 'mysqli';
+
+        $configMock = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
+
+        $dbServiceMock = $this->getMockBuilder(MysqliDriver::class)
+            ->onlyMethods(['handlesDumpCompression', 'runProcess'])
+            ->getMock();
+        $dbServiceMock->expects($this->once())->method('handlesDumpCompression')->willReturn(true);
+
+        $dbServiceMock->expects($this->once())
+            ->method('runProcess')
+            ->with($this->callback(function (Process $process) use ($expectedCommandLine) {
+                $this->assertSame($expectedCommandLine, $process->getCommandLine());
+                return true;
+            }))->willReturn(true);
+
+        $dbServiceMock->setConfig($configMock);
+
+        $result = $dbServiceMock->dbExport($fileName, $tables);
+
+        $this->assertTrue($result);
+    }
+
+    private static function provideValidImportFilenameAndPasswordAndExpectedCommandLine()
+    {
+        return [
+            [
+                '/path/to/dump.sql', 'securepassword',
                 "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''"
             ],
             [
-                '/path/to/dump.sql.gz',
+                '/path/to/dump.sql.gz', 'securepassword',
                 "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''"
+            ],
+            [
+                '/path/to/dump.sql', '',
+                "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''"
+            ],
+            [
+                '/path/to/dump.sql.gz', '',
+                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''"
             ],
         ];
     }
 
     /**
      * @param string $fileName
-     * @dataProvider provideValidFilenameAndExpectedCommandLine
+     * @param string $password
+     * @param string $expectedCommandLine
+     * @dataProvider provideValidImportFilenameAndPasswordAndExpectedCommandLine
      */
-    public function testDbImportWillRunProcess(string $fileName, $expectedCommandLine): void
+    public function testDbImportWillRunProcess(string $fileName, string $password, string $expectedCommandLine): void
     {
         $host = 'localhost';
         $user = 'sebastian_bergmann';
-        $password = 'securepassword';
         $database = 'testdb';
         $port = 3306;
         $driver = 'mysqli';
