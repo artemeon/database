@@ -326,4 +326,16 @@ abstract class DriverAbstract implements DriverInterface
             throw new ProcessFailedException($process);
         }
     }
+
+    protected function runProcess(Process $process, string $errorPrefix = ''): bool
+    {
+        $process->setTimeout(3600.);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException(trim($errorPrefix . ' ' . $process->getErrorOutput()));
+        }
+
+        return true;
+    }
 }
