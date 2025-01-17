@@ -33,16 +33,15 @@ final class MysqliDriverTest extends TestCase
             [
                 '/path/to/dump.sql', [],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\''  | gzip > /path/to/dump.sql.gz'"
+                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''"
             ],
             [
                 '/path/to/dump.sql', ['agp_user', 'agp_tours'],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'' '\''agp_user'\'' '\''agp_tours'\'' | gzip > /path/to/dump.sql.gz'"
+                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'' '\''agp_user'\'' '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''"
             ],
         ];
     }
-
 
     /**
      * @param string $fileName
@@ -139,7 +138,6 @@ final class MysqliDriverTest extends TestCase
 
     public function testDbImportWillThrowException(): void
     {
-
         $fileName = '/path/to/dump.wrong';
 
         $this->expectException(\RuntimeException::class); // Erwartet, dass eine RuntimeException geworfen wird

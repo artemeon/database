@@ -39,18 +39,11 @@ class MysqliDriver extends DriverAbstract
 
     private ?mysqli $linkDB; //DB-Link
 
-    private ?ConnectionParameters $config;
-
     private string $dumpBin = 'mysqldump'; // Binary to dump db (if not in path, add the path here)
 
     private string $restoreBin = 'mysql'; // Binary to dump db (if not in path, add the path here)
 
     private string $errorMessage = '';
-
-    public function setConfig(ConnectionParameters $params): void
-    {
-        $this->config = $params;
-    }
 
     /**
      * @inheritdoc
@@ -527,7 +520,7 @@ class MysqliDriver extends DriverAbstract
 
         $process = new Process([
             'bash', '-c',
-            sprintf($pattern, $mysqldumpCommand, $fileName)
+            sprintf($pattern, $mysqldumpCommand, escapeshellarg($fileName))
         ]);
 
         $this->runProcess($process, 'Database import failed:');

@@ -38,8 +38,6 @@ class Oci8Driver extends DriverAbstract
     /** @var resource | false */
     private $linkDB;
 
-    private ConnectionParameters $config;
-
     private string $dumpBin = 'exp'; // Binary to dump db (if not in path, add the path here)
     // /usr/lib/oracle/xe/app/oracle/product/10.2.0/server/bin/
     private string $restoreBin = 'imp'; // Binary to restore db (if not in path, add the path here)

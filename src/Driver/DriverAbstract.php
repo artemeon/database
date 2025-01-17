@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Artemeon\Database\Driver;
 
 use Artemeon\Database\ConnectionInterface;
+use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\DriverInterface;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
@@ -32,6 +33,12 @@ abstract class DriverAbstract implements DriverInterface
 
     protected int $affectedRowsCount = 0;
 
+    protected ?ConnectionParameters $config;
+
+    public function setConfig(ConnectionParameters $params): void
+    {
+        $this->config = $params;
+    }
 
     /**
      * Detects if the current installation runs on Windows or UNIX.
