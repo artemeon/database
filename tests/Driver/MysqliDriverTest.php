@@ -27,7 +27,7 @@ final class MysqliDriverTest extends TestCase
         self::assertEquals('SUBSTRING("test value", 1, 1)', $mysqliDriver->getSubstringExpression('"test value"', 1, 1));
     }
 
-    private static function provideValidExportFilenameAndPasswordAndExpectedCommandLine()
+    public static function provideValidExportFilenameAndPasswordAndExpectedCommandLine()
     {
         return [
             [
@@ -79,7 +79,7 @@ final class MysqliDriverTest extends TestCase
         $this->assertTrue($result);
     }
 
-    private static function provideValidImportFilenameAndPasswordAndExpectedCommandLine()
+    public static function provideValidImportFilenameAndPasswordAndExpectedCommandLine()
     {
         return [
             [

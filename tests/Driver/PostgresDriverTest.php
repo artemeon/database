@@ -27,7 +27,7 @@ final class PostgresDriverTest extends TestCase
         self::assertEquals('SUBSTRING(cast ("test value" as text), 1, 1)', $postgresDriver->getSubstringExpression('"test value"', 1, 1));
     }
 
-    private static function provideValidExportFilenameAndPasswordAndExpectedCommandLine()
+    public static function provideValidExportFilenameAndPasswordAndExpectedCommandLine()
     {
         return [
             [
@@ -80,7 +80,7 @@ final class PostgresDriverTest extends TestCase
         $this->assertTrue($result);
     }
 
-    private static function provideValidImportFilenameAndPasswordAndExpectedCommandLine()
+    public static function provideValidImportFilenameAndPasswordAndExpectedCommandLine()
     {
         return [
             [
