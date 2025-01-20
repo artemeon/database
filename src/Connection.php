@@ -59,14 +59,6 @@ class Connection implements ConnectionInterface
      */
     private int $numberCache = 0;
 
-    private ConnectionParameters $connectionParams;
-
-    private DriverFactory $driverFactory;
-
-    private ?LoggerInterface $logger;
-
-    private ?int $debugLevel;
-
     /**
      * Instance of the db-driver defined in the configs.
      */
@@ -99,15 +91,11 @@ class Connection implements ConnectionInterface
      * @throws Exception\DriverNotFoundException
      */
     public function __construct(
-        ConnectionParameters $connectionParams,
-        DriverFactory $driverFactory,
-        ?LoggerInterface $logger = null,
-        ?int $debugLevel = null
+        private readonly ConnectionParameters $connectionParams,
+        private readonly DriverFactory $driverFactory,
+        private readonly ?LoggerInterface $logger = null,
+        private readonly ?int $debugLevel = null
     ) {
-        $this->connectionParams = $connectionParams;
-        $this->driverFactory = $driverFactory;
-        $this->logger = $logger;
-        $this->debugLevel = $debugLevel;
         $this->dbDriver = $this->driverFactory->factory($this->connectionParams->getDriver());
     }
 
@@ -143,6 +131,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function multiInsert(string $tableName, array $columns, array $valueSets, ?array $escapes = null): bool
     {
         if (!$this->connected) {
@@ -175,6 +164,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function insert(string $tableName, array $values, ?array $escapes = null): int
     {
         $this->multiInsert($tableName, array_keys($values), [array_values($values)], $escapes);
@@ -185,6 +175,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function selectRow(
         string $tableName,
         array $columns,
@@ -197,9 +188,7 @@ class Connection implements ConnectionInterface
             implode(
                 ', ',
                 array_map(
-                    function ($columnName): string {
-                        return $this->encloseColumnName((string)$columnName);
-                    },
+                    fn($columnName): string => $this->encloseColumnName((string)$columnName),
                     $columns,
                 ),
             ),
@@ -207,9 +196,7 @@ class Connection implements ConnectionInterface
             implode(
                 ' AND ',
                 array_map(
-                    function (string $columnName): string {
-                        return $this->encloseColumnName($columnName) . ' = ?';
-                    },
+                    fn(string $columnName): string => $this->encloseColumnName($columnName) . ' = ?',
                     array_keys($identifiers),
                 ),
             ),
@@ -227,6 +214,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): int
     {
         if (empty($identifier)) {
@@ -257,6 +245,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function delete(string $tableName, array $identifier): int
     {
         if (empty($identifier)) {
@@ -281,6 +270,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function insertOrUpdate(string $tableName, array $columns, array $values, array $primaryColumns): bool
     {
         if (!$this->connected) {
@@ -299,6 +289,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function _pQuery(string $query, array $params = [], array $escapes = []): bool
     {
         if (!$this->connected) {
@@ -328,6 +319,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function executeStatement(string $query, array $params = []): int
     {
         $this->_pQuery($query, $params);
@@ -338,6 +330,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getAffectedRowsCount(): int
     {
         return $this->dbDriver->getAffectedRowsCount();
@@ -347,6 +340,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function getPRow(string $query, array $params = [], int $number = 0, bool $cache = true, array $escapes = []): array
     {
         if (!$this->connected) {
@@ -371,6 +365,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function getPArray(
         string $query,
         array $params = [],
@@ -430,6 +425,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function getGenerator(string $query, array $params = [], int $chunkSize = 2048, bool $paging = true): Generator
     {
         if (!$this->connected) {
@@ -460,6 +456,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function fetchAllAssociative(string $query, array $params = []): array
     {
         if (!$this->connected) {
@@ -482,6 +479,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function fetchAssociative(string $query, array $params = []): array | false
     {
         if (!$this->connected) {
@@ -508,6 +506,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function fetchFirstColumn(string $query, array $params = []): array
     {
         if (!$this->connected) {
@@ -530,6 +529,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function fetchOne(string $query, array $params = []): mixed
     {
         if (!$this->connected) {
@@ -549,6 +549,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function iterateAssociative(string $query, array $params = []): Generator
     {
         if (!$this->connected) {
@@ -565,6 +566,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function iterateColumn(string $query, array $params = []): Generator
     {
         if (!$this->connected) {
@@ -631,6 +633,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function beginTransaction(): void
     {
         if (!$this->connected) {
@@ -654,6 +657,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function transactionBegin(): void
     {
         $this->beginTransaction();
@@ -664,6 +668,7 @@ class Connection implements ConnectionInterface
      * @throws CommitException
      * @throws ConnectionException
      */
+    #[\Override]
     public function commit(): void
     {
         if (!$this->connected) {
@@ -695,6 +700,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws CommitException
      */
+    #[\Override]
     public function transactionCommit(): void
     {
         $this->commit();
@@ -704,6 +710,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function rollBack(): void
     {
         if (!$this->connected) {
@@ -727,6 +734,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function transactionRollback(): void
     {
         $this->rollBack();
@@ -740,6 +748,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function hasDriver(string $class): bool
     {
         return $this->dbDriver instanceof $class;
@@ -749,7 +758,8 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
-    public function getTables(string $prefix = null): array
+    #[\Override]
+    public function getTables(?string $prefix = null): array
     {
         if ($prefix === null) {
             $prefix = 'agp_';
@@ -771,7 +781,7 @@ class Connection implements ConnectionInterface
             $tables = $this->dbDriver->getTables();
 
             foreach ($tables as $table) {
-                if (str_starts_with($table['name'], $prefix)) {
+                if (str_starts_with((string) $table['name'], $prefix)) {
                     $this->tablesCache[$prefix][] = $table['name'];
                 }
             }
@@ -819,6 +829,7 @@ class Connection implements ConnectionInterface
      * @throws TableNotFoundException
      * @throws ConnectionException
      */
+    #[\Override]
     public function getTableInformation(string $tableName): Table
     {
         if (!$this->hasTable($tableName)) {
@@ -835,6 +846,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getDatatype(DataType $type): string
     {
         return $this->dbDriver->getDatatype($type);
@@ -844,6 +856,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function createTable(string $tableName, array $columns, array $keys, array $indices = []): bool
     {
         if (!$this->connected) {
@@ -887,6 +900,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function dropTable(string $tableName): void
     {
         if (!$this->hasTable($tableName)) {
@@ -902,6 +916,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function generateTableFromMetadata(Table $table): void
     {
         $columns = [];
@@ -925,6 +940,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function createIndex(string $tableName, string $name, array $columns, bool $unique = false): bool
     {
         if (!$this->connected) {
@@ -946,6 +962,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function deleteIndex(string $table, string $index): bool
     {
         if (!$this->connected) {
@@ -959,6 +976,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function addIndex(string $table, TableIndex $index): bool
     {
         if (!$this->connected) {
@@ -972,6 +990,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function hasIndex(string $tableName, string $name): bool
     {
         if (!$this->connected) {
@@ -985,6 +1004,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function renameTable(string $oldName, string $newName): bool
     {
         if (!$this->connected) {
@@ -1002,6 +1022,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function changeColumn(string $tableName, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
         if (!$this->connected) {
@@ -1031,6 +1052,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     public function addColumn(string $table, string $column, DataType $dataType, ?bool $nullable = null, ?string $default = null): bool
     {
         if (!$this->connected) {
@@ -1064,6 +1086,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function removeColumn($tableName, $column): bool
     {
         if (!$this->connected) {
@@ -1085,6 +1108,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function hasColumn(string $tableName, string $column): bool
     {
         return $this->dbDriver->hasColumn($tableName, $column);
@@ -1094,6 +1118,7 @@ class Connection implements ConnectionInterface
      * @inheritDoc
      * @throws ConnectionException
      */
+    #[\Override]
     public function hasTable(string $tableName): bool
     {
         return in_array($tableName, $this->getTables(), true);
@@ -1129,6 +1154,7 @@ class Connection implements ConnectionInterface
      *
      * @throws ConnectionException
      */
+    #[\Override]
     public function getDbInfo(): array
     {
         if (!$this->connected) {
@@ -1145,6 +1171,7 @@ class Connection implements ConnectionInterface
     /**
      * Returns an array of all queries.
      */
+    #[\Override]
     public function getQueries(): array
     {
         return $this->queries;
@@ -1154,6 +1181,7 @@ class Connection implements ConnectionInterface
      * Returns the number of queries sent to the database
      * including those solved by the cache.
      */
+    #[\Override]
     public function getNumber(): int
     {
         return $this->number;
@@ -1162,6 +1190,7 @@ class Connection implements ConnectionInterface
     /**
      * Returns the number of queries solved by the cache.
      */
+    #[\Override]
     public function getNumberCache(): int
     {
         return $this->numberCache;
@@ -1170,6 +1199,7 @@ class Connection implements ConnectionInterface
     /**
      * Returns the number of items currently in the query-cache.
      */
+    #[\Override]
     public function getCacheSize(): int
     {
         return count($this->queryCache);
@@ -1246,7 +1276,7 @@ class Connection implements ConnectionInterface
         }
 
         if ($addSlashes) {
-            $input = addslashes($input);
+            $input = addslashes((string) $input);
         }
 
         return $input;
@@ -1288,6 +1318,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function encloseColumnName(string $column): string
     {
         return $this->dbDriver->encloseColumnName($column);
@@ -1296,6 +1327,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function encloseTableName(string $tableName): string
     {
         return $this->dbDriver->encloseTableName($tableName);
@@ -1319,6 +1351,7 @@ class Connection implements ConnectionInterface
         return false;
     }
 
+    #[\Override]
     public function isConnected(): bool
     {
         return $this->connected;
@@ -1337,6 +1370,7 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function prettifyQuery(string $query, array $params): string
     {
         foreach ($params as $param) {
@@ -1362,11 +1396,13 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function appendLimitExpression(string $query, int $start, int $end): string
     {
         return $this->dbDriver->appendLimitExpression($query, $start, $end);
     }
 
+    #[\Override]
     public function getConcatExpression(array $parts): string
     {
         return $this->dbDriver->getConcatExpression($parts);
@@ -1375,31 +1411,37 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function convertToDatabaseValue(mixed $value, DataType $type): mixed
     {
         return $this->dbDriver->convertToDatabaseValue($value, $type);
     }
 
+    #[\Override]
     public function getLeastExpression(array $parts): string
     {
         return $this->dbDriver->getLeastExpression($parts);
     }
 
+    #[\Override]
     public function getSubstringExpression(string $value, int $offset, ?int $length): string
     {
         return $this->dbDriver->getSubstringExpression($value, $offset, $length);
     }
 
+    #[\Override]
     public function getStringLengthExpression(string $targetString): string
     {
         return $this->dbDriver->getStringLengthExpression($targetString);
     }
 
+    #[\Override]
     public function getJsonColumnExpression(string $column, string $key): string
     {
         return $this->dbDriver->getJsonColumnExpression($column, $key);
     }
 
+    #[\Override]
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
         return $this->dbDriver->getNthLastElementFromSlug($column, $position);

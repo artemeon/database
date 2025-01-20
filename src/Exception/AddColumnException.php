@@ -17,25 +17,17 @@ use Artemeon\Database\Schema\DataType;
 
 class AddColumnException extends \Exception
 {
-    private string $table;
-
-    private string $column;
-
-    private DataType $dataType;
-
-    private ?bool $null;
-
-    private ?string $default;
-
-    public function __construct(string $message, string $table, string $column, DataType $dataType, ?bool $null = null, ?string $default = null, ?\Throwable $previous = null)
+    public function __construct(
+        string                    $message,
+        private readonly string   $table,
+        private readonly string   $column,
+        private readonly DataType $dataType,
+        private readonly ?bool    $null = null,
+        private readonly ?string  $default = null,
+        ?\Throwable               $previous = null
+    )
     {
         parent::__construct($message, 0, $previous);
-
-        $this->table = $table;
-        $this->column = $column;
-        $this->dataType = $dataType;
-        $this->null = $null;
-        $this->default = $default;
     }
 
     public function getTable(): string

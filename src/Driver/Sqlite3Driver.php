@@ -33,12 +33,13 @@ use Throwable;
  */
 class Sqlite3Driver extends DriverAbstract
 {
-    private ?SQLite3 $linkDB;
+    private ?SQLite3 $linkDB = null;
     private string $dbFile;
 
     /**
      * @inheritdoc
      */
+    #[\Override]
     public function dbconnect(ConnectionParameters $params): bool
     {
         if ($params->getDatabase() === '') {
@@ -74,6 +75,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function dbclose(): void
     {
         if ($this->linkDB !== null) {
@@ -95,12 +97,12 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         $sourceColumns = [];
-        array_walk($sourceTableInfo, static function (array $value) use (&$sourceColumns) {
+        array_walk($sourceTableInfo, static function (array $value) use (&$sourceColumns): void {
             $sourceColumns[] = $value['columnName'];
         });
 
         $targetColumns = [];
-        array_walk($targetTableInfo, static function (array $value) use (&$targetColumns) {
+        array_walk($targetTableInfo, static function (array $value) use (&$targetColumns): void {
             $targetColumns[] = $value['columnName'];
         });
 
@@ -169,6 +171,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function changeColumn(string $table, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
         $tableDef = $this->getTableInformation($table);
@@ -199,6 +202,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function removeColumn(string $table, string $column): bool
     {
         $targetTableInfo = [];
@@ -219,6 +223,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool
     {
         $sqliteVersion = SQLite3::version();
@@ -227,13 +232,13 @@ class Sqlite3Driver extends DriverAbstract
         }
 
         //legacy code
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
+        $safeColumns = array_map(fn($column) => $this->encloseColumnName($column), $columns);
         $params = [];
         $escapeValues = [];
         $insertStatement = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(',', $safeColumns) . ') ';
         foreach ($valueSets as $key => $valueSet) {
             $selectStatement = $key === 0 ? ' SELECT ' : ' UNION SELECT ';
-            $insertStatement .= $selectStatement . implode(', ', array_map(static function ($column) { return ' ? AS ' . $column; }, $safeColumns));
+            $insertStatement .= $selectStatement . implode(', ', array_map(static fn($column) => ' ? AS ' . $column, $safeColumns));
             $params[] = array_values($valueSet);
             if ($escapes !== null) {
                 $escapeValues[] = $escapes;
@@ -246,6 +251,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
         $placeholders = [];
@@ -268,6 +274,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function _pQuery(string $query, array $params): bool
     {
         $query = $this->fixQuoting($query);
@@ -298,6 +305,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getPArray($query, $params): Generator
     {
         $query = $this->fixQuoting($query);
@@ -331,6 +339,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getError(): string
     {
         return $this->linkDB->lastErrorMsg();
@@ -340,12 +349,13 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function getTables(): array
     {
         $generator = $this->getPArray("SELECT name FROM sqlite_master WHERE type='table'", []);
         $result = [];
         foreach ($generator as $row) {
-            $result[] = ['name' => strtolower($row['name'])];
+            $result[] = ['name' => strtolower((string) $row['name'])];
         }
 
         return $result;
@@ -355,6 +365,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function getTableInformation(string $tableName): Table
     {
         $table = new Table($tableName);
@@ -390,7 +401,7 @@ class Sqlite3Driver extends DriverAbstract
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
-        $val = strtolower(trim($infoSchemaRow['type']));
+        $val = strtolower(trim((string) $infoSchemaRow['type']));
 
         if ($val === 'integer') {
             return DataType::INT;
@@ -411,6 +422,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function createTable(string $name, array $columns, array $primaryKeys): bool
     {
         $query = "CREATE TABLE $name ( \n";
@@ -445,6 +457,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritdoc
      * @throws QueryException
      */
+    #[\Override]
     public function hasIndex($table, $name): bool
     {
         $index = iterator_to_array($this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$table, $name]), false);
@@ -455,6 +468,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function beginTransaction(): void
     {
         $this->_pQuery('BEGIN TRANSACTION', []);
@@ -464,6 +478,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function transactionBegin(): void
     {
         $this->beginTransaction();
@@ -473,6 +488,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function commit(): void
     {
         $this->_pQuery('COMMIT TRANSACTION', []);
@@ -482,6 +498,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function transactionCommit(): void
     {
         $this->commit();
@@ -491,6 +508,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function rollBack(): void
     {
         $this->_pQuery('ROLLBACK TRANSACTION', []);
@@ -500,6 +518,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function transactionRollback(): void
     {
         $this->rollBack();
@@ -509,6 +528,7 @@ class Sqlite3Driver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function getDbInfo(): array
     {
         $timeout = iterator_to_array($this->getPArray('PRAGMA busy_timeout', []), false);
@@ -527,6 +547,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritdoc
      */
+    #[\Override]
     public function handlesDumpCompression(): bool
     {
         return false;
@@ -535,6 +556,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function dbExport(string &$fileName, array $tables): bool
     {
         return false;
@@ -543,6 +565,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function dbImport(string $fileName): bool
     {
         return false;
@@ -551,6 +574,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getDatatype(DataType $type): string
     {
         return match ($type) {
@@ -601,6 +625,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function encloseTableName(string $table): string
     {
         return "'$table'";
@@ -609,6 +634,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritdoc
      */
+    #[\Override]
     public function getConcatExpression(array $parts): string
     {
         return implode(' || ', $parts);
@@ -617,11 +643,13 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * @inheritdoc
      */
+    #[\Override]
     public function getLeastExpression(array $parts): string
     {
         return 'MIN(' . implode(', ', $parts) . ')';
     }
 
+    #[\Override]
     public function getSubstringExpression(string $value, int $offset, ?int $length): string
     {
         $parameters = [$value, $offset];
@@ -632,6 +660,7 @@ class Sqlite3Driver extends DriverAbstract
         return 'SUBSTR(' . implode(', ', $parameters) . ')';
     }
 
+    #[\Override]
     public function getJsonColumnExpression(string $column, string $key): string
     {
         return "CASE
@@ -642,6 +671,7 @@ class Sqlite3Driver extends DriverAbstract
                 END";
     }
 
+    #[\Override]
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
         return "extract_nth_last_slug_segment($column, $position)";

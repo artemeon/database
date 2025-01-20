@@ -32,12 +32,12 @@ use Symfony\Component\Process\Process;
  */
 class MysqliDriver extends DriverAbstract
 {
-    private const MAX_DEADLOCK_RETRY_COUNT = 10;
-    private const DEADLOCK_WAIT_TIMEOUT = 2;
+    private const int MAX_DEADLOCK_RETRY_COUNT = 10;
+    private const int DEADLOCK_WAIT_TIMEOUT = 2;
 
     private bool $connected = false;
 
-    private ?mysqli $linkDB; //DB-Link
+    private ?mysqli $linkDB = null; //DB-Link
 
     private string $dumpBin = 'mysqldump'; // Binary to dump db (if not in path, add the path here)
 
@@ -49,6 +49,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritdoc
      * @throws QueryException
      */
+    #[\Override]
     public function dbconnect(ConnectionParameters $params): bool
     {
         if ($this->connected) {
@@ -87,6 +88,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function dbclose(): void
     {
         if (!$this->connected) {
@@ -102,6 +104,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function _pQuery($query, $params): bool
     {
         $statement = $this->getPreparedStatement($query);
@@ -153,6 +156,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getPArray(string $query, array $params): Generator
     {
         $statement = $this->getPreparedStatement($query);
@@ -186,6 +190,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
         $placeholders = [];
@@ -212,6 +217,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getError(): string
     {
         $error = $this->errorMessage . ' ' . $this->linkDB->error;
@@ -224,6 +230,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function getTables(): array
     {
         $generator = $this->getPArray('SHOW TABLE STATUS', []);
@@ -239,6 +246,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function getTableInformation(string $tableName): Table
     {
         $table = new Table($tableName);
@@ -258,7 +266,7 @@ class MysqliDriver extends DriverAbstract
         $indexes = $this->getPArray("SHOW INDEX FROM $tableName WHERE Key_name != 'PRIMARY'", []);
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
-            $indexAggr[$indexInfo['Key_name']] = $indexAggr[$indexInfo['Key_name']] ?? [];
+            $indexAggr[$indexInfo['Key_name']] ??= [];
             $indexAggr[$indexInfo['Key_name']][] = $indexInfo['Column_name'];
         }
         foreach ($indexAggr as $key => $desc) {
@@ -332,6 +340,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getDatatype(DataType $type): string
     {
         return match ($type) {
@@ -352,6 +361,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function createTable(string $name, array $columns, array $primaryKeys): bool
     {
         $query = 'CREATE TABLE IF NOT EXISTS `' . $name . "` ( \n";
@@ -386,6 +396,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritdoc
      * @throws QueryException
      */
+    #[\Override]
     public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool
     {
         $enclosedTableName = $this->encloseTableName($table);
@@ -400,6 +411,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritdoc
      * @throws QueryException
      */
+    #[\Override]
     public function hasIndex($table, $name): bool
     {
         $index = iterator_to_array($this->getPArray("SHOW INDEX FROM $table WHERE Key_name = ?", [$name]), false);
@@ -410,6 +422,7 @@ class MysqliDriver extends DriverAbstract
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function deleteIndex(string $table, string $index): bool
     {
         return $this->_pQuery("DROP INDEX $index ON $table", []);
@@ -418,6 +431,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function beginTransaction(): void
     {
         $this->linkDB->begin_transaction();
@@ -426,6 +440,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function transactionBegin(): void
     {
         $this->beginTransaction();
@@ -434,6 +449,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function commit(): void
     {
         $this->linkDB->commit();
@@ -442,11 +458,13 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function transactionCommit(): void
     {
         $this->commit();
     }
 
+    #[\Override]
     public function rollBack(): void
     {
         $this->linkDB->rollback();
@@ -455,6 +473,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function transactionRollback(): void
     {
         $this->rollBack();
@@ -463,6 +482,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function getDbInfo(): array
     {
         return [
@@ -479,6 +499,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function encloseColumnName(string $column): string
     {
         return "`$column`";
@@ -487,6 +508,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function encloseTableName(string $table): string
     {
         return "`$table`";
@@ -497,6 +519,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function dbExport(string &$fileName, array $tables): bool
     {
         $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
@@ -531,6 +554,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function dbImport(string $fileName): bool
     {
         if (!in_array(pathinfo($fileName, PATHINFO_EXTENSION), ['sql', 'gz'])) {
@@ -599,11 +623,13 @@ class MysqliDriver extends DriverAbstract
         return $statement;
     }
 
+    #[\Override]
     public function escape(mixed $value): string
     {
         return str_replace("\\", "\\\\", (string)$value);
     }
 
+    #[\Override]
     public function getJsonColumnExpression(string $column, string $key): string
     {
         return "CASE
@@ -614,6 +640,7 @@ class MysqliDriver extends DriverAbstract
                 END";
     }
 
+    #[\Override]
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
         return "SUBSTRING_INDEX(SUBSTRING_INDEX($column, '/', -$position), '/', 1)";

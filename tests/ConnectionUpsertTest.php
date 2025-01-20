@@ -134,11 +134,11 @@ class ConnectionUpsertTest extends ConnectionTestCase
         $this->assertEquals(2, $row['temp_int']);
         $this->assertEquals('row 2', $row['temp_text']);
 
-        $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest2 WHERE temp_id = ? AND temp_id2 = ?', array($id, 2));
+        $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest2 WHERE temp_id = ? AND temp_id2 = ?', [$id, 2]);
         $this->assertEquals(3, $row['temp_int']);
         $this->assertEquals('row 3', $row['temp_text']);
 
-        $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest2 WHERE temp_id = ? AND temp_id2 = ?', array($id, 3));
+        $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest2 WHERE temp_id = ? AND temp_id2 = ?', [$id, 3]);
         $this->assertEquals(5, $row['temp_int']);
         $this->assertEquals('row 5', $row['temp_text']);
 
@@ -217,7 +217,7 @@ class ConnectionUpsertTest extends ConnectionTestCase
     private function runInsertAndUpdate($id, $id2, $int, $text): void
     {
         $objDb = $this->getConnection();
-        $row = $objDb->getPRow('SELECT COUNT(*) AS cnt FROM agp_temp_upserttest3 WHERE temp_id = ? AND temp_id2 = ?', array($id, $id2), 0, false);
+        $row = $objDb->getPRow('SELECT COUNT(*) AS cnt FROM agp_temp_upserttest3 WHERE temp_id = ? AND temp_id2 = ?', [$id, $id2], 0, false);
         if($row['cnt'] == '0') {
             $query = 'INSERT INTO agp_temp_upserttest3 (temp_id, temp_id2, temp_int, temp_text) VALUES (?, ?, ?, ?)';
             $objDb->_pQuery($query, [$id, $id2, $int, $text]);

@@ -22,6 +22,7 @@ class ConnectionMultiInsertTest extends ConnectionTestCase
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

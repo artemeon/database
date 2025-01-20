@@ -20,7 +20,6 @@ use JsonSerializable;
  */
 class TableColumn implements JsonSerializable
 {
-    private string $name;
     private ?DataType $internalType = null;
     private string $databaseType = '';
     private bool $nullable = true;
@@ -30,14 +29,14 @@ class TableColumn implements JsonSerializable
         return new self($name);
     }
 
-    public function __construct(string $name)
+    public function __construct(private string $name)
     {
-        $this->name = $name;
     }
 
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function jsonSerialize(): array
     {
         return [

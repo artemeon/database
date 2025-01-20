@@ -17,28 +17,16 @@ use Artemeon\Database\Schema\DataType;
 
 class ChangeColumnException extends \Exception
 {
-    private string $table;
-
-    /**
-     * @var string
-     */
-    private $oldColumnName;
-
-    /**
-     * @var string
-     */
-    private $newColumnName;
-
-    private DataType $newDataType;
-
-    public function __construct(string $message, string $table, string $oldColumnName, string $newColumnName, DataType $newDataType, ?\Throwable $previous = null)
+    public function __construct(
+        string $message,
+        private readonly string $table,
+        private readonly string $oldColumnName,
+        private readonly string $newColumnName,
+        private readonly DataType $newDataType,
+        ?\Throwable $previous = null
+    )
     {
         parent::__construct($message, 0, $previous);
-
-        $this->table = $table;
-        $this->oldColumnName = $oldColumnName;
-        $this->newColumnName = $newColumnName;
-        $this->newDataType = $newDataType;
     }
 
     /**

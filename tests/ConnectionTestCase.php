@@ -27,6 +27,7 @@ abstract class ConnectionTestCase extends TestCase
 
     protected const TEST_TABLE_NAME = 'agp_test_table';
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -35,6 +36,7 @@ abstract class ConnectionTestCase extends TestCase
         $this->setupFixture();
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         parent::tearDown();

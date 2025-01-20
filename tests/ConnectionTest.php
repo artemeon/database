@@ -718,15 +718,15 @@ class ConnectionTest extends ConnectionTestCase
         $expect = $value;
 
         if ($type === DataType::CHAR10) {
-            $expect = substr($expect, 0, 10);
+            $expect = substr((string) $expect, 0, 10);
         } elseif ($type === DataType::CHAR20) {
-            $expect = substr($expect, 0, 20);
+            $expect = substr((string) $expect, 0, 20);
         } elseif ($type === DataType::CHAR100) {
-            $expect = substr($expect, 0, 100);
+            $expect = substr((string) $expect, 0, 100);
         } elseif ($type === DataType::CHAR254) {
-            $expect = substr($expect, 0, 254);
+            $expect = substr((string) $expect, 0, 254);
         } elseif ($type === DataType::CHAR500) {
-            $expect = substr($expect, 0, 500);
+            $expect = substr((string) $expect, 0, 500);
         } elseif ($type === DataType::FLOAT) {
             $actual = round((float) $actual, 1);
         }
