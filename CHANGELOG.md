@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.4.0
+
+- make library for php 8.4 ready
+
 ## 3.3.0
 
 - Remove unused SqlsrvDriver #68

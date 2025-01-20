@@ -1,5 +1,6 @@
 {
   "name": "artemeon/database",
+  "version": "3.4.0",
   "description": "Database access layer for the AGP@ARTEMEON software suite.",
   "homepage": "https://github.com/artemeon/database#readme",
   "license": "MIT",
@@ -14,7 +15,7 @@
     }
   ],
   "require": {
-    "php": ">=8.1",
+    "php": ">=8.4",
     "psr/log": "^1|^2|^3",
     "symfony/process": "^5.0|^6.0|^7.0",
     "symfony/polyfill-mbstring": "^1.15"
