@@ -25,6 +25,7 @@ use Generator;
 use mysqli;
 use mysqli_stmt;
 use Symfony\Component\Process\ExecutableFinder;
+use Symfony\Component\Process\Process;
 
 /**
  * DB-driver for MySQL using the php-mysqli-interface.
@@ -37,8 +38,6 @@ class MysqliDriver extends DriverAbstract
     private bool $connected = false;
 
     private ?mysqli $linkDB; //DB-Link
-
-    private ?ConnectionParameters $config;
 
     private string $dumpBin = 'mysqldump'; // Binary to dump db (if not in path, add the path here)
 
@@ -62,7 +61,7 @@ class MysqliDriver extends DriverAbstract
         }
 
         // Save connection-details
-        $this->config = $params;
+        $this->setConfig($params);
 
         $this->linkDB = new mysqli(
             $this->config->getHost(),
@@ -500,27 +499,31 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbExport(string &$fileName, array $tables): bool
     {
-        $tablesString = implode(' ', $tables);
-        $paramPass = '';
-
-        if ($this->config->getPassword() !== '') {
-            $paramPass = " -p\"" . $this->config->getPassword() . "\"";
-        }
-
         $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
+        $dumpParams = [
+            $dumpBin,
+            '-h', escapeshellarg($this->config->getHost()),
+            '-u', escapeshellarg($this->config->getUsername()),
+            ($this->config->getPassword() === '') ? '': '-p' . escapeshellarg($this->config->getPassword()),
+            '-P', $this->config->getPort(),
+            escapeshellarg($this->config->getDatabase()),
+            implode(' ', array_map('escapeshellarg', $tables))
+        ];
 
+        $mysqldumpCommand = implode(' ', $dumpParams);
         if ($this->handlesDumpCompression()) {
             $fileName .= '.gz';
-            $command = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
-                ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
-                ) . ' ' . $tablesString . " | gzip > \"" . $fileName . "\"";
+            $pattern = '%s | gzip > %s';
         } else {
-            $command = $dumpBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
-                ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
-                ) . ' ' . $tablesString . " > \"" . $fileName . "\"";
+            $pattern = '%s > %s';
         }
 
-        $this->runCommand($command);
+        $process = new Process([
+            'bash', '-c',
+            sprintf($pattern, $mysqldumpCommand, escapeshellarg($fileName))
+        ]);
+
+        $this->runProcess($process, 'Database import failed:');
 
         return true;
     }
@@ -530,25 +533,36 @@ class MysqliDriver extends DriverAbstract
      */
     public function dbImport(string $fileName): bool
     {
-        $paramPass = '';
-
-        if ($this->config->getPassword() !== '') {
-            $paramPass = " -p\"" . $this->config->getPassword() . "\"";
+        if (!in_array(pathinfo($fileName, PATHINFO_EXTENSION), ['sql', 'gz'])) {
+            throw new \RuntimeException(trim($fileName . ' is not a valid import file'));
         }
 
         $restoreBin = (new ExecutableFinder())->find($this->restoreBin);
 
+        $restoreParams = [
+            $restoreBin,
+            '-h', escapeshellarg($this->config->getHost()),
+            '-u', escapeshellarg($this->config->getUsername()),
+            ($this->config->getPassword() === '') ? '': '-p' . escapeshellarg($this->config->getPassword()),
+            '-P', $this->config->getPort(),
+            escapeshellarg($this->config->getDatabase()),
+        ];
+
+        $mysqlCommand = implode(' ', $restoreParams);
         if ($this->handlesDumpCompression() && pathinfo($fileName, PATHINFO_EXTENSION) === 'gz') {
-            $command = " gunzip -c \"" . $fileName . "\" | " . $restoreBin . ' -h' . $this->config->getHost(
-                ) . ' -u' . $this->config->getUsername() . $paramPass . ' -P' . $this->config->getPort(
-                ) . ' ' . $this->config->getDatabase();
+            $fileCommand = sprintf('gunzip -c %s', escapeshellarg($fileName));
+        } elseif (pathinfo($fileName, PATHINFO_EXTENSION) === 'sql') {
+            $fileCommand = sprintf('cat %s', escapeshellarg($fileName));
         } else {
-            $command = $restoreBin . ' -h' . $this->config->getHost() . ' -u' . $this->config->getUsername(
-                ) . $paramPass . ' -P' . $this->config->getPort() . ' ' . $this->config->getDatabase(
-                ) . " < \"" . $fileName . "\"";
+            throw new \RuntimeException(trim($fileName . ' is not a valid import file'));
         }
 
-        $this->runCommand($command);
+        $process = new Process([
+            'bash', '-c',
+            sprintf('%s | %s', $fileCommand, $mysqlCommand)
+        ]);
+
+        $this->runProcess($process, 'Database import failed:');
 
         return true;
     }
@@ -556,7 +570,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * Prepares a statement or uses an instance from the cache.
      */
-    private function getPreparedStatement(string $query): mysqli_stmt | false
+    private function getPreparedStatement(string $query): mysqli_stmt|false
     {
         $name = md5($query);
 
@@ -587,7 +601,7 @@ class MysqliDriver extends DriverAbstract
 
     public function escape(mixed $value): string
     {
-        return str_replace("\\", "\\\\", (string) $value);
+        return str_replace("\\", "\\\\", (string)$value);
     }
 
     public function getJsonColumnExpression(string $column, string $key): string

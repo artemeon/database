@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Tests;
 
-use Artemeon\Database\Driver\Oci8Driver;
 use Artemeon\Database\Driver\PostgresDriver;
 use Artemeon\Database\Exception\AddColumnException;
 use Artemeon\Database\Exception\ChangeColumnException;
@@ -728,11 +727,6 @@ class ConnectionTest extends ConnectionTestCase
             $expect = substr($expect, 0, 254);
         } elseif ($type === DataType::CHAR500) {
             $expect = substr($expect, 0, 500);
-        } elseif ($type === DataType::TEXT) {
-            if ($connection->hasDriver(Oci8Driver::class)) {
-                // for Oracle the text column is max 4000 chars
-                $expect = substr($expect, 0, 4000);
-            }
         } elseif ($type === DataType::FLOAT) {
             $actual = round((float) $actual, 1);
         }

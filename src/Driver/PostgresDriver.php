@@ -24,6 +24,7 @@ use Artemeon\Database\Schema\TableKey;
 use Generator;
 use PgSql\Connection;
 use Symfony\Component\Process\ExecutableFinder;
+use Symfony\Component\Process\Process;
 
 /**
  * DB-driver for postgres using the php-postgres-interface.
@@ -31,9 +32,6 @@ use Symfony\Component\Process\ExecutableFinder;
 class PostgresDriver extends DriverAbstract
 {
     private Connection | false | null $linkDB;
-
-    private ?ConnectionParameters $config = null;
-
     private string $dumpBin = 'pg_dump'; // Binary to dump db (if not in path, add the path here)
     private string $restoreBin = 'psql'; // Binary to restore db (if not in path, add the path here)
 
@@ -50,7 +48,7 @@ class PostgresDriver extends DriverAbstract
             $port = 5432;
         }
 
-        $this->config = $params;
+        $this->setConfig($params);
         $this->linkDB = pg_connect(
             "host='" . $params->getHost() . "' port='" . $port . "' dbname='" . $params->getDatabase(
             ) . "' user='" . $params->getUsername() . "' password='" . $params->getPassword() . "'"
@@ -464,15 +462,9 @@ class PostgresDriver extends DriverAbstract
      */
     public function dbExport(string &$fileName, array $tables): bool
     {
-        $tablesString = '-t ' . implode(' -t ', $tables);
-
-        $command = '';
-        if ($this->config->getPassword() !== '') {
-            if ($this->isWinOs()) {
-                $command .= "SET \"PGPASSWORD=" . $this->config->getPassword() . "\" && ";
-            } else {
-                $command .= "PGPASSWORD=\"" . $this->config->getPassword() . "\" ";
-            }
+        $tablesString = '';
+        if (!empty($tables)) {
+            $tablesString = '-t ' . implode(' -t ', array_map('escapeshellarg', $tables));
         }
 
         $port = $this->config->getPort();
@@ -481,18 +473,33 @@ class PostgresDriver extends DriverAbstract
         }
 
         $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
-        $host = $this->config->getHost();
-        $username = $this->config->getUsername();
-        $database = $this->config->getDatabase();
+        $dumpParams = [
+            $dumpBin,
+            '--clean',
+            '--no-owner',
+            '-h' , escapeshellarg($this->config->getHost()),
+            ($this->config->getUsername() === '') ? '': '-U', escapeshellarg($this->config->getUsername()),
+            '-p', (string)$this->config->getPort(),
+            '-d', escapeshellarg($this->config->getDatabase()),
+            $tablesString,
+        ];
 
         if ($this->handlesDumpCompression()) {
             $fileName .= '.gz';
-            $command .= $dumpBin . ' --clean --no-owner -h' . $host . ($username !== '' ? ' -U' . $username : '') . ' -p' . $port . ' ' . $tablesString . ' ' . $database . " | gzip > \"" . $fileName . "\"";
+            $process = new Process([
+                'bash', '-c',
+                sprintf(
+                    '%s | gzip > %s',
+                    implode(' ', $dumpParams),
+                    escapeshellarg($fileName)
+                ),
+            ]);
         } else {
-            $command .= $dumpBin . ' --clean --no-owner -h' . $host . ($username !== '' ? ' -U' . $username : '') . ' -p' . $port . ' ' . $tablesString . ' ' . $database . " > \"" . $fileName . "\"";
+            $process = new Process(array_merge($dumpParams, ['-f', $fileName]));
         }
 
-        $this->runCommand($command);
+        $process->setEnv(['PGPASSWORD' => $this->config->getPassword()]);
+        $this->runProcess($process);
 
         return true;
     }
@@ -502,32 +509,45 @@ class PostgresDriver extends DriverAbstract
      */
     public function dbImport($fileName): bool
     {
-        $command = '';
-        if ($this->config->getPassword() !== '') {
-            if ($this->isWinOs()) {
-                $command .= "SET \"PGPASSWORD=" . $this->config->getPassword() . "\" && ";
-            } else {
-                $command .= "PGPASSWORD=\"" . $this->config->getPassword() . "\" ";
-            }
-        }
-
-        $port = $this->config->getPort();
-        if (empty($port)) {
-            $port = 5432;
+        if (!in_array(pathinfo($fileName, PATHINFO_EXTENSION), ['sql', 'gz'])) {
+            throw new \RuntimeException(trim($fileName . ' is not a valid import file'));
         }
 
         $restoreBin = (new ExecutableFinder())->find($this->restoreBin);
-        $host = $this->config->getHost();
-        $username = $this->config->getUsername();
-        $database = $this->config->getDatabase();
-
         if ($this->handlesDumpCompression() && pathinfo($fileName, PATHINFO_EXTENSION) === 'gz') {
-            $command .= " gunzip -c \"" . $fileName . "\" | " . $restoreBin . ' -q -h' . $host . ($username !== '' ? ' -U' . $username : '') . ' -p' . $port . ' ' . $database;
+            $restoreParams = [
+                $restoreBin,
+                '-q',
+                '-h' , escapeshellarg($this->config->getHost()),
+                ($this->config->getUsername() === '') ? '': '-U', escapeshellarg($this->config->getUsername()),
+                '-p' . (string)$this->config->getPort(),
+                '-d', escapeshellarg($this->config->getDatabase()),
+            ];
+
+            $psqlCommand = implode(' ', $restoreParams);
+            $fileCommand = sprintf('gunzip -c %s', escapeshellarg($fileName));
+            $process = new Process([
+                'bash', '-c',
+                sprintf('%s | %s', $fileCommand, $psqlCommand)
+            ]);
+        } elseif (pathinfo($fileName, PATHINFO_EXTENSION) === 'sql') {
+            $restoreParams = [
+                $restoreBin,
+                '-q',
+                '-h' , $this->config->getHost(),
+                ($this->config->getUsername() === '') ? '': '-U', $this->config->getUsername(),
+                '-p' . (string)$this->config->getPort(),
+                '-d', $this->config->getDatabase(),
+                '-f', $fileName,
+            ];
+
+            $process = new Process($restoreParams);
         } else {
-            $command .= $restoreBin . ' -q -h' . $host . ($username !== '' ? ' -U' . $username : '') . ' -p' . $port . ' ' . $database . " < \"" . $fileName . "\"";
+            throw new \RuntimeException(trim($fileName . ' is not a valid import file'));
         }
 
-        $this->runCommand($command);
+        $process->setEnv(['PGPASSWORD' => $this->config->getPassword()]);
+        $this->runProcess($process, 'Database import failed:');
 
         return true;
     }
