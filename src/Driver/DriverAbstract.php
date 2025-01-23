@@ -345,20 +345,9 @@ abstract class DriverAbstract implements DriverInterface
         return 'LENGTH('.$targetString.')';
     }
 
-    protected function runCommand(string $command): void
-    {
-        $process = Process::fromShellCommandline($command);
-        $process->setTimeout(3600.0);
-        $process->run();
-
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
-    }
-
     protected function runProcess(Process $process, string $errorPrefix = ''): bool
     {
-        $process->setTimeout(3600.);
+        $process->setTimeout(null);
         $process->run();
 
         if (!$process->isSuccessful()) {

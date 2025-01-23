@@ -4,6 +4,11 @@
 
 - make library for php 8.4 ready
 
+## 3.3.1
+
+- Fix Command Injection
+- Remove Oracle Driver
+
 ## 3.3.0
 
 - Remove unused SqlsrvDriver #68
