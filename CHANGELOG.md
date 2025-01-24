@@ -1,8 +1,9 @@
 # Changelog
 
-# 3.4.0
+# 4.0.0
 
-- make library for php 8.4 ready
+- Add support for PHP 8.4.
+- Drop support for PHP 8.1, PHP 8.2 and PHP 8.3.
 
 ## 3.3.1
 
