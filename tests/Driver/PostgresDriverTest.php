@@ -63,13 +63,11 @@ final class PostgresDriverTest extends TestCase
         $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')
             ->once()
-            ->withArgs([
-                static function (Process $process) use ($expectedCommandLine): bool {
-                    self::assertSame($expectedCommandLine, $process->getCommandLine());
+            ->withArgs(function (Process $process) use ($expectedCommandLine): bool {
+                self::assertSame($expectedCommandLine, $process->getCommandLine());
 
-                    return true;
-                },
-            ])
+                return true;
+            })
             ->andReturn(true);
 
         $dbServiceMock->setConfig($configMock);
