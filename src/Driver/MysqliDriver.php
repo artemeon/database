@@ -72,7 +72,7 @@ class MysqliDriver extends DriverAbstract
             $port,
         );
 
-        if ($this->linkDB->connect_errno) {
+        if ($this->linkDB->connect_errno !== 0) {
             throw new ConnectionException('Error connecting to database: ' . $this->linkDB->connect_error);
         }
 

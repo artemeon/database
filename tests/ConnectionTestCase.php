@@ -85,20 +85,19 @@ abstract class ConnectionTestCase extends TestCase
 
     protected function getTestTableColumns(): array
     {
-        $columns = [];
-        $columns['temp_id'] = [DataType::CHAR20, false];
-        $columns['temp_int'] = [DataType::INT, true];
-        $columns['temp_bigint'] = [DataType::BIGINT, true];
-        $columns['temp_float'] = [DataType::FLOAT, true];
-        $columns['temp_char10'] = [DataType::CHAR10, true];
-        $columns['temp_char20'] = [DataType::CHAR20, true];
-        $columns['temp_char100'] = [DataType::CHAR100, true];
-        $columns['temp_char254'] = [DataType::CHAR254, true];
-        $columns['temp_char500'] = [DataType::CHAR500, true];
-        $columns['temp_text'] = [DataType::TEXT, true];
-        $columns['temp_longtext'] = [DataType::LONGTEXT, true];
-
-        return $columns;
+        return [
+            'temp_id' => [DataType::CHAR20, false],
+            'temp_int' => [DataType::INT, true],
+            'temp_bigint' => [DataType::BIGINT, true],
+            'temp_float' => [DataType::FLOAT, true],
+            'temp_char10' => [DataType::CHAR10, true],
+            'temp_char20' => [DataType::CHAR20, true],
+            'temp_char100' => [DataType::CHAR100, true],
+            'temp_char254' => [DataType::CHAR254, true],
+            'temp_char500' => [DataType::CHAR500, true],
+            'temp_text' => [DataType::TEXT, true],
+            'temp_longtext' => [DataType::LONGTEXT, true],
+        ];
     }
 
     protected function generateSystemid(): string

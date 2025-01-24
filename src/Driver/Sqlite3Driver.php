@@ -60,7 +60,7 @@ class Sqlite3Driver extends DriverAbstract
             $this->linkDB->busyTimeout(5000);
 
             // Benutzerdefinierte Funktion zum Extrahieren des n-ten letzten Segments
-            $this->linkDB->createFunction('extract_nth_last_slug_segment', function ($string, $position) {
+            $this->linkDB->createFunction('extract_nth_last_slug_segment', static function ($string, $position) {
                 $segments = explode('/', trim($string, '/'));
                 $index = count($segments) - $position;
 

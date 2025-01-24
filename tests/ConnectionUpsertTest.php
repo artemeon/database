@@ -212,7 +212,7 @@ class ConnectionUpsertTest extends ConnectionTestCase
      * @throws QueryException
      * @throws ConnectionException
      */
-    private function runUpsert($id, $id2, $int, $text): void
+    private function runUpsert(string $id, int $id2, int $int, string $text): void
     {
         $this->getConnection()->insertOrUpdate('agp_temp_upserttest3', ['temp_id', 'temp_id2', 'temp_int', 'temp_text'], [$id, $id2, $int, $text], ['temp_id', 'temp_id2']);
     }
@@ -221,7 +221,7 @@ class ConnectionUpsertTest extends ConnectionTestCase
      * @throws QueryException
      * @throws ConnectionException
      */
-    private function runInsertAndUpdate($id, $id2, $int, $text): void
+    private function runInsertAndUpdate(string $id, int $id2, int $int, string $text): void
     {
         $objDb = $this->getConnection();
         $row = $objDb->getPRow('SELECT COUNT(*) AS cnt FROM agp_temp_upserttest3 WHERE temp_id = ? AND temp_id2 = ?', [$id, $id2], 0, false);

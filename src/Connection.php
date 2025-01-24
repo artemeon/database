@@ -1165,7 +1165,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        if (!$this->dbDriver) {
+        if ($this->dbDriver === null) {
             return [];
         }
 
