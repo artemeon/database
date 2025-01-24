@@ -113,14 +113,14 @@ final class PostgresDriverTest extends TestCase
         $configMock = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
 
         $dbServiceMock = Mockery::mock(PostgresDriver::class)
-            ->shouldAllowMockingProtectedMethods()
             ->makePartial();
 
         $dbServiceMock->shouldReceive('handlesDumpCompression')
             ->once()
             ->andReturn(true);
 
-        $dbServiceMock->shouldReceive('runProcess')
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('runProcess')
             ->once()
             ->withArgs(function (Process $process) use ($expectedCommandLine): bool {
                 self::assertSame($expectedCommandLine, $process->getCommandLine());
