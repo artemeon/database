@@ -494,7 +494,7 @@ class PostgresDriver extends DriverAbstract
             $port = 5432;
         }
 
-        $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
+        $dumpBin = new ExecutableFinder()->find($this->dumpBin);
         $dumpParams = [
             $dumpBin,
             '--clean',
