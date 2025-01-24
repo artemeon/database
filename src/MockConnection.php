@@ -18,7 +18,6 @@ use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use Generator;
-
 use Override;
 
 use function current;
