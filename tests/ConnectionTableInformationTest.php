@@ -25,7 +25,7 @@ use Artemeon\Database\Schema\TableKey;
  */
 class ConnectionTableInformationTest extends ConnectionTestCase
 {
-    public const TEST_TABLE_NAME = 'agp_temp_tableinfotest';
+    public const string TEST_TABLE_NAME = 'agp_temp_tableinfotest';
 
     /**
      * @throws TableNotFoundException

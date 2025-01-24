@@ -23,9 +23,9 @@ use PHPUnit\Framework\TestCase;
 
 abstract class ConnectionTestCase extends TestCase
 {
-    private static $connection;
+    private static ?Connection $connection = null;
 
-    protected const TEST_TABLE_NAME = 'agp_test_table';
+    protected const string TEST_TABLE_NAME = 'agp_test_table';
 
     #[\Override]
     protected function setUp(): void
@@ -58,7 +58,9 @@ abstract class ConnectionTestCase extends TestCase
         $params = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
         $factory = new DriverFactory();
 
-        return self::$connection = new Connection($params, $factory);
+        self::$connection = new Connection($params, $factory);
+
+        return self::$connection;
     }
 
     protected function flushDBCache(): void
