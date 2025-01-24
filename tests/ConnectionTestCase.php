@@ -146,5 +146,4 @@ abstract class ConnectionTestCase extends TestCase
             'temp_longtext',
         ];
     }
-
 }

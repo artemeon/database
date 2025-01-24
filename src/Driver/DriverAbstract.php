@@ -19,7 +19,6 @@ use Artemeon\Database\DriverInterface;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\TableIndex;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -64,6 +63,7 @@ abstract class DriverAbstract implements DriverInterface
     public function hasColumn(string $tableName, string $columnName): bool
     {
         $table = $this->getTableInformation($tableName);
+
         return in_array(strtolower($columnName), $table->getColumnNames(), true);
     }
 
@@ -75,6 +75,7 @@ abstract class DriverAbstract implements DriverInterface
     {
         $enclosedOldName = $this->encloseTableName($oldName);
         $enclosedNewName = $this->encloseTableName($newName);
+
         return $this->_pQuery("ALTER TABLE $enclosedOldName RENAME TO $enclosedNewName", []);
     }
 
@@ -116,7 +117,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool
@@ -164,7 +165,7 @@ abstract class DriverAbstract implements DriverInterface
     #[\Override]
     public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool
     {
-        $safeColumns = array_map(fn($column) => $this->encloseColumnName($column), $columns);
+        $safeColumns = array_map(fn ($column) => $this->encloseColumnName($column), $columns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $placeholderSets = [];
         $params = [];
@@ -273,7 +274,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function getAffectedRowsCount(): int
@@ -282,7 +283,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function appendLimitExpression(string $query, int $start, int $end): string
@@ -295,7 +296,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function getConcatExpression(array $parts): string
@@ -320,7 +321,7 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function getLeastExpression(array $parts): string
@@ -342,7 +343,7 @@ abstract class DriverAbstract implements DriverInterface
     #[\Override]
     public function getStringLengthExpression(string $targetString): string
     {
-        return 'LENGTH('.$targetString.')';
+        return 'LENGTH(' . $targetString . ')';
     }
 
     protected function runProcess(Process $process, string $errorPrefix = ''): bool

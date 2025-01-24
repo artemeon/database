@@ -16,6 +16,9 @@ namespace Artemeon\Database\Tests;
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 
+/**
+ * @internal
+ */
 class ConnectionRoundTest extends ConnectionTestCase
 {
     /**
@@ -44,4 +47,3 @@ class ConnectionRoundTest extends ConnectionTestCase
         $this->assertEqualsWithDelta(1 + round(1 / 6, 8), (float) $row['val'], 0.0001);
     }
 }
-

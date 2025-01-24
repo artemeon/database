@@ -18,15 +18,14 @@ use Artemeon\Database\Schema\DataType;
 class AddColumnException extends \Exception
 {
     public function __construct(
-        string                    $message,
-        private readonly string   $table,
-        private readonly string   $column,
+        string $message,
+        private readonly string $table,
+        private readonly string $column,
         private readonly DataType $dataType,
-        private readonly ?bool    $null = null,
-        private readonly ?string  $default = null,
-        ?\Throwable               $previous = null
-    )
-    {
+        private readonly ?bool $null = null,
+        private readonly ?string $default = null,
+        ?\Throwable $previous = null,
+    ) {
         parent::__construct($message, 0, $previous);
     }
 

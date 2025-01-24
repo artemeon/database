@@ -38,7 +38,7 @@ class PostgresDriver extends DriverAbstract
     private array $cxInfo = [];
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      * @throws QueryException
      */
     #[\Override]
@@ -52,7 +52,7 @@ class PostgresDriver extends DriverAbstract
         $this->setConfig($params);
         $this->linkDB = pg_connect(
             "host='" . $params->getHost() . "' port='" . $port . "' dbname='" . $params->getDatabase(
-            ) . "' user='" . $params->getUsername() . "' password='" . $params->getPassword() . "'"
+            ) . "' user='" . $params->getUsername() . "' password='" . $params->getPassword() . "'",
         );
 
         if (!$this->linkDB) {
@@ -121,7 +121,7 @@ class PostgresDriver extends DriverAbstract
         }
 
         while ($row = pg_fetch_array($resultSet, null, PGSQL_ASSOC)) {
-            //conversions to remain compatible:
+            // conversions to remain compatible:
             //   count --> COUNT(*)
             if (isset($row['count'])) {
                 $row['COUNT(*)'] = $row['count'];
@@ -164,18 +164,18 @@ class PostgresDriver extends DriverAbstract
 
         if (empty($keyValuePairs)) {
             $query = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(
-                    ', ',
-                    $mappedColumns
-                ) . ') VALUES (' . implode(
-                    ', ',
-                    $placeholders
-                ) . ')
+                ', ',
+                $mappedColumns,
+            ) . ') VALUES (' . implode(
+                ', ',
+                $placeholders,
+            ) . ')
                         ON CONFLICT ON CONSTRAINT ' . $table . '_pkey DO NOTHING';
         } else {
             $query = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(
-                    ', ',
-                    $mappedColumns
-                ) . ') VALUES (' . implode(', ', $placeholders) . ')
+                ', ',
+                $mappedColumns,
+            ) . ') VALUES (' . implode(', ', $placeholders) . ')
                         ON CONFLICT ON CONSTRAINT ' . $table . '_pkey DO UPDATE SET ' . implode(', ', $keyValuePairs);
         }
 
@@ -200,7 +200,7 @@ class PostgresDriver extends DriverAbstract
     {
         $generator = $this->getPArray(
             "SELECT *, table_name as name FROM information_schema.tables WHERE table_schema = 'public'",
-            []
+            [],
         );
         $result = [];
         foreach ($generator as $row) {
@@ -237,17 +237,17 @@ class PostgresDriver extends DriverAbstract
         );
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['indexname']);
-            //scrape the columns from the indexdef
+            // scrape the columns from the indexdef
             $cols = substr(
                 (string) $indexInfo['indexdef'],
                 strpos((string) $indexInfo['indexdef'], '(') + 1,
-                strpos((string) $indexInfo['indexdef'], ')') - strpos((string) $indexInfo['indexdef'], '(') - 1
+                strpos((string) $indexInfo['indexdef'], ')') - strpos((string) $indexInfo['indexdef'], '(') - 1,
             );
             $index->setDescription($cols);
             $table->addIndex($index);
         }
 
-        //fetch all keys
+        // fetch all keys
         $query = "SELECT a.attname as column_name
                     FROM pg_class t,
                          pg_class i,
@@ -348,9 +348,9 @@ class PostgresDriver extends DriverAbstract
         }
 
         return $output && $this->_pQuery(
-                "ALTER TABLE $enclosedTableName ALTER COLUMN $enclosedNewColumnName TYPE " . $this->getDatatype($newDataType),
-                [],
-            );
+            "ALTER TABLE $enclosedTableName ALTER COLUMN $enclosedNewColumnName TYPE " . $this->getDatatype($newDataType),
+            [],
+        );
     }
 
     /**
@@ -362,13 +362,13 @@ class PostgresDriver extends DriverAbstract
     {
         $query = 'CREATE TABLE ' . $this->encloseTableName($name) . " ( \n";
 
-        //loop the fields
+        // loop the fields
         foreach ($columns as $columnName => $columnSettings) {
             $query .= " $columnName ";
 
             $query .= $this->getDatatype($columnSettings[0]);
 
-            //any default?
+            // any default?
             if (isset($columnSettings[2])) {
                 $query .= 'DEFAULT ' . $columnSettings[2] . ' ';
             }
@@ -391,7 +391,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      * @throws QueryException
      */
     #[\Override]
@@ -399,7 +399,7 @@ class PostgresDriver extends DriverAbstract
     {
         $index = iterator_to_array(
             $this->getPArray('SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?', [$table, $name]),
-            false
+            false,
         );
 
         return count($index) > 0;
@@ -474,7 +474,7 @@ class PostgresDriver extends DriverAbstract
         return pg_version($this->linkDB);
     }
 
-    //--- DUMP & RESTORE ------------------------------------------------------------------------------------
+    // --- DUMP & RESTORE ------------------------------------------------------------------------------------
 
     /**
      * @inheritDoc
@@ -497,9 +497,9 @@ class PostgresDriver extends DriverAbstract
             $dumpBin,
             '--clean',
             '--no-owner',
-            '-h' , escapeshellarg($this->config->getHost()),
-            ($this->config->getUsername() === '') ? '': '-U', escapeshellarg($this->config->getUsername()),
-            '-p', (string)$this->config->getPort(),
+            '-h', escapeshellarg($this->config->getHost()),
+            ($this->config->getUsername() === '') ? '' : '-U', escapeshellarg($this->config->getUsername()),
+            '-p', (string) $this->config->getPort(),
             '-d', escapeshellarg($this->config->getDatabase()),
             $tablesString,
         ];
@@ -511,7 +511,7 @@ class PostgresDriver extends DriverAbstract
                 sprintf(
                     '%s | gzip > %s',
                     implode(' ', $dumpParams),
-                    escapeshellarg($fileName)
+                    escapeshellarg($fileName),
                 ),
             ]);
         } else {
@@ -539,9 +539,9 @@ class PostgresDriver extends DriverAbstract
             $restoreParams = [
                 $restoreBin,
                 '-q',
-                '-h' , escapeshellarg($this->config->getHost()),
-                ($this->config->getUsername() === '') ? '': '-U', escapeshellarg($this->config->getUsername()),
-                '-p' . (string)$this->config->getPort(),
+                '-h', escapeshellarg($this->config->getHost()),
+                ($this->config->getUsername() === '') ? '' : '-U', escapeshellarg($this->config->getUsername()),
+                '-p' . (string) $this->config->getPort(),
                 '-d', escapeshellarg($this->config->getDatabase()),
             ];
 
@@ -549,15 +549,15 @@ class PostgresDriver extends DriverAbstract
             $fileCommand = sprintf('gunzip -c %s', escapeshellarg((string) $fileName));
             $process = new Process([
                 'bash', '-c',
-                sprintf('%s | %s', $fileCommand, $psqlCommand)
+                sprintf('%s | %s', $fileCommand, $psqlCommand),
             ]);
         } elseif (pathinfo((string) $fileName, PATHINFO_EXTENSION) === 'sql') {
             $restoreParams = [
                 $restoreBin,
                 '-q',
-                '-h' , $this->config->getHost(),
-                ($this->config->getUsername() === '') ? '': '-U', $this->config->getUsername(),
-                '-p' . (string)$this->config->getPort(),
+                '-h', $this->config->getHost(),
+                ($this->config->getUsername() === '') ? '' : '-U', $this->config->getUsername(),
+                '-p' . (string) $this->config->getPort(),
                 '-d', $this->config->getDatabase(),
                 '-f', $fileName,
             ];
@@ -582,21 +582,18 @@ class PostgresDriver extends DriverAbstract
     #[\Override]
     public function escape(mixed $value): string
     {
-        return str_replace("\\", "\\\\", (string) $value);
+        return str_replace('\\', '\\\\', (string) $value);
     }
 
     /**
-     * Transforms the query into a valid postgres-syntax
-     *
-     * @param string $query
-     *
-     * @return string
+     * Transforms the query into a valid postgres-syntax.
      */
     protected function processQuery(string $query): string
     {
         $query = preg_replace_callback('/\?/', static function (): string {
             static $i = 0;
             $i++;
+
             return '$' . $i;
         }, $query);
 
@@ -607,7 +604,7 @@ class PostgresDriver extends DriverAbstract
      * Does as cache-lookup for prepared statements.
      * Reduces the number of pre-compiles at the db-side.
      */
-    private function getPreparedStatementName(string $query): string | false
+    private function getPreparedStatementName(string $query): false | string
     {
         $sum = md5($query);
         if (in_array($sum, $this->statementsCache, true)) {
@@ -624,7 +621,7 @@ class PostgresDriver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function appendLimitExpression(string $query, int $start, int $end): string

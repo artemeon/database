@@ -7,6 +7,9 @@ namespace Artemeon\Database\Tests\Driver;
 use Artemeon\Database\Driver\Sqlite3Driver;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ */
 final class Sqlite3DriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void

@@ -17,9 +17,12 @@ use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 
+/**
+ * @internal
+ */
 class ConnectionUpsertTest extends ConnectionTestCase
 {
-    public function testInsertSinglePrimaryColumn()
+    public function testInsertSinglePrimaryColumn(): void
     {
         $objDB = $this->getConnection();
 
@@ -43,7 +46,8 @@ class ConnectionUpsertTest extends ConnectionTestCase
 
         $this->assertEquals(count($objDB->getPArray('SELECT * FROM agp_temp_upserttest', [], null, null, false)), 1);
         $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest WHERE temp_id = ?', [$id1]);
-        $this->assertEquals($row['temp_int'], 1); $this->assertEquals($row['temp_text'], 'row 1');
+        $this->assertEquals($row['temp_int'], 1);
+        $this->assertEquals($row['temp_text'], 'row 1');
 
         $objDB->flushQueryCache();
 
@@ -51,14 +55,14 @@ class ConnectionUpsertTest extends ConnectionTestCase
         $objDB->insertOrUpdate('agp_temp_upserttest', ['temp_id', 'temp_int', 'temp_text'], [$id1, 2, 'row 2'], ['temp_id']);
         $this->assertEquals(count($objDB->getPArray('SELECT * FROM agp_temp_upserttest', [], null, null, false)), 1);
         $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest WHERE temp_id = ?', [$id1]);
-        $this->assertEquals($row['temp_int'], 2); $this->assertEquals($row['temp_text'], 'row 2');
+        $this->assertEquals($row['temp_int'], 2);
+        $this->assertEquals($row['temp_text'], 'row 2');
 
         $id2 = $this->generateSystemid();
         $objDB->insertOrUpdate('agp_temp_upserttest', ['temp_id', 'temp_int', 'temp_text'], [$id2, 3, 'row 3'], ['temp_id']);
 
         $id3 = $this->generateSystemid();
         $objDB->insertOrUpdate('agp_temp_upserttest', ['temp_id', 'temp_int', 'temp_text'], [$id3, 4, 'row 4'], ['temp_id']);
-
 
         $this->assertEquals(count($objDB->getPArray('SELECT * FROM agp_temp_upserttest', [], null, null, false)), 3);
 
@@ -67,13 +71,16 @@ class ConnectionUpsertTest extends ConnectionTestCase
         $this->assertEquals(count($objDB->getPArray('SELECT * FROM agp_temp_upserttest', [], null, null, false)), 3);
 
         $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest WHERE temp_id = ?', [$id1]);
-        $this->assertEquals($row['temp_int'], 2); $this->assertEquals($row['temp_text'], 'row 2');
+        $this->assertEquals($row['temp_int'], 2);
+        $this->assertEquals($row['temp_text'], 'row 2');
 
         $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest WHERE temp_id = ?', [$id2]);
-        $this->assertEquals($row['temp_int'], 3); $this->assertEquals($row['temp_text'], 'row 3');
+        $this->assertEquals($row['temp_int'], 3);
+        $this->assertEquals($row['temp_text'], 'row 3');
 
         $row = $objDB->getPRow('SELECT * FROM agp_temp_upserttest WHERE temp_id = ?', [$id3]);
-        $this->assertEquals($row['temp_int'], 5); $this->assertEquals($row['temp_text'], 'row 5');
+        $this->assertEquals($row['temp_int'], 5);
+        $this->assertEquals($row['temp_text'], 'row 5');
 
         $query = 'DROP TABLE agp_temp_upserttest';
         $this->assertTrue($objDB->_pQuery($query));
@@ -189,11 +196,11 @@ class ConnectionUpsertTest extends ConnectionTestCase
             [$id3, 4, 5, 'text 4'],
         ];
 
-        foreach($testData as $row) {
+        foreach ($testData as $row) {
             $this->runInsertAndUpdate($row[0], $row[1], $row[2], $row[3]);
         }
 
-        foreach($testData as $row) {
+        foreach ($testData as $row) {
             $this->runUpsert($row[0], $row[1], $row[2], $row[3]);
         }
 
@@ -218,7 +225,7 @@ class ConnectionUpsertTest extends ConnectionTestCase
     {
         $objDb = $this->getConnection();
         $row = $objDb->getPRow('SELECT COUNT(*) AS cnt FROM agp_temp_upserttest3 WHERE temp_id = ? AND temp_id2 = ?', [$id, $id2], 0, false);
-        if($row['cnt'] == '0') {
+        if ($row['cnt'] == '0') {
             $query = 'INSERT INTO agp_temp_upserttest3 (temp_id, temp_id2, temp_int, temp_text) VALUES (?, ?, ?, ?)';
             $objDb->_pQuery($query, [$id, $id2, $int, $text]);
         } else {

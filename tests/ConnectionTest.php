@@ -24,6 +24,9 @@ use DateInterval;
 use DateTime;
 use ReflectionClass;
 
+/**
+ * @internal
+ */
 class ConnectionTest extends ConnectionTestCase
 {
     /**
@@ -311,14 +314,14 @@ class ConnectionTest extends ConnectionTestCase
 
         // like must be escaped
         $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 LIKE ?';
-        $row = $connection->getPRow($query, [$connection->escape("Foo\\Bar%")]);
+        $row = $connection->getPRow($query, [$connection->escape('Foo\\Bar%')]);
 
         $this->assertNotEmpty($row);
         $this->assertEquals('Foo\\Bar\\Baz', $row['temp_char20']);
 
         // equals needs no escape
         $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 = ?';
-        $row = $connection->getPRow($query, ["Foo\\Bar\\Baz"]);
+        $row = $connection->getPRow($query, ['Foo\\Bar\\Baz']);
 
         $this->assertNotEmpty($row);
         $this->assertEquals('Foo\\Bar\\Baz', $row['temp_char20']);
@@ -358,14 +361,16 @@ class ConnectionTest extends ConnectionTestCase
         $systemId = $this->generateSystemid();
 
         // insert, which affects one row
-        $connection->multiInsert(self::TEST_TABLE_NAME,
+        $connection->multiInsert(
+            self::TEST_TABLE_NAME,
             ['temp_id', 'temp_char20'],
             [[$this->generateSystemid(), $systemId]],
         );
         $this->assertEquals(1, $connection->getAffectedRowsCount());
 
         // insert, which affects two rows
-        $connection->multiInsert(self::TEST_TABLE_NAME,
+        $connection->multiInsert(
+            self::TEST_TABLE_NAME,
             ['temp_id', 'temp_char20'],
             [
                 [$this->generateSystemid(), $systemId],
@@ -656,13 +661,13 @@ class ConnectionTest extends ConnectionTestCase
     public function intComparisonDataProvider(): array
     {
         return [
-            ['a111', 20170801000000, 20170901000000-20170801000000],
-            ['a112', 20171101000000, 20171201000000-20171101000000],
-            ['a113', 20171201000000, 20180101000000-20171201000000],
-            ['a113', 20171215000000, 20180115000000-20171215000000],
-            ['a113', 20171230000000, 20180130000000-20171230000000],
-            ['a113', 20171231000000, 20180131000000-20171231000000],
-            ['a113', 20170101000000, 20170201000000-20170101000000],
+            ['a111', 20170801000000, 20170901000000 - 20170801000000],
+            ['a112', 20171101000000, 20171201000000 - 20171101000000],
+            ['a113', 20171201000000, 20180101000000 - 20171201000000],
+            ['a113', 20171215000000, 20180115000000 - 20171215000000],
+            ['a113', 20171230000000, 20180130000000 - 20171230000000],
+            ['a113', 20171231000000, 20180131000000 - 20171231000000],
+            ['a113', 20170101000000, 20170201000000 - 20170101000000],
         ];
     }
 
@@ -683,7 +688,7 @@ class ConnectionTest extends ConnectionTestCase
 
         $this->assertEquals(",$systemId,", $row['val']);
 
-        $query = 'SELECT temp_id as val FROM ' . self::TEST_TABLE_NAME . ' WHERE ' . $connection->getConcatExpression(["','", 'temp_id', "','"]) . ' LIKE ? ';//. " AS val FROM agp_temp_autotest";
+        $query = 'SELECT temp_id as val FROM ' . self::TEST_TABLE_NAME . ' WHERE ' . $connection->getConcatExpression(["','", 'temp_id', "','"]) . ' LIKE ? ';// . " AS val FROM agp_temp_autotest";
         $row = $connection->getPRow($query, ["%$systemId%"]);
 
         $this->assertEquals($systemId, $row['val']);
@@ -769,12 +774,12 @@ class ConnectionTest extends ConnectionTestCase
         $tableName = 'agp_test_least';
         $fields = [
             'test_id' => [DataType::CHAR20, false],
-            'column_1'  => [DataType::INT, true],
-            'column_2'  => [DataType::INT, true],
-            'column_3'  => [DataType::INT, true],
-            'column_4'  => [DataType::CHAR20, true],
-            'column_5'  => [DataType::CHAR20, true],
-            'column_6'  => [DataType::CHAR20, true],
+            'column_1' => [DataType::INT, true],
+            'column_2' => [DataType::INT, true],
+            'column_3' => [DataType::INT, true],
+            'column_4' => [DataType::CHAR20, true],
+            'column_5' => [DataType::CHAR20, true],
+            'column_6' => [DataType::CHAR20, true],
         ];
 
         $connection->createTable($tableName, $fields, ['test_id']);
@@ -794,7 +799,6 @@ class ConnectionTest extends ConnectionTestCase
             ['conditionValue' => 'foo', 'columns' => ['column_4', 'column_5', 'column_6'], 'expectedResult' => 'alpha'],
             ['conditionValue' => 'bar', 'columns' => ['column_4', 'column_5', 'column_6'], 'expectedResult' => 'dolor'],
         ];
-
 
         foreach ($testCases as $testCase) {
             $query = 'SELECT ' . $connection->getLeastExpression($testCase['columns']) . ' AS minimum FROM ' . $tableName . ' WHERE test_id = ?';
@@ -823,7 +827,7 @@ class ConnectionTest extends ConnectionTestCase
             'b' => 'another_value',
             'c' => null,
             'd' => '42',
-            'e' => 'invalid_json'
+            'e' => 'invalid_json',
         ];
 
         $query = 'SELECT temp_id, ' . $connection->getJsonColumnExpression('temp_text', 'key1') . ' AS extracted_value FROM ' . self::TEST_TABLE_NAME;
@@ -834,7 +838,7 @@ class ConnectionTest extends ConnectionTestCase
         }
     }
 
-    public function testGetNthLastElementFromSlug()
+    public function testGetNthLastElementFromSlug(): void
     {
         $connection = $this->getConnection();
         $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
@@ -885,7 +889,7 @@ class ConnectionTest extends ConnectionTestCase
         $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
         $connection->_pQuery(
             'INSERT INTO ' . self::TEST_TABLE_NAME . ' (temp_id, temp_char100) VALUES (?, ?)',
-            [$this->generateSystemid(), 'foobarbazquux']
+            [$this->generateSystemid(), 'foobarbazquux'],
         );
 
         $testCases = [

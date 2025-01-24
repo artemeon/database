@@ -28,7 +28,7 @@ final class ConnectionParameters
         private readonly string $password,
         private readonly string $database,
         private readonly ?int $port,
-        private readonly string $driver
+        private readonly string $driver,
     ) {
     }
 

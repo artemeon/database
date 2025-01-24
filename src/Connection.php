@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
  * Old plain queries are still allows, but will be discontinued around kajona 3.5 / 4.0. Up from kajona > 3.4.0
  * a warning will be generated when using the old apis.
  * When using prepared statements, all escaping is done by the database layer.
- * When using the old, plain queries, you have to escape all embedded arguments yourself by using dbsafeString()
+ * When using the old, plain queries, you have to escape all embedded arguments yourself by using dbsafeString().
  */
 class Connection implements ConnectionInterface
 {
@@ -88,13 +88,13 @@ class Connection implements ConnectionInterface
     public static bool $dbSafeStringEnabled = true;
 
     /**
-     * @throws Exception\DriverNotFoundException
+     * @throws DriverNotFoundException
      */
     public function __construct(
         private readonly ConnectionParameters $connectionParams,
         private readonly DriverFactory $driverFactory,
         private readonly ?LoggerInterface $logger = null,
-        private readonly ?int $debugLevel = null
+        private readonly ?int $debugLevel = null,
     ) {
         $this->dbDriver = $this->driverFactory->factory($this->connectionParams->getDriver());
     }
@@ -148,12 +148,12 @@ class Connection implements ConnectionInterface
 
         foreach (array_chunk($valueSets, $setsPerInsert) as $valueSet) {
             $output = $output && $this->dbDriver->triggerMultiInsert(
-                    $tableName,
-                    $columns,
-                    $valueSet,
-                    $this,
-                    $escapes
-                );
+                $tableName,
+                $columns,
+                $valueSet,
+                $this,
+                $escapes,
+            );
         }
 
         return $output;
@@ -188,7 +188,7 @@ class Connection implements ConnectionInterface
             implode(
                 ', ',
                 array_map(
-                    fn($columnName): string => $this->encloseColumnName((string)$columnName),
+                    fn ($columnName): string => $this->encloseColumnName((string) $columnName),
                     $columns,
                 ),
             ),
@@ -196,7 +196,7 @@ class Connection implements ConnectionInterface
             implode(
                 ' AND ',
                 array_map(
-                    fn(string $columnName): string => $this->encloseColumnName($columnName) . ' = ?',
+                    fn (string $columnName): string => $this->encloseColumnName($columnName) . ' = ?',
                     array_keys($identifiers),
                 ),
             ),
@@ -688,6 +688,7 @@ class Connection implements ConnectionInterface
             } else {
                 $this->dbDriver->rollBack();
                 $this->currentTransactionIsDirty = false;
+
                 throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction, because of this we have have executed a rollback on the complete outer transaction which may result in data loss');
             }
         } else {
@@ -793,7 +794,7 @@ class Connection implements ConnectionInterface
     /**
      * Looks up the columns of the given table.
      * Should return an array for each row consisting of:
-     * array ("columnName", "columnType")
+     * array ("columnName", "columnType").
      *
      * @throws QueryException
      * @throws TableNotFoundException
@@ -817,7 +818,7 @@ class Connection implements ConnectionInterface
             $columnName = $column->getName();
             $return[$columnName] = [
                 'columnName' => $columnName,
-                'columnType' => $column->getInternalType()
+                'columnType' => $column->getInternalType(),
             ];
         }
 
@@ -1033,6 +1034,7 @@ class Connection implements ConnectionInterface
 
         if (!$return) {
             $error = $this->dbDriver->getError();
+
             throw new ChangeColumnException(
                 'Could not change column: ' . $error,
                 $tableName,
@@ -1067,6 +1069,7 @@ class Connection implements ConnectionInterface
 
         if (!$return) {
             $error = $this->dbDriver->getError();
+
             throw new AddColumnException(
                 'Could not add column: ' . $error,
                 $table,
@@ -1097,6 +1100,7 @@ class Connection implements ConnectionInterface
 
         if (!$return) {
             $error = $this->dbDriver->getError();
+
             throw new RemoveColumnException('Could not remove column: ' . $error, $tableName, $column);
         }
 
@@ -1210,11 +1214,11 @@ class Connection implements ConnectionInterface
      * as used by prepared statements.
      *
      * @param array|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
-     *                          If not passed, all params will be cleaned.
+     *                             If not passed, all params will be cleaned.
      *
      * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
-    private function dbsafeParams(array $params, array|false $escapes = []): array
+    private function dbsafeParams(array $params, array | false $escapes = []): array
     {
         $replace = [];
         foreach ($params as $key => $param) {

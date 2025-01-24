@@ -16,7 +16,7 @@ namespace Artemeon\Database\Schema;
 use JsonSerializable;
 
 /**
- * Base information about a tables primary key
+ * Base information about a tables primary key.
  */
 class TableKey implements JsonSerializable
 {

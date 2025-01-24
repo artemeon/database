@@ -37,7 +37,7 @@ class Sqlite3Driver extends DriverAbstract
     private string $dbFile;
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function dbconnect(ConnectionParameters $params): bool
@@ -49,7 +49,7 @@ class Sqlite3Driver extends DriverAbstract
         if ($params->getDatabase() === ':memory:') {
             $this->dbFile = ':memory:';
         } else {
-            $this->dbFile = $params->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $params->getDatabase().'.db3';
+            $this->dbFile = $params->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $params->getDatabase() . '.db3';
         }
 
         try {
@@ -60,9 +60,10 @@ class Sqlite3Driver extends DriverAbstract
             $this->linkDB->busyTimeout(5000);
 
             // Benutzerdefinierte Funktion zum Extrahieren des n-ten letzten Segments
-            $this->linkDB->createFunction('extract_nth_last_slug_segment', function($string, $position) {
+            $this->linkDB->createFunction('extract_nth_last_slug_segment', function ($string, $position) {
                 $segments = explode('/', trim($string, '/'));
                 $index = count($segments) - $position;
+
                 return ($index >= 0 && $index < count($segments)) ? $segments[$index] : '';
             }, 2);
 
@@ -89,7 +90,7 @@ class Sqlite3Driver extends DriverAbstract
      */
     private function buildAndCopyTempTables(string $targetTableName, array $sourceTableInfo, array $targetTableInfo): bool
     {
-        /* Get existing table info */
+        // Get existing table info
         $pragmaTableInfo = $this->getPArray("PRAGMA table_info('$targetTableName')", []);
         $columnsPragma = [];
         foreach ($pragmaTableInfo as $row) {
@@ -156,9 +157,11 @@ class Sqlite3Driver extends DriverAbstract
 
         $output = $this->_pQuery($query, []);
 
-        //copy all values
+        // copy all values
         $query = 'INSERT INTO ' . $targetTableName . '_temp (' . implode(',', $targetColumns) . ') SELECT ' . implode(
-                ',', $sourceColumns) . ' FROM ' . $targetTableName;
+            ',',
+            $sourceColumns,
+        ) . ' FROM ' . $targetTableName;
         $output = $output && $this->_pQuery($query, []);
 
         $query = 'DROP TABLE ' . $targetTableName;
@@ -231,14 +234,14 @@ class Sqlite3Driver extends DriverAbstract
             return parent::triggerMultiInsert($table, $columns, $valueSets, $database, $escapes);
         }
 
-        //legacy code
-        $safeColumns = array_map(fn($column) => $this->encloseColumnName($column), $columns);
+        // legacy code
+        $safeColumns = array_map(fn ($column) => $this->encloseColumnName($column), $columns);
         $params = [];
         $escapeValues = [];
         $insertStatement = 'INSERT INTO ' . $this->encloseTableName($table) . ' (' . implode(',', $safeColumns) . ') ';
         foreach ($valueSets as $key => $valueSet) {
             $selectStatement = $key === 0 ? ' SELECT ' : ' UNION SELECT ';
-            $insertStatement .= $selectStatement . implode(', ', array_map(static fn($column) => ' ? AS ' . $column, $safeColumns));
+            $insertStatement .= $selectStatement . implode(', ', array_map(static fn ($column) => ' ? AS ' . $column, $safeColumns));
             $params[] = array_values($valueSet);
             if ($escapes !== null) {
                 $escapeValues[] = $escapes;
@@ -265,7 +268,9 @@ class Sqlite3Driver extends DriverAbstract
         $enclosedTableName = $this->encloseTableName($table);
 
         $query = "INSERT OR REPLACE INTO $enclosedTableName (" . implode(', ', $mappedColumns) . ') VALUES (' . implode(
-                ', ', $placeholders) . ')';
+            ', ',
+            $placeholders,
+        ) . ')';
 
         return $this->_pQuery($query, $values);
     }
@@ -454,13 +459,14 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      * @throws QueryException
      */
     #[\Override]
     public function hasIndex($table, $name): bool
     {
         $index = iterator_to_array($this->getPArray("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name = ?", [$table, $name]), false);
+
         return count($index) > 0;
     }
 
@@ -545,7 +551,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function handlesDumpCompression(): bool
@@ -590,7 +596,7 @@ class Sqlite3Driver extends DriverAbstract
      */
     private function fixQuoting(string $query): string
     {
-        return str_replace(["\\'", "\\\""], ["''", "\""], $query);
+        return str_replace(["\\'", '\\"'], ["''", '"'], $query);
     }
 
     /**
@@ -601,6 +607,7 @@ class Sqlite3Driver extends DriverAbstract
         return preg_replace_callback('/\?/', static function (): string {
             static $i = 0;
             $i++;
+
             return ':param' . $i;
         }, $query);
     }
@@ -608,7 +615,7 @@ class Sqlite3Driver extends DriverAbstract
     /**
      * Prepares a statement or uses an instance from the cache.
      */
-    private function getPreparedStatement(string $query): SQLite3Stmt | false
+    private function getPreparedStatement(string $query): false | SQLite3Stmt
     {
         $name = md5($query);
 
@@ -632,7 +639,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function getConcatExpression(array $parts): string
@@ -641,7 +648,7 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     #[\Override]
     public function getLeastExpression(array $parts): string

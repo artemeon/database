@@ -23,31 +23,21 @@ class ChangeColumnException extends \Exception
         private readonly string $oldColumnName,
         private readonly string $newColumnName,
         private readonly DataType $newDataType,
-        ?\Throwable $previous = null
-    )
-    {
+        ?\Throwable $previous = null,
+    ) {
         parent::__construct($message, 0, $previous);
     }
 
-    /**
-     * @return string
-     */
     public function getTable(): string
     {
         return $this->table;
     }
 
-    /**
-     * @return string
-     */
     public function getOldColumnName(): string
     {
         return $this->oldColumnName;
     }
 
-    /**
-     * @return string
-     */
     public function getNewColumnName(): string
     {
         return $this->newColumnName;

@@ -37,7 +37,7 @@ class MysqliDriver extends DriverAbstract
 
     private bool $connected = false;
 
-    private ?mysqli $linkDB = null; //DB-Link
+    private ?mysqli $linkDB = null; // DB-Link
 
     private string $dumpBin = 'mysqldump'; // Binary to dump db (if not in path, add the path here)
 
@@ -46,7 +46,7 @@ class MysqliDriver extends DriverAbstract
     private string $errorMessage = '';
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      * @throws QueryException
      */
     #[\Override]
@@ -69,7 +69,7 @@ class MysqliDriver extends DriverAbstract
             $this->config->getUsername(),
             $this->config->getPassword(),
             $this->config->getDatabase(),
-            $port
+            $port,
         );
 
         if ($this->linkDB->connect_errno) {
@@ -206,9 +206,9 @@ class MysqliDriver extends DriverAbstract
         $enclosedTableName = $this->encloseTableName($table);
 
         $query = "INSERT INTO $enclosedTableName (" . implode(
-                ', ',
-                $mappedColumns
-            ) . ') VALUES (' . implode(', ', $placeholders) . ')
+            ', ',
+            $mappedColumns,
+        ) . ') VALUES (' . implode(', ', $placeholders) . ')
                         ON DUPLICATE KEY UPDATE ' . implode(', ', $keyValuePairs);
 
         return $this->_pQuery($query, array_merge($values, $values));
@@ -262,7 +262,7 @@ class MysqliDriver extends DriverAbstract
             );
         }
 
-        //fetch all indexes
+        // fetch all indexes
         $indexes = $this->getPArray("SHOW INDEX FROM $tableName WHERE Key_name != 'PRIMARY'", []);
         $indexAggr = [];
         foreach ($indexes as $indexInfo) {
@@ -275,7 +275,7 @@ class MysqliDriver extends DriverAbstract
             $table->addIndex($index);
         }
 
-        //fetch all keys
+        // fetch all keys
         $keys = $this->getPArray("SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'", []);
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['Column_name']);
@@ -393,7 +393,7 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      * @throws QueryException
      */
     #[\Override]
@@ -408,13 +408,14 @@ class MysqliDriver extends DriverAbstract
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      * @throws QueryException
      */
     #[\Override]
     public function hasIndex($table, $name): bool
     {
         $index = iterator_to_array($this->getPArray("SHOW INDEX FROM $table WHERE Key_name = ?", [$name]), false);
+
         return count($index) > 0;
     }
 
@@ -514,7 +515,7 @@ class MysqliDriver extends DriverAbstract
         return "`$table`";
     }
 
-    //--- DUMP & RESTORE ------------------------------------------------------------------------------------
+    // --- DUMP & RESTORE ------------------------------------------------------------------------------------
 
     /**
      * @inheritDoc
@@ -527,10 +528,10 @@ class MysqliDriver extends DriverAbstract
             $dumpBin,
             '-h', escapeshellarg($this->config->getHost()),
             '-u', escapeshellarg($this->config->getUsername()),
-            ($this->config->getPassword() === '') ? '': '-p' . escapeshellarg($this->config->getPassword()),
+            ($this->config->getPassword() === '') ? '' : '-p' . escapeshellarg($this->config->getPassword()),
             '-P', $this->config->getPort(),
             escapeshellarg($this->config->getDatabase()),
-            implode(' ', array_map('escapeshellarg', $tables))
+            implode(' ', array_map('escapeshellarg', $tables)),
         ];
 
         $mysqldumpCommand = implode(' ', $dumpParams);
@@ -543,7 +544,7 @@ class MysqliDriver extends DriverAbstract
 
         $process = new Process([
             'bash', '-c',
-            sprintf($pattern, $mysqldumpCommand, escapeshellarg($fileName))
+            sprintf($pattern, $mysqldumpCommand, escapeshellarg($fileName)),
         ]);
 
         $this->runProcess($process, 'Database import failed:');
@@ -567,7 +568,7 @@ class MysqliDriver extends DriverAbstract
             $restoreBin,
             '-h', escapeshellarg($this->config->getHost()),
             '-u', escapeshellarg($this->config->getUsername()),
-            ($this->config->getPassword() === '') ? '': '-p' . escapeshellarg($this->config->getPassword()),
+            ($this->config->getPassword() === '') ? '' : '-p' . escapeshellarg($this->config->getPassword()),
             '-P', $this->config->getPort(),
             escapeshellarg($this->config->getDatabase()),
         ];
@@ -583,7 +584,7 @@ class MysqliDriver extends DriverAbstract
 
         $process = new Process([
             'bash', '-c',
-            sprintf('%s | %s', $fileCommand, $mysqlCommand)
+            sprintf('%s | %s', $fileCommand, $mysqlCommand),
         ]);
 
         $this->runProcess($process, 'Database import failed:');
@@ -594,7 +595,7 @@ class MysqliDriver extends DriverAbstract
     /**
      * Prepares a statement or uses an instance from the cache.
      */
-    private function getPreparedStatement(string $query): mysqli_stmt|false
+    private function getPreparedStatement(string $query): false | mysqli_stmt
     {
         $name = md5($query);
 
@@ -626,7 +627,7 @@ class MysqliDriver extends DriverAbstract
     #[\Override]
     public function escape(mixed $value): string
     {
-        return str_replace("\\", "\\\\", (string)$value);
+        return str_replace('\\', '\\\\', (string) $value);
     }
 
     #[\Override]

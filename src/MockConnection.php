@@ -17,7 +17,6 @@ use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
-
 use Generator;
 
 use function current;
@@ -93,7 +92,7 @@ class MockConnection implements ConnectionInterface
     }
 
     #[\Override]
-    public function fetchAssociative(string $query, array $params = []): array|false
+    public function fetchAssociative(string $query, array $params = []): array | false
     {
         return reset($this->rows);
     }
@@ -105,6 +104,7 @@ class MockConnection implements ConnectionInterface
         foreach ($this->rows as $row) {
             $values[] = reset($row);
         }
+
         return $values;
     }
 
@@ -345,7 +345,7 @@ class MockConnection implements ConnectionInterface
     #[\Override]
     public function getConcatExpression(array $parts): string
     {
-        return 'CONCAT('  . implode(',', $parts) . ')';
+        return 'CONCAT(' . implode(',', $parts) . ')';
     }
 
     #[\Override]

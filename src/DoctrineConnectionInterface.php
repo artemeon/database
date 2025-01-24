@@ -33,7 +33,7 @@ interface DoctrineConnectionInterface
      * Prepares and executes an SQL query and returns the first row of the result
      * as an associative array.
      */
-    public function fetchAssociative(string $query, array $params = []): array|false;
+    public function fetchAssociative(string $query, array $params = []): array | false;
 
     /**
      * Prepares and executes an SQL query and returns the result as an array of the first column values.

@@ -20,6 +20,9 @@ use Artemeon\Database\Schema\TableKey;
 use JsonException;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ */
 class TableTest extends TestCase
 {
     /**

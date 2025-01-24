@@ -16,6 +16,9 @@ namespace Artemeon\Database\Tests;
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 
+/**
+ * @internal
+ */
 class ConnectionStringLengthTest extends ConnectionTestCase
 {
     /**
@@ -28,6 +31,6 @@ class ConnectionStringLengthTest extends ConnectionTestCase
             . ' WHERE temp_char10 = ?';
         $row = $this->getConnection()->getPRow($query, ['char10-3']);
 
-        $this->assertEquals(8, (int)$row['val']);
+        $this->assertEquals(8, (int) $row['val']);
     }
 }

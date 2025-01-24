@@ -9,6 +9,9 @@ use Artemeon\Database\Driver\PostgresDriver;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
+/**
+ * @internal
+ */
 final class PostgresDriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void
@@ -33,22 +36,17 @@ final class PostgresDriverTest extends TestCase
             [
                 '/path/to/dump.sql', ['agp_user', 'agp_tours'],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p 5432 -d '\''testdb'\'' -t '\''agp_user'\'' -t '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''"
+                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p 5432 -d '\''testdb'\'' -t '\''agp_user'\'' -t '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
             [
                 '/path/to/dump.sql', [],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p 5432 -d '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''"
+                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p 5432 -d '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
         ];
     }
 
-
     /**
-     * @param string $fileName
-     * @param array $tables
-     * @param string $password
-     * @param string $expectedCommandLine
      * @dataProvider provideValidExportFilenameAndPasswordAndExpectedCommandLine
      */
     public function testDbExportWillRunProcess(string $fileName, array $tables, string $password, string $expectedCommandLine): void
@@ -70,6 +68,7 @@ final class PostgresDriverTest extends TestCase
             ->method('runProcess')
             ->with($this->callback(function (Process $process) use ($expectedCommandLine) {
                 $this->assertSame($expectedCommandLine, $process->getCommandLine());
+
                 return true;
             }))->willReturn(true);
 
@@ -85,27 +84,24 @@ final class PostgresDriverTest extends TestCase
         return [
             [
                 '/path/to/dump.sql', 'securepassword',
-                "'/usr/bin/psql' '-q' '-h' 'localhost' '-U' 'sebastian_bergmann' '-p5432' '-d' 'testdb' '-f' '/path/to/dump.sql'"
+                "'/usr/bin/psql' '-q' '-h' 'localhost' '-U' 'sebastian_bergmann' '-p5432' '-d' 'testdb' '-f' '/path/to/dump.sql'",
             ],
             [
                 '/path/to/dump.sql.gz', 'securepassword',
-                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/psql -q -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p5432 -d '\''testdb'\'''"
+                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/psql -q -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p5432 -d '\''testdb'\'''",
             ],
             [
                 '/path/to/dump.sql', '',
-                "'/usr/bin/psql' '-q' '-h' 'localhost' '-U' 'sebastian_bergmann' '-p5432' '-d' 'testdb' '-f' '/path/to/dump.sql'"
+                "'/usr/bin/psql' '-q' '-h' 'localhost' '-U' 'sebastian_bergmann' '-p5432' '-d' 'testdb' '-f' '/path/to/dump.sql'",
             ],
             [
                 '/path/to/dump.sql.gz', '',
-                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/psql -q -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p5432 -d '\''testdb'\'''"
+                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/psql -q -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p5432 -d '\''testdb'\'''",
             ],
         ];
     }
 
     /**
-     * @param string $fileName
-     * @param string $password
-     * @param string $expectedCommandLine
      * @dataProvider provideValidImportFilenameAndPasswordAndExpectedCommandLine
      */
     public function testDbImportWillRunProcess(string $fileName, string $password, string $expectedCommandLine): void
@@ -127,6 +123,7 @@ final class PostgresDriverTest extends TestCase
             ->method('runProcess')
             ->with($this->callback(function (Process $process) use ($expectedCommandLine) {
                 $this->assertSame($expectedCommandLine, $process->getCommandLine());
+
                 return true;
             }))->willReturn(true);
 
