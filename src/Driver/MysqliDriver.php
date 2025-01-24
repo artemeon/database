@@ -524,7 +524,7 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function dbExport(string &$fileName, array $tables): bool
     {
-        $dumpBin = (new ExecutableFinder())->find($this->dumpBin);
+        $dumpBin = new ExecutableFinder()->find($this->dumpBin);
         $dumpParams = [
             $dumpBin,
             '-h', escapeshellarg($this->config->getHost()),
@@ -563,7 +563,7 @@ class MysqliDriver extends DriverAbstract
             throw new \RuntimeException(trim($fileName . ' is not a valid import file'));
         }
 
-        $restoreBin = (new ExecutableFinder())->find($this->restoreBin);
+        $restoreBin = new ExecutableFinder()->find($this->restoreBin);
 
         $restoreParams = [
             $restoreBin,
