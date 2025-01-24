@@ -45,9 +45,9 @@ final class PostgresDriverTest extends TestCase
     #[DataProvider('provideValidExportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbExportWillRunProcess(string $fileName, array $tables, string $password, string $expectedCommandLine): void
     {
-        $host = 'localhost';
-        $user = 'sebastian_bergmann';
-        $database = 'testdb';
+        $host = '127.0.0.1';
+        $user = 'agp';
+        $database = 'agp';
         $port = 5432;
         $driver = 'sqlite3';
 
@@ -104,9 +104,9 @@ final class PostgresDriverTest extends TestCase
     #[DataProvider('provideValidImportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbImportWillRunProcess(string $fileName, string $password, string $expectedCommandLine): void
     {
-        $host = 'localhost';
-        $user = 'sebastian_bergmann';
-        $database = 'testdb';
+        $host = '127.0.0.1';
+        $user = 'agp';
+        $database = 'agp';
         $port = 5432;
         $driver = 'mysqli';
 
