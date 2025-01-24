@@ -6,6 +6,8 @@ namespace Artemeon\Database\Tests\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Driver\MysqliDriver;
+use Mockery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
@@ -16,13 +18,7 @@ final class MysqliDriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void
     {
-        $mysqliDriver = $this->getMockBuilder(MysqliDriver::class)
-            ->disableOriginalConstructor()
-            ->disableOriginalClone()
-            ->disableArgumentCloning()
-            ->disallowMockingUnknownTypes()
-            ->setMethodsExcept(['getSubstringExpression'])
-            ->getMock();
+        $mysqliDriver = new MysqliDriver();
 
         self::assertEquals('SUBSTRING(test_column, 1)', $mysqliDriver->getSubstringExpression('test_column', 1, null));
         self::assertEquals('SUBSTRING(test_column, 1, 1)', $mysqliDriver->getSubstringExpression('test_column', 1, 1));
@@ -46,9 +42,7 @@ final class MysqliDriverTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider provideValidExportFilenameAndPasswordAndExpectedCommandLine
-     */
+    #[DataProvider('provideValidExportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbExportWillRunProcess(string $fileName, array $tables, string $password, string $expectedCommandLine): void
     {
         $host = 'localhost';
@@ -59,18 +53,18 @@ final class MysqliDriverTest extends TestCase
 
         $configMock = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
 
-        $dbServiceMock = $this->getMockBuilder(MysqliDriver::class)
-            ->onlyMethods(['handlesDumpCompression', 'runProcess'])
-            ->getMock();
-        $dbServiceMock->expects($this->once())->method('handlesDumpCompression')->willReturn(true);
+        $dbServiceMock = Mockery::mock(MysqliDriver::class)
+            ->shouldAllowMockingProtectedMethods()
+            ->makePartial();
 
-        $dbServiceMock->expects($this->once())
-            ->method('runProcess')
-            ->with($this->callback(function (Process $process) use ($expectedCommandLine) {
-                $this->assertSame($expectedCommandLine, $process->getCommandLine());
+        $dbServiceMock->shouldReceive('runProcess')
+            ->once()
+            ->withArgs(static function (Process $process) use ($expectedCommandLine): bool {
+                self::assertSame($expectedCommandLine, $process->getCommandLine());
 
                 return true;
-            }))->willReturn(true);
+            })
+            ->andReturn(true);
 
         $dbServiceMock->setConfig($configMock);
 
@@ -101,9 +95,7 @@ final class MysqliDriverTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider provideValidImportFilenameAndPasswordAndExpectedCommandLine
-     */
+    #[DataProvider('provideValidImportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbImportWillRunProcess(string $fileName, string $password, string $expectedCommandLine): void
     {
         $host = 'localhost';
@@ -114,18 +106,22 @@ final class MysqliDriverTest extends TestCase
 
         $configMock = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
 
-        $dbServiceMock = $this->getMockBuilder(MysqliDriver::class)
-            ->onlyMethods(['handlesDumpCompression', 'runProcess'])
-            ->getMock();
-        $dbServiceMock->expects($this->once())->method('handlesDumpCompression')->willReturn(true);
+        $dbServiceMock = Mockery::mock(MysqliDriver::class)
+            ->shouldAllowMockingProtectedMethods()
+            ->makePartial();
 
-        $dbServiceMock->expects($this->once())
-            ->method('runProcess')
-            ->with($this->callback(function (Process $process) use ($expectedCommandLine) {
-                $this->assertSame($expectedCommandLine, $process->getCommandLine());
+        $dbServiceMock->shouldReceive('handlesDumpCompression')
+            ->once()
+            ->andReturn(true);
+
+        $dbServiceMock->shouldReceive('runProcess')
+            ->once()
+            ->withArgs(static function (Process $process) use ($expectedCommandLine): bool {
+                self::assertSame($expectedCommandLine, $process->getCommandLine());
 
                 return true;
-            }))->willReturn(true);
+            })
+            ->andReturn(true);
 
         $dbServiceMock->setConfig($configMock);
 

@@ -14,13 +14,7 @@ final class Sqlite3DriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void
     {
-        $sqlite3Driver = $this->getMockBuilder(Sqlite3Driver::class)
-            ->disableOriginalConstructor()
-            ->disableOriginalClone()
-            ->disableArgumentCloning()
-            ->disallowMockingUnknownTypes()
-            ->setMethodsExcept(['getSubstringExpression'])
-            ->getMock();
+        $sqlite3Driver = new Sqlite3Driver();
 
         self::assertEquals('SUBSTR(test_column, 1)', $sqlite3Driver->getSubstringExpression('test_column', 1, null));
         self::assertEquals('SUBSTR(test_column, 1, 1)', $sqlite3Driver->getSubstringExpression('test_column', 1, 1));

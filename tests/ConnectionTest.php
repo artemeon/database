@@ -22,11 +22,14 @@ use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\DataType;
 use DateInterval;
 use DateTime;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionClass;
 
 /**
  * @internal
  */
+#[CoversClass(PostgresDriver::class)]
 class ConnectionTest extends ConnectionTestCase
 {
     /**
@@ -399,10 +402,9 @@ class ConnectionTest extends ConnectionTestCase
     }
 
     /**
-     * @dataProvider dataPostgresProcessQueryProvider
-     * @covers       \Artemeon\Database\Driver\PostgresDriver::processQuery
      * @throws \ReflectionException
      */
+    #[DataProvider('dataPostgresProcessQueryProvider')]
     public function testPostgresProcessQuery($expected, $query): void
     {
         $dbPostgres = new PostgresDriver();
@@ -416,7 +418,7 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function dataPostgresProcessQueryProvider(): array
+    public static function dataPostgresProcessQueryProvider(): array
     {
         return [
             ['UPDATE temp_autotest_temp SET temp_char20 = $1 WHERE temp_char20 = $2', 'UPDATE temp_autotest_temp SET temp_char20 = ? WHERE temp_char20 = ?'],
@@ -633,10 +635,10 @@ class ConnectionTest extends ConnectionTestCase
 
     /**
      * This test checks whether we can use a long timestamp format in in an sql query.
-     * @dataProvider intComparisonDataProvider
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[DataProvider('intComparisonDataProvider')]
     public function testIntComparison($id, $date, $expected): void
     {
         // note calculation does not work if we cross a year border.
@@ -658,7 +660,7 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expected, $row['result_2']);
     }
 
-    public function intComparisonDataProvider(): array
+    public static function intComparisonDataProvider(): array
     {
         return [
             ['a111', 20170801000000, 20170901000000 - 20170801000000],
@@ -695,10 +697,10 @@ class ConnectionTest extends ConnectionTestCase
     }
 
     /**
-     * @dataProvider databaseValueProvider
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[DataProvider('databaseValueProvider')]
     public function testConvertToDatabaseValue($value, DataType $type): void
     {
         $connection = $this->getConnection();
@@ -739,7 +741,7 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expect, $actual);
     }
 
-    public function databaseValueProvider(): array
+    public static function databaseValueProvider(): array
     {
         return [
             [PHP_INT_MAX, DataType::BIGINT],

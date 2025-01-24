@@ -165,7 +165,7 @@ abstract class DriverAbstract implements DriverInterface
     #[\Override]
     public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool
     {
-        $safeColumns = array_map(fn ($column) => $this->encloseColumnName($column), $columns);
+        $safeColumns = array_map(fn (string $column) => $this->encloseColumnName($column), $columns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $placeholderSets = [];
         $params = [];

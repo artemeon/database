@@ -188,7 +188,7 @@ class Connection implements ConnectionInterface
             implode(
                 ', ',
                 array_map(
-                    fn ($columnName): string => $this->encloseColumnName((string) $columnName),
+                    fn (string $columnName): string => $this->encloseColumnName($columnName),
                     $columns,
                 ),
             ),
@@ -1090,7 +1090,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      */
     #[\Override]
-    public function removeColumn($tableName, $column): bool
+    public function removeColumn(string $tableName, string $column): bool
     {
         if (!$this->connected) {
             $this->dbconnect();

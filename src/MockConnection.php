@@ -19,6 +19,8 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use Generator;
 
+use Override;
+
 use function current;
 
 /**
@@ -61,43 +63,43 @@ class MockConnection implements ConnectionInterface
         $this->rows = [];
     }
 
-    #[\Override]
-    public function getPArray($query, $params = [], $start = null, $end = null, $cache = true, array $escapes = []): array
+    #[Override]
+    public function getPArray(string $query, array $params = [], ?int $start = null, ?int $end = null, bool $cache = true, array $escapes = []): array
     {
         return $this->rows;
     }
 
-    #[\Override]
-    public function getPRow($query, $params = [], $number = 0, $cache = true, array $escapes = []): array
+    #[Override]
+    public function getPRow(string $query, array $params = [], int $number = 0, bool $cache = true, array $escapes = []): array
     {
         return current($this->rows);
     }
 
-    #[\Override]
+    #[Override]
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array
     {
         return current($this->rows);
     }
 
-    #[\Override]
+    #[Override]
     public function getGenerator(string $query, array $params = [], int $chunkSize = 2048, bool $paging = true): Generator
     {
         yield from $this->rows;
     }
 
-    #[\Override]
+    #[Override]
     public function fetchAllAssociative(string $query, array $params = []): array
     {
         return $this->rows;
     }
 
-    #[\Override]
+    #[Override]
     public function fetchAssociative(string $query, array $params = []): array | false
     {
         return reset($this->rows);
     }
 
-    #[\Override]
+    #[Override]
     public function fetchFirstColumn(string $query, array $params = []): array
     {
         $values = [];
@@ -108,13 +110,13 @@ class MockConnection implements ConnectionInterface
         return $values;
     }
 
-    #[\Override]
+    #[Override]
     public function fetchOne(string $query, array $params = []): mixed
     {
         return null;
     }
 
-    #[\Override]
+    #[Override]
     public function iterateAssociative(string $query, array $params = []): Generator
     {
         foreach ($this->rows as $row) {
@@ -122,7 +124,7 @@ class MockConnection implements ConnectionInterface
         }
     }
 
-    #[\Override]
+    #[Override]
     public function iterateColumn(string $query, array $params = []): Generator
     {
         foreach ($this->rows as $row) {
@@ -130,204 +132,204 @@ class MockConnection implements ConnectionInterface
         }
     }
 
-    #[\Override]
-    public function _pQuery($query, $params = [], array $escapes = []): bool
+    #[Override]
+    public function _pQuery(string $query, array $params = [], array $escapes = []): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function executeStatement(string $query, array $params = []): int
     {
         return 1;
     }
 
-    #[\Override]
+    #[Override]
     public function getAffectedRowsCount(): int
     {
         return 1;
     }
 
-    #[\Override]
+    #[Override]
     public function insert(string $tableName, array $values, ?array $escapes = null): int
     {
         return 1;
     }
 
-    #[\Override]
+    #[Override]
     public function multiInsert(string $tableName, array $columns, array $valueSets, ?array $escapes = null): bool
     {
         return true;
     }
 
-    #[\Override]
-    public function insertOrUpdate($tableName, $columns, $values, $primaryColumns): bool
+    #[Override]
+    public function insertOrUpdate(string $tableName, array $columns, array $values, array $primaryColumns): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): int
     {
         return 1;
     }
 
-    #[\Override]
+    #[Override]
     public function delete(string $tableName, array $identifier): int
     {
         return 1;
     }
 
-    #[\Override]
+    #[Override]
     public function isConnected(): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function beginTransaction(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function transactionBegin(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function commit(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function transactionCommit(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function rollBack(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function transactionRollback(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function hasDriver(string $class): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function getTables(): array
     {
         return [];
     }
 
-    #[\Override]
-    public function getTableInformation($tableName): Table
+    #[Override]
+    public function getTableInformation(string $tableName): Table
     {
         throw new QueryException('not implemented', 'getTableInformation', []);
     }
 
-    #[\Override]
+    #[Override]
     public function getDatatype(DataType $type): string
     {
         return DataType::TEXT->value;
     }
 
-    #[\Override]
+    #[Override]
     public function createTable(string $tableName, array $columns, array $keys, array $indices = []): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function dropTable(string $tableName): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function generateTableFromMetadata(Table $table): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function createIndex(string $tableName, string $name, array $columns, bool $unique = false): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function deleteIndex(string $table, string $index): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function addIndex(string $table, TableIndex $index): bool
     {
         return true;
     }
 
-    #[\Override]
-    public function hasIndex($tableName, $name): bool
+    #[Override]
+    public function hasIndex(string $tableName, string $name): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function renameTable(string $oldName, string $newName): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function changeColumn(string $tableName, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function addColumn(string $table, string $column, DataType $dataType, ?bool $nullable = null, ?string $default = null): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function removeColumn(string $tableName, string $column): bool
     {
         return true;
     }
 
-    #[\Override]
+    #[Override]
     public function hasColumn(string $tableName, string $column): bool
     {
         return true;
     }
 
-    #[\Override]
-    public function hasTable($tableName): bool
+    #[Override]
+    public function hasTable(string $tableName): bool
     {
         return true;
     }
 
-    #[\Override]
-    public function encloseColumnName($column): string
+    #[Override]
+    public function encloseColumnName(string $column): string
     {
         return $column;
     }
 
-    #[\Override]
-    public function encloseTableName($tableName): string
+    #[Override]
+    public function encloseTableName(string $tableName): string
     {
         return $tableName;
     }
 
-    #[\Override]
-    public function prettifyQuery($query, $params): string
+    #[Override]
+    public function prettifyQuery(string $query, array $params): string
     {
         foreach ($params as $param) {
             $query = (string) preg_replace('/\?/', isset($param) ? '"' . $param . '"' : 'NULL', $query, 1);
@@ -336,25 +338,25 @@ class MockConnection implements ConnectionInterface
         return $query;
     }
 
-    #[\Override]
-    public function appendLimitExpression($query, $start, $end): string
+    #[Override]
+    public function appendLimitExpression(string $query, int $start, int $end): string
     {
         return $query . ' LIMIT ' . $start . ',' . ($end - $start + 1);
     }
 
-    #[\Override]
+    #[Override]
     public function getConcatExpression(array $parts): string
     {
         return 'CONCAT(' . implode(',', $parts) . ')';
     }
 
-    #[\Override]
+    #[Override]
     public function getLeastExpression(array $parts): string
     {
         return 'LEAST(' . implode(',', $parts) . ')';
     }
 
-    #[\Override]
+    #[Override]
     public function getSubstringExpression(string $value, int $offset, ?int $length): string
     {
         $parameters = [$value, $offset];
@@ -365,55 +367,55 @@ class MockConnection implements ConnectionInterface
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
 
-    #[\Override]
+    #[Override]
     public function getStringLengthExpression(string $targetString): string
     {
         return 'LENGTH(' . $targetString . ')';
     }
 
-    #[\Override]
+    #[Override]
     public function convertToDatabaseValue(mixed $value, DataType $type): string
     {
         return (string) $value;
     }
 
-    #[\Override]
+    #[Override]
     public function getDbInfo(): array
     {
         return [];
     }
 
-    #[\Override]
+    #[Override]
     public function getQueries(): array
     {
         return [];
     }
 
-    #[\Override]
+    #[Override]
     public function getNumber(): int
     {
         return 0;
     }
 
-    #[\Override]
+    #[Override]
     public function getNumberCache(): int
     {
         return 0;
     }
 
-    #[\Override]
+    #[Override]
     public function getCacheSize(): int
     {
         return 0;
     }
 
-    #[\Override]
+    #[Override]
     public function getJsonColumnExpression(string $column, string $key): string
     {
         return '';
     }
 
-    #[\Override]
+    #[Override]
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
         return '';
