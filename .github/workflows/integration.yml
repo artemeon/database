@@ -10,8 +10,8 @@ on:
       - 1.0.x
       - 0.2.x
 jobs:
-  phpunit-smoke-check:
-    name: "PHPUnit with SQLite"
+  smoke-check:
+    name: "Tests with SQLite"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -32,12 +32,12 @@ jobs:
       - name: "Print SQLite version"
         run: >
           php -r 'printf("Testing with libsqlite version %s\n", (new PDO("sqlite::memory:"))->query("select sqlite_version()")->fetch()[0]);'
-      - name: "Run PHPUnit"
-        run: "vendor/bin/phpunit"
-  phpunit-postgres:
-    name: "PHPUnit with PostgreSQL"
+      - name: "Run Pest"
+        run: "vendor/bin/pest"
+  postgres:
+    name: "Tests with PostgreSQL"
     runs-on: ubuntu-latest
-    needs: phpunit-smoke-check
+    needs: smoke-check
     strategy:
       matrix:
         php-version:
@@ -65,18 +65,18 @@ jobs:
         uses: "ramsey/composer-install@v1"
         with:
           composer-options: "--ignore-platform-req=php+"
-      - name: "Run PHPUnit"
+      - name: "Run Tests"
         env:
           DB_HOST: "localhost"
           DB_USER: "postgres"
           DB_PWD: "postgres"
           DB_SCHEMA: "postgres"
           DB_DRIVER: "postgres"
-        run: "vendor/bin/phpunit"
-  phpunit-mariadb:
-    name: "PHPUnit with MariaDB"
+        run: "vendor/bin/pest"
+  mariadb:
+    name: "Tests with MariaDB"
     runs-on: ubuntu-latest
-    needs: phpunit-smoke-check
+    needs: smoke-check
     strategy:
       matrix:
         php-version:
@@ -108,18 +108,18 @@ jobs:
         uses: "ramsey/composer-install@v1"
         with:
           composer-options: "--ignore-platform-req=php+"
-      - name: "Run PHPUnit"
+      - name: "Run Tests"
         env:
           DB_HOST: "127.0.0.1"
           DB_USER: "agp"
           DB_PWD: "agp"
           DB_SCHEMA: "agp"
           DB_DRIVER: "mysqli"
-        run: "vendor/bin/phpunit"
-  phpunit-mysql:
-    name: "PHPUnit with MySQL"
+        run: "vendor/bin/pest"
+  mysql:
+    name: "Tests with MySQL"
     runs-on: ubuntu-latest
-    needs: phpunit-smoke-check
+    needs: smoke-check
     strategy:
       matrix:
         php-version:
@@ -153,12 +153,12 @@ jobs:
         uses: "ramsey/composer-install@v1"
         with:
           composer-options: "--ignore-platform-req=php+"
-      - name: "Run PHPUnit"
+      - name: "Run Tests"
         env:
           DB_HOST: "127.0.0.1"
           DB_USER: "agp"
           DB_PWD: "agp"
           DB_SCHEMA: "agp"
           DB_DRIVER: "mysqli"
-        run: "vendor/bin/phpunit"
+        run: "vendor/bin/pest"
 
