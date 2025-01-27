@@ -171,22 +171,10 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     public function getDatatype(DataType $type): string;
 
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = [string data-type, boolean isNull [, default (only if not null)]]
-     * whereas data-type is one of the following:
-     *  - int
-     *  - long
-     *  - double
-     *  - char10
-     *  - char20
-     *  - char100
-     *  - char254
-     *  - char500
-     *  - text
-     *  - longtext.
+     * Used to send a `CREATE TABLE` statement to the database.
+     * By passing the query through this method, the driver can add db-specific commands.
+     *
+     * @param array<non-falsy-string, DataType> $columns
      *
      * @throws QueryException
      */
