@@ -174,7 +174,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Used to send a `CREATE TABLE` statement to the database.
      * By passing the query through this method, the driver can add db-specific commands.
      *
-     * @param array<non-falsy-string, DataType> $columns
+     * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
      *
      * @throws QueryException
      */

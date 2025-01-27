@@ -90,19 +90,8 @@ interface DriverInterface
     /**
      * Used to send a CREATE table statement to the database
      * By passing the query through this method, the driver can add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = [{@see DataType} datatype, bool isNull [, default (only if not null)]]
-     * whereas datatype is one of the following:
-     *  - int
-     *  - long
-     *  - double
-     *  - char10
-     *  - char20
-     *  - char100
-     *  - char254
-     *  - char500
-     *  - text
-     *  - longtext.
+     *
+     * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
      */
     public function createTable(string $name, array $columns, array $primaryKeys): bool;
 
