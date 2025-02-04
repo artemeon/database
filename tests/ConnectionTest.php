@@ -22,8 +22,14 @@ use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\DataType;
 use DateInterval;
 use DateTime;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionClass;
 
+/**
+ * @internal
+ */
+#[CoversClass(PostgresDriver::class)]
 class ConnectionTest extends ConnectionTestCase
 {
     /**
@@ -311,14 +317,14 @@ class ConnectionTest extends ConnectionTestCase
 
         // like must be escaped
         $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 LIKE ?';
-        $row = $connection->getPRow($query, [$connection->escape("Foo\\Bar%")]);
+        $row = $connection->getPRow($query, [$connection->escape('Foo\\Bar%')]);
 
         $this->assertNotEmpty($row);
         $this->assertEquals('Foo\\Bar\\Baz', $row['temp_char20']);
 
         // equals needs no escape
         $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char20 = ?';
-        $row = $connection->getPRow($query, ["Foo\\Bar\\Baz"]);
+        $row = $connection->getPRow($query, ['Foo\\Bar\\Baz']);
 
         $this->assertNotEmpty($row);
         $this->assertEquals('Foo\\Bar\\Baz', $row['temp_char20']);
@@ -358,14 +364,16 @@ class ConnectionTest extends ConnectionTestCase
         $systemId = $this->generateSystemid();
 
         // insert, which affects one row
-        $connection->multiInsert(self::TEST_TABLE_NAME,
+        $connection->multiInsert(
+            self::TEST_TABLE_NAME,
             ['temp_id', 'temp_char20'],
             [[$this->generateSystemid(), $systemId]],
         );
         $this->assertEquals(1, $connection->getAffectedRowsCount());
 
         // insert, which affects two rows
-        $connection->multiInsert(self::TEST_TABLE_NAME,
+        $connection->multiInsert(
+            self::TEST_TABLE_NAME,
             ['temp_id', 'temp_char20'],
             [
                 [$this->generateSystemid(), $systemId],
@@ -394,10 +402,9 @@ class ConnectionTest extends ConnectionTestCase
     }
 
     /**
-     * @dataProvider dataPostgresProcessQueryProvider
-     * @covers       \Artemeon\Database\Driver\PostgresDriver::processQuery
      * @throws \ReflectionException
      */
+    #[DataProvider('dataPostgresProcessQueryProvider')]
     public function testPostgresProcessQuery($expected, $query): void
     {
         $dbPostgres = new PostgresDriver();
@@ -411,7 +418,7 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function dataPostgresProcessQueryProvider(): array
+    public static function dataPostgresProcessQueryProvider(): array
     {
         return [
             ['UPDATE temp_autotest_temp SET temp_char20 = $1 WHERE temp_char20 = $2', 'UPDATE temp_autotest_temp SET temp_char20 = ? WHERE temp_char20 = ?'],
@@ -628,10 +635,10 @@ class ConnectionTest extends ConnectionTestCase
 
     /**
      * This test checks whether we can use a long timestamp format in in an sql query.
-     * @dataProvider intComparisonDataProvider
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[DataProvider('intComparisonDataProvider')]
     public function testIntComparison($id, $date, $expected): void
     {
         // note calculation does not work if we cross a year border.
@@ -653,16 +660,16 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expected, $row['result_2']);
     }
 
-    public function intComparisonDataProvider(): array
+    public static function intComparisonDataProvider(): array
     {
         return [
-            ['a111', 20170801000000, 20170901000000-20170801000000],
-            ['a112', 20171101000000, 20171201000000-20171101000000],
-            ['a113', 20171201000000, 20180101000000-20171201000000],
-            ['a113', 20171215000000, 20180115000000-20171215000000],
-            ['a113', 20171230000000, 20180130000000-20171230000000],
-            ['a113', 20171231000000, 20180131000000-20171231000000],
-            ['a113', 20170101000000, 20170201000000-20170101000000],
+            ['a111', 20170801000000, 20170901000000 - 20170801000000],
+            ['a112', 20171101000000, 20171201000000 - 20171101000000],
+            ['a113', 20171201000000, 20180101000000 - 20171201000000],
+            ['a113', 20171215000000, 20180115000000 - 20171215000000],
+            ['a113', 20171230000000, 20180130000000 - 20171230000000],
+            ['a113', 20171231000000, 20180131000000 - 20171231000000],
+            ['a113', 20170101000000, 20170201000000 - 20170101000000],
         ];
     }
 
@@ -683,17 +690,17 @@ class ConnectionTest extends ConnectionTestCase
 
         $this->assertEquals(",$systemId,", $row['val']);
 
-        $query = 'SELECT temp_id as val FROM ' . self::TEST_TABLE_NAME . ' WHERE ' . $connection->getConcatExpression(["','", 'temp_id', "','"]) . ' LIKE ? ';//. " AS val FROM agp_temp_autotest";
+        $query = 'SELECT temp_id as val FROM ' . self::TEST_TABLE_NAME . ' WHERE ' . $connection->getConcatExpression(["','", 'temp_id', "','"]) . ' LIKE ? ';// . " AS val FROM agp_temp_autotest";
         $row = $connection->getPRow($query, ["%$systemId%"]);
 
         $this->assertEquals($systemId, $row['val']);
     }
 
     /**
-     * @dataProvider databaseValueProvider
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[DataProvider('databaseValueProvider')]
     public function testConvertToDatabaseValue($value, DataType $type): void
     {
         $connection = $this->getConnection();
@@ -718,15 +725,15 @@ class ConnectionTest extends ConnectionTestCase
         $expect = $value;
 
         if ($type === DataType::CHAR10) {
-            $expect = substr($expect, 0, 10);
+            $expect = substr((string) $expect, 0, 10);
         } elseif ($type === DataType::CHAR20) {
-            $expect = substr($expect, 0, 20);
+            $expect = substr((string) $expect, 0, 20);
         } elseif ($type === DataType::CHAR100) {
-            $expect = substr($expect, 0, 100);
+            $expect = substr((string) $expect, 0, 100);
         } elseif ($type === DataType::CHAR254) {
-            $expect = substr($expect, 0, 254);
+            $expect = substr((string) $expect, 0, 254);
         } elseif ($type === DataType::CHAR500) {
-            $expect = substr($expect, 0, 500);
+            $expect = substr((string) $expect, 0, 500);
         } elseif ($type === DataType::FLOAT) {
             $actual = round((float) $actual, 1);
         }
@@ -734,7 +741,7 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expect, $actual);
     }
 
-    public function databaseValueProvider(): array
+    public static function databaseValueProvider(): array
     {
         return [
             [PHP_INT_MAX, DataType::BIGINT],
@@ -769,12 +776,12 @@ class ConnectionTest extends ConnectionTestCase
         $tableName = 'agp_test_least';
         $fields = [
             'test_id' => [DataType::CHAR20, false],
-            'column_1'  => [DataType::INT, true],
-            'column_2'  => [DataType::INT, true],
-            'column_3'  => [DataType::INT, true],
-            'column_4'  => [DataType::CHAR20, true],
-            'column_5'  => [DataType::CHAR20, true],
-            'column_6'  => [DataType::CHAR20, true],
+            'column_1' => [DataType::INT, true],
+            'column_2' => [DataType::INT, true],
+            'column_3' => [DataType::INT, true],
+            'column_4' => [DataType::CHAR20, true],
+            'column_5' => [DataType::CHAR20, true],
+            'column_6' => [DataType::CHAR20, true],
         ];
 
         $connection->createTable($tableName, $fields, ['test_id']);
@@ -794,7 +801,6 @@ class ConnectionTest extends ConnectionTestCase
             ['conditionValue' => 'foo', 'columns' => ['column_4', 'column_5', 'column_6'], 'expectedResult' => 'alpha'],
             ['conditionValue' => 'bar', 'columns' => ['column_4', 'column_5', 'column_6'], 'expectedResult' => 'dolor'],
         ];
-
 
         foreach ($testCases as $testCase) {
             $query = 'SELECT ' . $connection->getLeastExpression($testCase['columns']) . ' AS minimum FROM ' . $tableName . ' WHERE test_id = ?';
@@ -823,7 +829,7 @@ class ConnectionTest extends ConnectionTestCase
             'b' => 'another_value',
             'c' => null,
             'd' => '42',
-            'e' => 'invalid_json'
+            'e' => 'invalid_json',
         ];
 
         $query = 'SELECT temp_id, ' . $connection->getJsonColumnExpression('temp_text', 'key1') . ' AS extracted_value FROM ' . self::TEST_TABLE_NAME;
@@ -834,7 +840,7 @@ class ConnectionTest extends ConnectionTestCase
         }
     }
 
-    public function testGetNthLastElementFromSlug()
+    public function testGetNthLastElementFromSlug(): void
     {
         $connection = $this->getConnection();
         $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
@@ -885,7 +891,7 @@ class ConnectionTest extends ConnectionTestCase
         $connection->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME);
         $connection->_pQuery(
             'INSERT INTO ' . self::TEST_TABLE_NAME . ' (temp_id, temp_char100) VALUES (?, ?)',
-            [$this->generateSystemid(), 'foobarbazquux']
+            [$this->generateSystemid(), 'foobarbazquux'],
         );
 
         $testCases = [

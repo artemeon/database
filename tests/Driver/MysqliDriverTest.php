@@ -6,20 +6,19 @@ namespace Artemeon\Database\Tests\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Driver\MysqliDriver;
+use Mockery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
+/**
+ * @internal
+ */
 final class MysqliDriverTest extends TestCase
 {
     public function testBuildsDatabaseSpecificSubstringExpression(): void
     {
-        $mysqliDriver = $this->getMockBuilder(MysqliDriver::class)
-            ->disableOriginalConstructor()
-            ->disableOriginalClone()
-            ->disableArgumentCloning()
-            ->disallowMockingUnknownTypes()
-            ->setMethodsExcept(['getSubstringExpression'])
-            ->getMock();
+        $mysqliDriver = new MysqliDriver();
 
         self::assertEquals('SUBSTRING(test_column, 1)', $mysqliDriver->getSubstringExpression('test_column', 1, null));
         self::assertEquals('SUBSTRING(test_column, 1, 1)', $mysqliDriver->getSubstringExpression('test_column', 1, 1));
@@ -33,23 +32,17 @@ final class MysqliDriverTest extends TestCase
             [
                 '/path/to/dump.sql', [],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''"
+                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
             [
                 '/path/to/dump.sql', ['agp_user', 'agp_tours'],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'' '\''agp_user'\'' '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''"
+                "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'' '\''agp_user'\'' '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
         ];
     }
 
-    /**
-     * @param string $fileName
-     * @param array $tables
-     * @param string $password
-     * @param string $expectedCommandLine
-     * @dataProvider provideValidExportFilenameAndPasswordAndExpectedCommandLine
-     */
+    #[DataProvider('provideValidExportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbExportWillRunProcess(string $fileName, array $tables, string $password, string $expectedCommandLine): void
     {
         $host = 'localhost';
@@ -60,17 +53,18 @@ final class MysqliDriverTest extends TestCase
 
         $configMock = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
 
-        $dbServiceMock = $this->getMockBuilder(MysqliDriver::class)
-            ->onlyMethods(['handlesDumpCompression', 'runProcess'])
-            ->getMock();
-        $dbServiceMock->expects($this->once())->method('handlesDumpCompression')->willReturn(true);
+        $dbServiceMock = Mockery::mock(MysqliDriver::class)
+            ->makePartial();
 
-        $dbServiceMock->expects($this->once())
-            ->method('runProcess')
-            ->with($this->callback(function (Process $process) use ($expectedCommandLine) {
-                $this->assertSame($expectedCommandLine, $process->getCommandLine());
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('runProcess')
+            ->once()
+            ->withArgs(static function (Process $process) use ($expectedCommandLine): bool {
+                self::assertSame($expectedCommandLine, $process->getCommandLine());
+
                 return true;
-            }))->willReturn(true);
+            })
+            ->andReturn(true);
 
         $dbServiceMock->setConfig($configMock);
 
@@ -84,29 +78,24 @@ final class MysqliDriverTest extends TestCase
         return [
             [
                 '/path/to/dump.sql', 'securepassword',
-                "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''"
+                "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''",
             ],
             [
                 '/path/to/dump.sql.gz', 'securepassword',
-                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''"
+                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''",
             ],
             [
                 '/path/to/dump.sql', '',
-                "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''"
+                "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''",
             ],
             [
                 '/path/to/dump.sql.gz', '',
-                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''"
+                "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''",
             ],
         ];
     }
 
-    /**
-     * @param string $fileName
-     * @param string $password
-     * @param string $expectedCommandLine
-     * @dataProvider provideValidImportFilenameAndPasswordAndExpectedCommandLine
-     */
+    #[DataProvider('provideValidImportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbImportWillRunProcess(string $fileName, string $password, string $expectedCommandLine): void
     {
         $host = 'localhost';
@@ -117,17 +106,22 @@ final class MysqliDriverTest extends TestCase
 
         $configMock = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
 
-        $dbServiceMock = $this->getMockBuilder(MysqliDriver::class)
-            ->onlyMethods(['handlesDumpCompression', 'runProcess'])
-            ->getMock();
-        $dbServiceMock->expects($this->once())->method('handlesDumpCompression')->willReturn(true);
+        $dbServiceMock = Mockery::mock(MysqliDriver::class)
+            ->makePartial();
 
-        $dbServiceMock->expects($this->once())
-            ->method('runProcess')
-            ->with($this->callback(function (Process $process) use ($expectedCommandLine) {
-                $this->assertSame($expectedCommandLine, $process->getCommandLine());
+        $dbServiceMock->shouldReceive('handlesDumpCompression')
+            ->once()
+            ->andReturn(true);
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('runProcess')
+            ->once()
+            ->withArgs(static function (Process $process) use ($expectedCommandLine): bool {
+                self::assertSame($expectedCommandLine, $process->getCommandLine());
+
                 return true;
-            }))->willReturn(true);
+            })
+            ->andReturn(true);
 
         $dbServiceMock->setConfig($configMock);
 

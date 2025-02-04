@@ -1,5 +1,10 @@
 # Changelog
 
+# 4.0.0
+
+- Add support for PHP 8.4.
+- Drop support for PHP 8.1, PHP 8.2 and PHP 8.3.
+
 ## 3.3.1
 
 - Fix Command Injection

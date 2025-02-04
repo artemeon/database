@@ -17,6 +17,9 @@ use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Exception\TableNotFoundException;
 
+/**
+ * @internal
+ */
 class ConnectionColumnTypeTest extends ConnectionTestCase
 {
     /**
@@ -29,7 +32,7 @@ class ConnectionColumnTypeTest extends ConnectionTestCase
         $connection = $this->getConnection();
         $columns = $this->getTestTableColumns();
 
-        //fetch all columns from the table and match the types
+        // fetch all columns from the table and match the types
         $columnsFromDb = $connection->getColumnsOfTable(self::TEST_TABLE_NAME);
 
         foreach ($columnsFromDb as $columnName => $details) {

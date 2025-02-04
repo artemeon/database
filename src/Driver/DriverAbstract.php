@@ -19,7 +19,6 @@ use Artemeon\Database\DriverInterface;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\TableIndex;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -33,7 +32,7 @@ abstract class DriverAbstract implements DriverInterface
 
     protected int $affectedRowsCount = 0;
 
-    protected ?ConnectionParameters $config;
+    protected ?ConnectionParameters $config = null;
 
     public function setConfig(ConnectionParameters $params): void
     {
@@ -51,6 +50,7 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function handlesDumpCompression(): bool
     {
         return !$this->isWinOs();
@@ -59,25 +59,30 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function hasColumn(string $tableName, string $columnName): bool
     {
         $table = $this->getTableInformation($tableName);
+
         return in_array(strtolower($columnName), $table->getColumnNames(), true);
     }
 
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function renameTable(string $oldName, string $newName): bool
     {
         $enclosedOldName = $this->encloseTableName($oldName);
         $enclosedNewName = $this->encloseTableName($newName);
+
         return $this->_pQuery("ALTER TABLE $enclosedOldName RENAME TO $enclosedNewName", []);
     }
 
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function changeColumn(string $table, string $oldColumnName, string $newColumnName, DataType $newDataType): bool
     {
         $enclosedTableName = $this->encloseTableName($table);
@@ -91,7 +96,8 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
-    public function addColumn(string $table, string $column, DataType $dataType, bool $nullable = null, string $default = null): bool
+    #[\Override]
+    public function addColumn(string $table, string $column, DataType $dataType, ?bool $nullable = null, ?string $default = null): bool
     {
         $enclosedTableName = $this->encloseTableName($table);
         $enclosedColumnName = $this->encloseColumnName($column);
@@ -111,8 +117,9 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
+    #[\Override]
     public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool
     {
         return $this->_pQuery(
@@ -124,6 +131,7 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function deleteIndex(string $table, string $index): bool
     {
         return $this->_pQuery("DROP INDEX $index", []);
@@ -132,6 +140,7 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function addIndex(string $table, TableIndex $index): bool
     {
         return $this->createIndex($table, $index->getName(), explode(',', $index->getDescription()));
@@ -140,6 +149,7 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function removeColumn(string $table, string $column): bool
     {
         $enclosedTableName = $this->encloseTableName($table);
@@ -152,9 +162,10 @@ abstract class DriverAbstract implements DriverInterface
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool
     {
-        $safeColumns = array_map(function ($column) { return $this->encloseColumnName($column); }, $columns);
+        $safeColumns = array_map(fn (string $column) => $this->encloseColumnName($column), $columns);
         $paramsPlaceholder = '(' . implode(',', array_fill(0, count($safeColumns), '?')) . ')';
         $placeholderSets = [];
         $params = [];
@@ -175,6 +186,7 @@ abstract class DriverAbstract implements DriverInterface
      * @inheritDoc
      * @throws QueryException
      */
+    #[\Override]
     public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
         $placeholders = [];
@@ -231,6 +243,7 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function encloseColumnName(string $column): string
     {
         return $column;
@@ -239,6 +252,7 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function encloseTableName(string $table): string
     {
         return $table;
@@ -247,27 +261,31 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function flushQueryCache(): void
     {
         $this->statementsCache = [];
     }
 
+    #[\Override]
     public function escape(mixed $value): mixed
     {
         return $value;
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
+    #[\Override]
     public function getAffectedRowsCount(): int
     {
         return $this->affectedRowsCount;
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
+    #[\Override]
     public function appendLimitExpression(string $query, int $start, int $end): string
     {
         // Calculate the end-value: mysql limit: start, nr of records, so:
@@ -278,8 +296,9 @@ abstract class DriverAbstract implements DriverInterface
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
+    #[\Override]
     public function getConcatExpression(array $parts): string
     {
         return 'CONCAT(' . implode(', ', $parts) . ')';
@@ -288,26 +307,29 @@ abstract class DriverAbstract implements DriverInterface
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function convertToDatabaseValue(mixed $value, DataType $type): mixed
     {
         return match ($type) {
-            DataType::CHAR10 => mb_substr($value, 0, 10),
-            DataType::CHAR20 => mb_substr($value, 0, 20),
-            DataType::CHAR100 => mb_substr($value, 0, 100),
-            DataType::CHAR254 => mb_substr($value, 0, 254),
-            DataType::CHAR500 => mb_substr($value, 0, 500),
+            DataType::CHAR10 => mb_substr((string) $value, 0, 10),
+            DataType::CHAR20 => mb_substr((string) $value, 0, 20),
+            DataType::CHAR100 => mb_substr((string) $value, 0, 100),
+            DataType::CHAR254 => mb_substr((string) $value, 0, 254),
+            DataType::CHAR500 => mb_substr((string) $value, 0, 500),
             default => $value,
         };
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
+    #[\Override]
     public function getLeastExpression(array $parts): string
     {
         return 'LEAST(' . implode(', ', $parts) . ')';
     }
 
+    #[\Override]
     public function getSubstringExpression(string $value, int $offset, ?int $length): string
     {
         $parameters = [$value, $offset];
@@ -318,9 +340,10 @@ abstract class DriverAbstract implements DriverInterface
         return 'SUBSTRING(' . implode(', ', $parameters) . ')';
     }
 
+    #[\Override]
     public function getStringLengthExpression(string $targetString): string
     {
-        return 'LENGTH('.$targetString.')';
+        return 'LENGTH(' . $targetString . ')';
     }
 
     protected function runProcess(Process $process, string $errorPrefix = ''): bool

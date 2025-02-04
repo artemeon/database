@@ -17,6 +17,9 @@ use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 
+/**
+ * @internal
+ */
 class ConnectionPreparedTest extends ConnectionTestCase
 {
     /**
@@ -31,7 +34,6 @@ class ConnectionPreparedTest extends ConnectionTestCase
         $row = $connection->getPRow($query);
         $this->assertTrue(count($row) >= 9, 'testDataBase getRow count');
         $this->assertEquals('char10-1', $row['temp_char10'], 'testDataBase getRow content');
-
 
         $query = 'SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_char10 = ? ORDER BY temp_bigint ASC';
         $row = $connection->getPRow($query, ['char10-2']);
@@ -111,7 +113,7 @@ class ConnectionPreparedTest extends ConnectionTestCase
         $connection->multiInsert(
             self::TEST_TABLE_NAME,
             ['temp_id', 'temp_bigint', 'temp_float'],
-            [['id1', 123456, 1.7], ['id2', '123456', '1.7']]
+            [['id1', 123456, 1.7], ['id2', '123456', '1.7']],
         );
 
         $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['id1']);
@@ -125,4 +127,3 @@ class ConnectionPreparedTest extends ConnectionTestCase
         $this->assertEquals(1.7, round((float) $row['temp_float'], 1));
     }
 }
-

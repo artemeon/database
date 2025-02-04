@@ -18,7 +18,7 @@ namespace Artemeon\Database;
  */
 final class ConnectionParameters
 {
-    public const SQLITE3_BASE_PATH = 'sqlite3_base_path';
+    public const string SQLITE3_BASE_PATH = 'sqlite3_base_path';
 
     private array $attributes = [];
 
@@ -28,7 +28,7 @@ final class ConnectionParameters
         private readonly string $password,
         private readonly string $database,
         private readonly ?int $port,
-        private readonly string $driver
+        private readonly string $driver,
     ) {
     }
 

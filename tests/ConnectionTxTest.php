@@ -18,6 +18,9 @@ use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 
+/**
+ * @internal
+ */
 class ConnectionTxTest extends ConnectionTestCase
 {
     /**
@@ -102,4 +105,3 @@ class ConnectionTxTest extends ConnectionTestCase
         $connection->commit();
     }
 }
-

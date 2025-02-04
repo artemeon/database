@@ -78,7 +78,7 @@ interface DriverInterface
     /**
      * Returns ALL tables in the database currently connected to.
      * The method should return an array using the following keys:
-     * name => Table name
+     * name => Table name.
      */
     public function getTables(): array;
 
@@ -87,23 +87,11 @@ interface DriverInterface
      */
     public function getTableInformation(string $tableName): Table;
 
-
     /**
      * Used to send a CREATE table statement to the database
      * By passing the query through this method, the driver can add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = [{@see DataType} datatype, bool isNull [, default (only if not null)]]
-     * whereas datatype is one of the following:
-     *  - int
-     *  - long
-     *  - double
-     *  - char10
-     *  - char20
-     *  - char100
-     *  - char254
-     *  - char500
-     *  - text
-     *  - longtext
+     *
+     * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
      */
     public function createTable(string $name, array $columns, array $primaryKeys): bool;
 
@@ -192,7 +180,7 @@ interface DriverInterface
     /**
      * Returns an array of key value pairs with infos about the current database
      * The array returned should have tho following structure:
-     *  property name => value
+     *  property name => value.
      */
     public function getDbInfo(): array;
 
@@ -247,14 +235,12 @@ interface DriverInterface
      * Returns a query expression, which concatenates different values. This can bei either column names or strings.
      * <code>
      *  $connection->getConcatExpression(['user_kajona.user_forename', '\' \'', 'user_kajona.user_name'])
-     * </code>
+     * </code>.
      */
     public function getConcatExpression(array $parts): string;
 
     /**
      * Returns the number of affected rows from the last _pQuery call.
-     *
-     * @return int
      */
     public function getAffectedRowsCount(): int;
 
@@ -275,7 +261,7 @@ interface DriverInterface
      * Returns a "LEAST()" query expression, which selects the minimum value of given columns.
      * <code>
      *  $connection->getLeastExpression(['column1','column2', ...])
-     * </code>
+     * </code>.
      */
     public function getLeastExpression(array $parts): string;
 

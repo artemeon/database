@@ -20,17 +20,16 @@ use JsonSerializable;
  */
 class TableIndex implements JsonSerializable
 {
-    private string $name;
     private string $description = '';
 
-    public function __construct(string $name)
+    public function __construct(private string $name)
     {
-        $this->name = $name;
     }
 
     /**
      * @inheritDoc
      */
+    #[\Override]
     public function jsonSerialize(): array
     {
         return [

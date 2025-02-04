@@ -16,12 +16,16 @@ namespace Artemeon\Database\Tests;
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 
+/**
+ * @internal
+ */
 class ConnectionMultiInsertTest extends ConnectionTestCase
 {
     /**
      * @throws ConnectionException
      * @throws QueryException
      */
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

@@ -24,14 +24,14 @@ use Generator;
 
 /**
  * Interface of our internal database abstraction layer.
- * If possible please use the new methods from the DoctrineConnectionInterface
+ * If possible please use the new methods from the DoctrineConnectionInterface.
  */
 interface ConnectionInterface extends DoctrineConnectionInterface
 {
     /**
      * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
      * Note the new fetch* and iterate* methods dont use the dbsafeParams method, this means there is no htmlspecialchars handling
-     * also there is no query cache handling, so you need to cache the results if needed in your service
+     * also there is no query cache handling, so you need to cache the results if needed in your service.
      *
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
@@ -44,7 +44,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Legacy method to execute a query and return the result, please use one of the newer fetch* or iterate* methods
      * Note the new fetch* and iterate* methods dont use the dbsafeParams method, this means there is no htmlspecialchars handling
-     * also there is no query cache handling, so you need to cache the results if needed in your service
+     * also there is no query cache handling, so you need to cache the results if needed in your service.
      *
      * Returns one row from a result-set.
      * Makes use of prepared statements.
@@ -85,7 +85,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     public function getGenerator(string $query, array $params = [], int $chunkSize = 2048, bool $paging = true): Generator;
 
     /**
-     * Legacy method to execute a query please use executeStatement
+     * Legacy method to execute a query please use executeStatement.
      *
      * Sending a prepared statement to the database
      *
@@ -171,22 +171,10 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     public function getDatatype(DataType $type): string;
 
     /**
-     * Used to send a create table statement to the database
-     * By passing the query through this method, the driver can
-     * add db-specific commands.
-     * The array of fields should have the following structure
-     * $array[string columnName] = [string data-type, boolean isNull [, default (only if not null)]]
-     * whereas data-type is one of the following:
-     *  - int
-     *  - long
-     *  - double
-     *  - char10
-     *  - char20
-     *  - char100
-     *  - char254
-     *  - char500
-     *  - text
-     *  - longtext
+     * Used to send a `CREATE TABLE` statement to the database.
+     * By passing the query through this method, the driver can add db-specific commands.
+     *
+     * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
      *
      * @throws QueryException
      */
@@ -231,7 +219,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     public function addIndex(string $table, TableIndex $index): bool;
 
     /**
-     * Checks whether the table has an index with the provided name
+     * Checks whether the table has an index with the provided name.
      *
      * @throws QueryException
      */
@@ -320,8 +308,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
 
     /**
      * Returns the database-specific string-length expression, e.g. LEN() or LENGTH().
-     * Pass the value to be counted (e.g. a column name) by param
-     *
+     * Pass the value to be counted (e.g. a column name) by param.
      */
     public function getStringLengthExpression(string $targetString): string;
 

@@ -16,6 +16,9 @@ namespace Artemeon\Database\Tests;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\MockConnection;
 
+/**
+ * @internal
+ */
 class MockConnectionTest extends ConnectionTestCase
 {
     /**
