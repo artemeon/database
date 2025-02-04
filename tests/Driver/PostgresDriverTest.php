@@ -32,12 +32,12 @@ final class PostgresDriverTest extends TestCase
             [
                 '/path/to/dump.sql', ['agp_user', 'agp_tours'],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p 5432 -d '\''testdb'\'' -t '\''agp_user'\'' -t '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''",
+                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p '\''5432'\'' -d '\''testdb'\'' -t '\''agp_user'\'' -t '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
             [
                 '/path/to/dump.sql', [],
                 'securepassword',
-                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p 5432 -d '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''",
+                "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p '\''5432'\'' -d '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
         ];
     }
