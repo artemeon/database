@@ -501,7 +501,7 @@ class PostgresDriver extends DriverAbstract
             '--no-owner',
             '-h', escapeshellarg($this->config->getHost()),
             ($this->config->getUsername() === '') ? '' : '-U', escapeshellarg($this->config->getUsername()),
-            '-p', (string) $this->config->getPort(),
+            '-p', escapeshellarg($this->config->getPort() ?? ''),
             '-d', escapeshellarg($this->config->getDatabase()),
             $tablesString,
         ];
@@ -543,7 +543,7 @@ class PostgresDriver extends DriverAbstract
                 '-q',
                 '-h', escapeshellarg($this->config->getHost()),
                 ($this->config->getUsername() === '') ? '' : '-U', escapeshellarg($this->config->getUsername()),
-                '-p' . (string) $this->config->getPort(),
+                '-p' . escapeshellarg($this->config->getPort() ?? ''),
                 '-d', escapeshellarg($this->config->getDatabase()),
             ];
 
