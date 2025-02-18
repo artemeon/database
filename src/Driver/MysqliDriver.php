@@ -615,6 +615,7 @@ class MysqliDriver extends DriverAbstract
         }
 
         $statement = $this->linkDB->stmt_init();
+
         try {
             if (!$statement->prepare($query)) {
                 $this->errorMessage = $statement->error;
