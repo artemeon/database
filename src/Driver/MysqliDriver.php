@@ -23,6 +23,7 @@ use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
 use Generator;
 use mysqli;
+use mysqli_sql_exception;
 use mysqli_stmt;
 use Override;
 use Symfony\Component\Process\ExecutableFinder;
@@ -614,8 +615,15 @@ class MysqliDriver extends DriverAbstract
         }
 
         $statement = $this->linkDB->stmt_init();
-        if (!$statement->prepare($query)) {
-            $this->errorMessage = $statement->error;
+
+        try {
+            if (!$statement->prepare($query)) {
+                $this->errorMessage = $statement->error;
+
+                return false;
+            }
+        } catch (mysqli_sql_exception $e) {
+            $this->errorMessage = $e->getMessage();
 
             return false;
         }
