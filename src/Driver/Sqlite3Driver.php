@@ -684,4 +684,11 @@ class Sqlite3Driver extends DriverAbstract
     {
         return "extract_nth_last_slug_segment($column, $position)";
     }
+
+    #[Override]
+    public function getGroupConcatExpression(array $columns): string
+    {
+        $columnList = implode(" || ', ' || ", $columns);
+        return "TRIM(GROUP_CONCAT($columnList, ', '))";
+    }
 }

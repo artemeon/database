@@ -677,4 +677,11 @@ class PostgresDriver extends DriverAbstract
     {
         return "SPLIT_PART(REVERSE(SPLIT_PART(REVERSE($column), '/', $position)), '/', 1)";
     }
+
+    #[Override]
+    public function getGroupConcatExpression(array $columns): string
+    {
+        $columnList = implode(" || ', ' || ", $columns);
+        return "TRIM(BOTH ', ' FROM STRING_AGG($columnList, ', '))";
+    }
 }

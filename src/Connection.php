@@ -1450,4 +1450,10 @@ class Connection implements ConnectionInterface
     {
         return $this->dbDriver->getNthLastElementFromSlug($column, $position);
     }
+
+    #[\Override]
+    public function getGroupConcatExpression(array $columns): string
+    {
+        return $this->dbDriver->getGroupConcatExpression($columns);
+    }
 }

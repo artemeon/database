@@ -314,4 +314,12 @@ interface DriverInterface
      * @return string The generated SQL snippet.
      */
     public function getNthLastElementFromSlug(string $column, int $position): string;
+
+    /**
+     * Returns the GROUP_CONCAT equivalent SQL snippet for the specific database type.
+     *
+     * @param array $columns The columns to concatenate.
+     * @return string The GROUP_CONCAT SQL snippet.
+     */
+    public function getGroupConcatExpression(array $columns): string;
 }

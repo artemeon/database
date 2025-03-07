@@ -655,4 +655,11 @@ class MysqliDriver extends DriverAbstract
     {
         return "SUBSTRING_INDEX(SUBSTRING_INDEX($column, '/', -$position), '/', 1)";
     }
+
+    #[Override]
+    public function getGroupConcatExpression(array $columns): string
+    {
+        $columnList = implode(", ', ', ", $columns);
+        return "TRIM(BOTH ', ' FROM GROUP_CONCAT(CONCAT_WS(', ', $columnList) SEPARATOR ', '))";
+    }
 }
