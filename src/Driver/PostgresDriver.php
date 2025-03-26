@@ -212,7 +212,7 @@ class PostgresDriver extends DriverAbstract
         $table = new Table($tableName);
 
         // fetch all columns
-        $columnInfo = $this->getPArray('SELECT * FROM information_schema.columns WHERE table_name = ?', [$tableName]);
+        $columnInfo = $this->getPArray('SELECT * FROM information_schema.columns WHERE table_name = ? ORDER BY ordinal_position ASC', [$tableName]);
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make($column['column_name'])
@@ -224,7 +224,7 @@ class PostgresDriver extends DriverAbstract
 
         // fetch all indexes
         $indexes = $this->getPArray(
-            "select * from pg_indexes where tablename  = ? AND indexname NOT LIKE '%_pkey'",
+            "SELECT * FROM pg_indexes WHERE tablename  = ? AND indexname NOT LIKE '%_pkey'",
             [$tableName],
         );
         foreach ($indexes as $indexInfo) {
