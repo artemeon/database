@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.3
+
+- Postgres silence errors
+- Postgres order columns by position
+
+## 3.3.2
+
+- Exceptions on mysql's prepare method will be handled internally
+
 ## 3.3.1
 
 - Fix Command Injection
