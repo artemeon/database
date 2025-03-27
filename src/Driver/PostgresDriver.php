@@ -89,7 +89,7 @@ class PostgresDriver extends DriverAbstract
             throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
-        $result = pg_execute($this->linkDB, $name, $params);
+        $result = @pg_execute($this->linkDB, $name, $params);
         if ($result === false) {
             throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
