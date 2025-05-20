@@ -1030,6 +1030,13 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
+        if (
+            !$this->hasColumn($tableName, $oldColumnName)
+            && $this->hasColumn($tableName, $newColumnName)
+        ) {
+            return true;
+        }
+
         $return = $this->dbDriver->changeColumn($tableName, $oldColumnName, $newColumnName, $newDataType);
 
         if (!$return) {
@@ -1094,6 +1101,10 @@ class Connection implements ConnectionInterface
     {
         if (!$this->connected) {
             $this->dbconnect();
+        }
+
+        if (!$this->hasColumn($tableName, $column)) {
+            return true;
         }
 
         $return = $this->dbDriver->removeColumn($tableName, $column);
