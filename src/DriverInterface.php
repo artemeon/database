@@ -58,6 +58,8 @@ interface DriverInterface
     /**
      * Sends a prepared statement to the database. All params must be represented by the "?" char.
      * The params themselves are stored using the second params using the matching order.
+     *
+     * @throws QueryException
      */
     public function _pQuery(string $query, array $params): bool;
 
