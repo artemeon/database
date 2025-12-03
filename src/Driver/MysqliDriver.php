@@ -155,9 +155,9 @@ class MysqliDriver extends DriverAbstract
 
             if ($statement->errno === 1213) {
                 throw new LockException('Could not execute statement: ' . $this->getError(), $query, $params);
-            } else {
-                throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
             }
+
+            throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
         $this->affectedRowsCount = $statement->affected_rows;
