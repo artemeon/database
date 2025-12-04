@@ -304,7 +304,16 @@ class Connection implements ConnectionInterface
         $this->number++;
 
         if ($this->dbDriver !== null) {
-            $output = $this->dbDriver->_pQuery($query, $this->dbsafeParams($params, $escapes));
+            try {
+                $output = $this->dbDriver->_pQuery($query, $this->dbsafeParams($params, $escapes));
+            } catch (QueryException $e) {
+                $prettifiedQuery = $this->prettifyQuery($e->getQuery(), $e->getParams());
+
+                $this->logger->error($e->getMessage());
+                $this->logger->error('Query: ' . $prettifiedQuery);
+
+                throw $e;
+            }
         }
 
         if (!$output) {

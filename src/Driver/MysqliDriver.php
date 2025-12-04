@@ -15,6 +15,7 @@ namespace Artemeon\Database\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Exception\ConnectionException;
+use Artemeon\Database\Exception\LockException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
@@ -146,6 +147,16 @@ class MysqliDriver extends DriverAbstract
         }
 
         if ($output === false) {
+            // in case there was an error reset the statement cache so that we use a new statement
+            $name = $this->getPreparedStatementName($query);
+            if (isset($this->statementsCache[$name])) {
+                unset($this->statementsCache[$name]);
+            }
+
+            if ($statement->errno === 1213) {
+                throw new LockException('Could not execute statement: ' . $this->getError(), $query, $params);
+            }
+
             throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
@@ -594,12 +605,17 @@ class MysqliDriver extends DriverAbstract
         return true;
     }
 
+    private function getPreparedStatementName(string $query): string
+    {
+        return md5($query);
+    }
+
     /**
      * Prepares a statement or uses an instance from the cache.
      */
     private function getPreparedStatement(string $query): false | mysqli_stmt
     {
-        $name = md5($query);
+        $name = $this->getPreparedStatementName($query);
 
         if (isset($this->statementsCache[$name])) {
             return $this->statementsCache[$name];
