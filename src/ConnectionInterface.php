@@ -377,4 +377,21 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * @return string The generated SQL snippet.
      */
     public function getNthLastElementFromSlug(string $column, int $position): string;
+
+    public function flushQueryCache(): void;
+
+    public function flushTablesCache(): void;
+
+    public function flushPreparedStatementsCache(): void;
+
+    /**
+     * @return array<string,array{columnName:string,columnType:DataType}>
+     */
+    public function getColumnsOfTable(string $tableName): array;
+
+    public function escape(mixed $value): mixed;
+
+    public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed;
+
+    public function hasOpenTransactions(): bool;
 }
