@@ -420,40 +420,40 @@ class MockConnection implements ConnectionInterface
         return '';
     }
 
-    #[\Override]
+    #[Override]
     public function flushQueryCache(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function flushTablesCache(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function flushPreparedStatementsCache(): void
     {
     }
 
-    #[\Override]
+    #[Override]
     public function getColumnsOfTable(string $tableName): array
     {
         return [];
     }
 
-    #[\Override]
+    #[Override]
     public function escape(mixed $value): mixed
     {
         return $value;
     }
 
-    #[\Override]
+    #[Override]
     public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
     {
         return $input;
     }
 
-    #[\Override]
+    #[Override]
     public function hasOpenTransactions(): bool
     {
         return false;
