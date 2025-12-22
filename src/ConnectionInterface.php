@@ -391,7 +391,5 @@ interface ConnectionInterface extends DoctrineConnectionInterface
 
     public function escape(mixed $value): mixed;
 
-    public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed;
-
     public function hasOpenTransactions(): bool;
 }
