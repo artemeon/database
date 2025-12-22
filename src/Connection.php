@@ -1265,7 +1265,6 @@ class Connection implements ConnectionInterface
      * @return int|float|null|string
      * @deprecated we need to get rid of this
      */
-    #[\Override]
     public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
     {
         // skip for numeric values to avoid php type juggling/autoboxing

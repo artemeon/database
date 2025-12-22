@@ -448,12 +448,6 @@ class MockConnection implements ConnectionInterface
     }
 
     #[Override]
-    public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
-    {
-        return $input;
-    }
-
-    #[Override]
     public function hasOpenTransactions(): bool
     {
         return false;
