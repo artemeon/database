@@ -419,4 +419,37 @@ class MockConnection implements ConnectionInterface
     {
         return '';
     }
+
+    #[Override]
+    public function flushQueryCache(): void
+    {
+    }
+
+    #[Override]
+    public function flushTablesCache(): void
+    {
+    }
+
+    #[Override]
+    public function flushPreparedStatementsCache(): void
+    {
+    }
+
+    #[Override]
+    public function getColumnsOfTable(string $tableName): array
+    {
+        return [];
+    }
+
+    #[Override]
+    public function escape(mixed $value): mixed
+    {
+        return $value;
+    }
+
+    #[Override]
+    public function hasOpenTransactions(): bool
+    {
+        return false;
+    }
 }

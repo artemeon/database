@@ -750,6 +750,7 @@ class Connection implements ConnectionInterface
         $this->rollBack();
     }
 
+    #[\Override]
     public function hasOpenTransactions(): bool
     {
         return $this->numberOfOpenTransactions > 0;
@@ -810,6 +811,7 @@ class Connection implements ConnectionInterface
      * @throws ConnectionException
      * @deprecated
      */
+    #[\Override]
     public function getColumnsOfTable(string $tableName): array
     {
         if (!$this->hasTable($tableName)) {
@@ -1298,6 +1300,7 @@ class Connection implements ConnectionInterface
     /**
      * Method to flush the query-cache.
      */
+    #[\Override]
     public function flushQueryCache(): void
     {
         $this->queryCache = [];
@@ -1308,6 +1311,7 @@ class Connection implements ConnectionInterface
      * Since the tables won't change during regular operations,
      * flushing the tables cache is only required during package updates / installations.
      */
+    #[\Override]
     public function flushTablesCache(): void
     {
         $this->tablesCache = [];
@@ -1319,6 +1323,7 @@ class Connection implements ConnectionInterface
      *
      * @throws ConnectionException
      */
+    #[\Override]
     public function flushPreparedStatementsCache(): void
     {
         if (!$this->connected) {
@@ -1375,6 +1380,7 @@ class Connection implements ConnectionInterface
      * method unifies the behaviour. In order to select a column, which contains a backslash you need to escape the value
      * with this method.
      */
+    #[\Override]
     public function escape(mixed $value): mixed
     {
         return $this->dbDriver->escape($value);
