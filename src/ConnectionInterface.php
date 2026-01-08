@@ -40,7 +40,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * @param list<bool> $escapes
      *
      * @throws QueryException
-     * @return list<array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      *
      * @see fetchAllAssociative
      */
