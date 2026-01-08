@@ -26,22 +26,30 @@ final class MysqliDriverTest extends TestCase
         self::assertEquals('SUBSTRING("test value", 1, 1)', $mysqliDriver->getSubstringExpression('"test value"', 1, 1));
     }
 
-    public static function provideValidExportFilenameAndPasswordAndExpectedCommandLine()
+    /**
+     * @return array{string,list<string>,string,string}[]
+     */
+    public static function provideValidExportFilenameAndPasswordAndExpectedCommandLine(): array
     {
         return [
             [
-                '/path/to/dump.sql', [],
+                '/path/to/dump.sql',
+                [],
                 'securepassword',
                 "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
             [
-                '/path/to/dump.sql', ['agp_user', 'agp_tours'],
+                '/path/to/dump.sql',
+                ['agp_user', 'agp_tours'],
                 'securepassword',
                 "'bash' '-c' '/usr/bin/mysqldump -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'' '\''agp_user'\'' '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
         ];
     }
 
+    /**
+     * @param list<string> $tables
+     */
     #[DataProvider('provideValidExportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbExportWillRunProcess(string $fileName, array $tables, string $password, string $expectedCommandLine): void
     {
@@ -73,23 +81,30 @@ final class MysqliDriverTest extends TestCase
         $this->assertTrue($result);
     }
 
-    public static function provideValidImportFilenameAndPasswordAndExpectedCommandLine()
+    /**
+     * @return array{string,string,string}[]
+     */
+    public static function provideValidImportFilenameAndPasswordAndExpectedCommandLine(): array
     {
         return [
             [
-                '/path/to/dump.sql', 'securepassword',
+                '/path/to/dump.sql',
+                'securepassword',
                 "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''",
             ],
             [
-                '/path/to/dump.sql.gz', 'securepassword',
+                '/path/to/dump.sql.gz',
+                'securepassword',
                 "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\'' -p'\''securepassword'\'' -P 3306 '\''testdb'\'''",
             ],
             [
-                '/path/to/dump.sql', '',
+                '/path/to/dump.sql',
+                '',
                 "'bash' '-c' 'cat '\''/path/to/dump.sql'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''",
             ],
             [
-                '/path/to/dump.sql.gz', '',
+                '/path/to/dump.sql.gz',
+                '',
                 "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/mysql -h '\''localhost'\'' -u '\''sebastian_bergmann'\''  -P 3306 '\''testdb'\'''",
             ],
         ];

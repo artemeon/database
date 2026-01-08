@@ -36,7 +36,12 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
      *
+     * @param list<mixed> $params
+     * @param list<bool> $escapes
+     *
      * @throws QueryException
+     * @return list<array<string, mixed>>
+     *
      * @see fetchAllAssociative
      */
     public function getPArray(string $query, array $params = [], ?int $start = null, ?int $end = null, bool $cache = true, array $escapes = []): array;
@@ -49,7 +54,12 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Returns one row from a result-set.
      * Makes use of prepared statements.
      *
+     * @param list<mixed> $params
+     * @param list<bool> $escapes
+     *
      * @throws QueryException
+     * @return array<string, mixed>
+     *
      * @see fetchAssociative
      */
     public function getPRow(string $query, array $params = [], int $number = 0, bool $cache = true, array $escapes = []): array;
@@ -58,11 +68,13 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Retrieves a single row of the referenced table, returning the requested columns and filtering by the given identifier(s).
      *
      * @param string $tableName the table name from which to select the row
-     * @param array $columns a flat list of column names to select
-     * @param array $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
+     * @param list<string> $columns a flat list of column names to select
+     * @param array<string, mixed> $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
      * @param bool $cached whether a previously selected result can be reused
-     * @param array|null $escapes which parameters to escape (described in {@see dbsafeParams})
+     * @param list<bool>|null $escapes which parameters to escape (described in {@see dbsafeParams})
      * @throws QueryException
+     *
+     * @return array<string, mixed>|null
      */
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array;
 
@@ -79,6 +91,8 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * false and don't modify the result set you will get an endless loop, so you must get sure that in the end the
      * result set will be empty.
      *
+     * @param list<mixed> $params
+     *
      * @throws QueryException
      * @see iterateAssociative
      */
@@ -89,8 +103,9 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      *
      * Sending a prepared statement to the database
      *
-     * @param array $escapes An array of booleans for each param, used to block the escaping of html-special chars.
-     *                       If not passed, all params will be cleaned.
+     * @param list<mixed> $params
+     * @param list<bool> $escapes An array of booleans for each param, used to block the escaping of html-special chars.
+     *                            If not passed, all params will be cleaned.
      * @throws QueryException
      * @see executeStatement
      */
@@ -107,6 +122,8 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * INSERT INTO $table ($columns) VALUES (?, ?), (?, ?)...
      *
      * @param string[] $columns
+     * @param list<mixed> $valueSets
+     * @param list<bool>|null $escapes
      * @throws QueryException
      */
     public function multiInsert(string $tableName, array $columns, array $valueSets, ?array $escapes = null): bool;
@@ -116,6 +133,10 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * to detect whether a row is already present or not.
      * Please note: since some DBRMs fire a delete && insert, make sure to pass ALL columns and values,
      * otherwise data might be lost. And: params are sent to the database unescaped.
+     *
+     * @param list<string> $columns
+     * @param list<mixed> $values
+     * @param list<string> $primaryColumns
      *
      * @throws QueryException
      */
@@ -155,6 +176,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Returns all tables used by the project.
      *
      * @throws QueryException
+     * @return list<string>
      */
     public function getTables(): array;
 
@@ -175,6 +197,8 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * By passing the query through this method, the driver can add db-specific commands.
      *
      * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
+     * @param list<string> $keys
+     * @param list<list<string>|string> $indices
      *
      * @throws QueryException
      */
@@ -198,6 +222,8 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
      * where each index can only occur once in the table.
+     *
+     * @param list<string> $columns
      *
      * @throws QueryException
      */
@@ -285,6 +311,8 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Helper to replace all param-placeholder with the matching value, only to be used
      * to render a debuggable-statement.
+     *
+     * @param list<mixed> $params
      */
     public function prettifyQuery(string $query, array $params): string;
 
@@ -293,8 +321,14 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      */
     public function appendLimitExpression(string $query, int $start, int $end): string;
 
+    /**
+     * @param list<string> $parts
+     */
     public function getConcatExpression(array $parts): string;
 
+    /**
+     * @param list<string> $parts
+     */
     public function getLeastExpression(array $parts): string;
 
     /**
@@ -320,11 +354,15 @@ interface ConnectionInterface extends DoctrineConnectionInterface
 
     /**
      * Queries the current db-driver about common information.
+     *
+     * @return array<string, mixed>
      */
     public function getDbInfo(): array;
 
     /**
      * Returns an array of all queries.
+     *
+     * @return list<array{query:string,cached:bool,time:float}>
      */
     public function getQueries(): array;
 

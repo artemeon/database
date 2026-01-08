@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Artemeon\Database\Schema;
 
 use JsonSerializable;
+use Override;
 
 /**
  * Base information about a tables primary key.
@@ -26,8 +27,10 @@ class TableKey implements JsonSerializable
 
     /**
      * @inheritDoc
+     *
+     * @return array{name: string}
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return ['name' => $this->getName()];

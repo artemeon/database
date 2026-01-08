@@ -26,33 +26,51 @@ interface DoctrineConnectionInterface
 {
     /**
      * Prepares and executes an SQL query and returns the result as an array of associative arrays.
+     *
+     * @param list<mixed> $params
+     *
+     * @return list<array<string, mixed>>
      */
     public function fetchAllAssociative(string $query, array $params = []): array;
 
     /**
      * Prepares and executes an SQL query and returns the first row of the result
      * as an associative array.
+     *
+     * @param list<mixed> $params
+     *
+     * @return list<array<string, mixed>>|false
      */
     public function fetchAssociative(string $query, array $params = []): array | false;
 
     /**
      * Prepares and executes an SQL query and returns the result as an array of the first column values.
+     *
+     * @param list<mixed> $params
+     *
+     * @return list<mixed>
      */
     public function fetchFirstColumn(string $query, array $params = []): array;
 
     /**
      * Prepares and executes an SQL query and returns the value of a single column of the first row of the result.
+     *
+     * @param list<mixed> $params
      */
     public function fetchOne(string $query, array $params = []): mixed;
 
     /**
      * Prepares and executes an SQL query and returns the result as an iterator over rows represented
      * as associative arrays.
+     *
+     * @param list<mixed> $params
      */
     public function iterateAssociative(string $query, array $params = []): Generator;
 
     /**
      * Prepares and executes an SQL query and returns the result as an iterator over the first column values.
+     *
+     * @param list<mixed> $params
      */
     public function iterateColumn(string $query, array $params = []): Generator;
 
@@ -65,22 +83,33 @@ interface DoctrineConnectionInterface
      *  - DCL statements: GRANT, REVOKE, etc.
      *  - Session control statements: ALTER SESSION, SET, DECLARE, etc.
      *  - Other statements that don't yield a row set.
+     *
+     * @param list<mixed> $params
      */
     public function executeStatement(string $query, array $params = []): int;
 
     /**
      * Creates a simple insert for a single row where the values parameter is an associative array with column names to
      * value mapping.
+     *
+     * @param array<string, mixed> $values
+     * @param list<bool>|null $escapes
      */
     public function insert(string $tableName, array $values, ?array $escapes = null): int;
 
     /**
      * Updates a row on the provided table by the identifier columns.
+     *
+     * @param array<string, mixed> $values
+     * @param array<string, mixed> $identifier
+     * @param list<bool>|null $escapes
      */
     public function update(string $tableName, array $values, array $identifier, ?array $escapes = null): int;
 
     /**
      * Deletes a row on the provided table by the identifier columns.
+     *
+     * @param array<string, mixed> $identifier
      */
     public function delete(string $tableName, array $identifier): int;
 

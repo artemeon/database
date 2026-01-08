@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Artemeon\Database\Schema;
 
 use JsonSerializable;
+use Override;
 
 /**
  * Base information about a database table.
@@ -35,8 +36,10 @@ class Table implements JsonSerializable
 
     /**
      * @inheritDoc
+     *
+     * @return array{name:string,indexes:TableIndex[],keys:TableKey[],columns:TableColumn[]}
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return [
@@ -148,6 +151,9 @@ class Table implements JsonSerializable
         return $this;
     }
 
+    /**
+     * @return string[]
+     */
     public function getColumnNames(): array
     {
         return array_map(static fn (TableColumn $column) => $column->getName(), $this->columns);

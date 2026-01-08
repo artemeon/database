@@ -43,11 +43,16 @@ use function current;
  */
 class MockConnection implements ConnectionInterface
 {
+    /**
+     * @var list<array<array-key, mixed>>
+     */
     private array $rows = [];
 
     /**
      * Adds a row to unconditionally be returned from {@see getPArray()} and {@see getGenerator()}. It will also be
      * returned from {@see getPRow()} and {@see selectRow()} _if it's the first row added_.
+     *
+     * @param array<array-key, mixed> $row
      */
     public function addRow(array $row): void
     {

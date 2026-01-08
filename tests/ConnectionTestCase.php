@@ -85,6 +85,9 @@ abstract class ConnectionTestCase extends TestCase
         }
     }
 
+    /**
+     * @return array<string, array{DataType, bool}>
+     */
     protected function getTestTableColumns(): array
     {
         return [
@@ -107,6 +110,9 @@ abstract class ConnectionTestCase extends TestCase
         return substr(sha1(uniqid()), 0, 20);
     }
 
+    /**
+     * @return ($assoc is true ? list<array<string, mixed>> : list<list<mixed>>)
+     */
     protected function getRows(int $count, bool $assoc = true): array
     {
         $rows = [];
@@ -131,6 +137,9 @@ abstract class ConnectionTestCase extends TestCase
         return $rows;
     }
 
+    /**
+     * @return list<string>
+     */
     protected function getColumnNames(): array
     {
         return [

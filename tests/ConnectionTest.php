@@ -405,7 +405,7 @@ class ConnectionTest extends ConnectionTestCase
      * @throws \ReflectionException
      */
     #[DataProvider('dataPostgresProcessQueryProvider')]
-    public function testPostgresProcessQuery($expected, $query): void
+    public function testPostgresProcessQuery(string $expected, string $query): void
     {
         $dbPostgres = new PostgresDriver();
         $reflection = new ReflectionClass(PostgresDriver::class);
@@ -418,6 +418,9 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expected, $actual);
     }
 
+    /**
+     * @return array{string,string}[]
+     */
     public static function dataPostgresProcessQueryProvider(): array
     {
         return [
@@ -639,7 +642,7 @@ class ConnectionTest extends ConnectionTestCase
      * @throws QueryException
      */
     #[DataProvider('intComparisonDataProvider')]
-    public function testIntComparison($id, $date, $expected): void
+    public function testIntComparison(string $id, int $date, int $expected): void
     {
         // note calculation does not work if we cross a year border.
         $objLeftDate = DateTime::createFromFormat('YmdHis', '' . $date);
@@ -660,6 +663,9 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expected, $row['result_2']);
     }
 
+    /**
+     * @return array{string,int,int}[]
+     */
     public static function intComparisonDataProvider(): array
     {
         return [
@@ -701,7 +707,7 @@ class ConnectionTest extends ConnectionTestCase
      * @throws QueryException
      */
     #[DataProvider('databaseValueProvider')]
-    public function testConvertToDatabaseValue($value, DataType $type): void
+    public function testConvertToDatabaseValue(mixed $value, DataType $type): void
     {
         $connection = $this->getConnection();
         $systemId = $this->generateSystemid();
@@ -741,6 +747,9 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertEquals($expect, $actual);
     }
 
+    /**
+     * @return array{mixed, DataType}[]
+     */
     public static function databaseValueProvider(): array
     {
         return [

@@ -37,6 +37,9 @@ class PostgresDriver extends DriverAbstract
     private string $dumpBin = 'pg_dump'; // Binary to dump db (if not in path, add the path here)
     private string $restoreBin = 'psql'; // Binary to restore db (if not in path, add the path here)
 
+    /**
+     * @var array<string, mixed>
+     */
     private array $cxInfo = [];
 
     /**
@@ -275,6 +278,8 @@ class PostgresDriver extends DriverAbstract
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant.
+     *
+     * @param array{data_type:string,character_maximum_length:int|numeric-string} $infoSchemaRow
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
@@ -293,13 +298,21 @@ class PostgresDriver extends DriverAbstract
         if ($infoSchemaRow['data_type'] === 'character varying') {
             if ($infoSchemaRow['character_maximum_length'] == '10') {
                 return DataType::CHAR10;
-            } elseif ($infoSchemaRow['character_maximum_length'] == '20') {
+            }
+
+            if ($infoSchemaRow['character_maximum_length'] == '20') {
                 return DataType::CHAR20;
-            } elseif ($infoSchemaRow['character_maximum_length'] == '100') {
+            }
+
+            if ($infoSchemaRow['character_maximum_length'] == '100') {
                 return DataType::CHAR100;
-            } elseif ($infoSchemaRow['character_maximum_length'] == '254') {
+            }
+
+            if ($infoSchemaRow['character_maximum_length'] == '254') {
                 return DataType::CHAR254;
-            } elseif ($infoSchemaRow['character_maximum_length'] == '500') {
+            }
+
+            if ($infoSchemaRow['character_maximum_length'] == '500') {
                 return DataType::CHAR500;
             }
         } elseif ($infoSchemaRow['data_type'] === 'text') {
