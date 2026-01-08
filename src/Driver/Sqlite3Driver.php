@@ -87,8 +87,8 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
-     * @param list<array{columnName:string,columnType:DataType|null}> $sourceTableInfo
-     * @param list<array{columnName:string,columnType:DataType|null}> $targetTableInfo
+     * @param list<array{columnName:string,columnType:DataType|string|null}> $sourceTableInfo
+     * @param list<array{columnName:string,columnType:DataType|string|null}> $targetTableInfo
      *
      * @throws QueryException
      */

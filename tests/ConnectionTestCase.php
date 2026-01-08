@@ -86,7 +86,7 @@ abstract class ConnectionTestCase extends TestCase
     }
 
     /**
-     * @return array<string, array{DataType, bool}>
+     * @return array<non-empty-string, array{DataType, bool}>
      */
     protected function getTestTableColumns(): array
     {

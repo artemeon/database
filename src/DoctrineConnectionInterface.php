@@ -39,7 +39,7 @@ interface DoctrineConnectionInterface
      *
      * @param list<mixed> $params
      *
-     * @return list<array<string, mixed>>|false
+     * @return array<string, mixed>|false
      */
     public function fetchAssociative(string $query, array $params = []): array | false;
 

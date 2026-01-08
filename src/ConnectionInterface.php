@@ -121,7 +121,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * For most databases, this will create s.th. like
      * INSERT INTO $table ($columns) VALUES (?, ?), (?, ?)...
      *
-     * @param string[] $columns
+     * @param list<string> $columns
      * @param list<mixed> $valueSets
      * @param list<bool>|null $escapes
      * @throws QueryException
@@ -196,7 +196,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Used to send a `CREATE TABLE` statement to the database.
      * By passing the query through this method, the driver can add db-specific commands.
      *
-     * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
+     * @param array<non-empty-string, array{0: DataType, 1: bool, 2?: mixed}> $columns
      * @param list<string> $keys
      * @param list<list<string>|string> $indices
      *

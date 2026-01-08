@@ -107,7 +107,7 @@ interface DriverInterface
      * Used to send a CREATE table statement to the database
      * By passing the query through this method, the driver can add db-specific commands.
      *
-     * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
+     * @param array<non-empty-string, array{0: DataType, 1: bool, 2?: mixed}> $columns
      * @param list<string> $primaryKeys
      */
     public function createTable(string $name, array $columns, array $primaryKeys): bool;
