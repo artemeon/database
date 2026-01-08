@@ -72,7 +72,7 @@ class Connection implements ConnectionInterface
     /**
      * Instance of the db-driver defined in the configs.
      */
-    protected ?DriverInterface $dbDriver = null;
+    protected DriverInterface $dbDriver;
 
     /**
      * The number of transactions currently opened.
@@ -120,7 +120,7 @@ class Connection implements ConnectionInterface
             $this->logger?->warning('Rolled back open transactions on deletion of current instance of Db!');
         }
 
-        if ($this->dbDriver !== null && $this->connected) {
+        if ($this->connected) {
             $this->logger?->info('closing database-connection');
 
             $this->dbDriver->dbclose();
@@ -216,7 +216,7 @@ class Connection implements ConnectionInterface
             ),
         );
 
-        $row = $this->getPRow($query, array_values($identifiers), 0, $cached, $escapes);
+        $row = $this->getPRow($query, array_values($identifiers), 0, $cached, $escapes ?? []);
         if ($row === []) {
             return null;
         }
@@ -317,17 +317,15 @@ class Connection implements ConnectionInterface
         // Increasing the counter
         $this->number++;
 
-        if ($this->dbDriver !== null) {
-            try {
-                $output = $this->dbDriver->_pQuery($query, $this->dbsafeParams($params, $escapes));
-            } catch (QueryException $e) {
-                $prettifiedQuery = $this->prettifyQuery($e->getQuery(), $e->getParams());
+        try {
+            $output = $this->dbDriver->_pQuery($query, $this->dbsafeParams($params, $escapes));
+        } catch (QueryException $e) {
+            $prettifiedQuery = $this->prettifyQuery($e->getQuery(), $e->getParams());
 
-                $this->logger->error($e->getMessage());
-                $this->logger->error('Query: ' . $prettifiedQuery);
+            $this->logger?->error($e->getMessage());
+            $this->logger?->error('Query: ' . $prettifiedQuery);
 
-                throw $e;
-            }
+            throw $e;
         }
 
         if (!$output) {
@@ -618,10 +616,7 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        $error = '';
-        if ($this->dbDriver !== null) {
-            $error = $this->dbDriver->getError();
-        }
+        $error = $this->dbDriver->getError();
 
         // reprocess query
         $query = str_ireplace(
@@ -665,10 +660,6 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        if ($this->dbDriver === null) {
-            return;
-        }
-
         // just start a new transaction, if no other transaction is open.
         if ($this->numberOfOpenTransactions === 0) {
             $this->dbDriver->beginTransaction();
@@ -698,10 +689,6 @@ class Connection implements ConnectionInterface
     {
         if (!$this->connected) {
             $this->dbconnect();
-        }
-
-        if ($this->dbDriver === null) {
-            return;
         }
 
         // check, if the current tx is allowed to be committed.
@@ -741,10 +728,6 @@ class Connection implements ConnectionInterface
     {
         if (!$this->connected) {
             $this->dbconnect();
-        }
-
-        if ($this->dbDriver === null) {
-            return;
         }
 
         if ($this->numberOfOpenTransactions === 1) {
@@ -802,15 +785,13 @@ class Connection implements ConnectionInterface
 
         $this->tablesCache[$prefix] = [];
 
-        if ($this->dbDriver !== null) {
-            // increase global counter
-            $this->number++;
-            $tables = $this->dbDriver->getTables();
+        // increase global counter
+        $this->number++;
+        $tables = $this->dbDriver->getTables();
 
-            foreach ($tables as $table) {
-                if (str_starts_with((string) $table['name'], $prefix)) {
-                    $this->tablesCache[$prefix][] = $table['name'];
-                }
+        foreach ($tables as $table) {
+            if (str_starts_with((string) $table['name'], $prefix)) {
+                $this->tablesCache[$prefix][] = $table['name'];
             }
         }
 
@@ -845,7 +826,7 @@ class Connection implements ConnectionInterface
             $columnName = $column->getName();
             $return[$columnName] = [
                 'columnName' => $columnName,
-                'columnType' => $column->getInternalType(),
+                'columnType' => $column->getInternalType() ?? DataType::CHAR254,
             ];
         }
 
@@ -949,7 +930,7 @@ class Connection implements ConnectionInterface
     {
         $columns = [];
         foreach ($table->getColumns() as $colDef) {
-            $columns[$colDef->getName()] = [$colDef->getInternalType(), $colDef->isNullable()];
+            $columns[$colDef->getName()] = [$colDef->getInternalType() ?? DataType::CHAR254, $colDef->isNullable()];
         }
 
         $primary = [];
@@ -1193,10 +1174,6 @@ class Connection implements ConnectionInterface
     {
         if (!$this->connected) {
             $this->dbconnect();
-        }
-
-        if ($this->dbDriver === null) {
-            return [];
         }
 
         return $this->dbDriver->getDbInfo();

@@ -27,6 +27,7 @@ use mysqli;
 use mysqli_sql_exception;
 use mysqli_stmt;
 use Override;
+use RuntimeException;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
@@ -97,6 +98,8 @@ class MysqliDriver extends DriverAbstract
         if (!$this->connected) {
             return;
         }
+
+        $this->assertConnected();
 
         $this->linkDB->close();
         $this->linkDB = null;
@@ -237,6 +240,8 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function getError(): string
     {
+        $this->assertConnected();
+
         $error = $this->errorMessage . ' ' . $this->linkDB->error;
         $this->errorMessage = '';
 
@@ -274,7 +279,7 @@ class MysqliDriver extends DriverAbstract
             $table->addColumn(
                 TableColumn::make($column['Field'])
                     ->setInternalType($this->getCoreTypeForDbType($column))
-                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column)))
+                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column) ?? DataType::CHAR254))
                     ->setNullable($column['Null'] === 'YES'),
             );
         }
@@ -454,6 +459,8 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function beginTransaction(): void
     {
+        $this->assertConnected();
+
         $this->linkDB->begin_transaction();
     }
 
@@ -472,6 +479,8 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function commit(): void
     {
+        $this->assertConnected();
+
         $this->linkDB->commit();
     }
 
@@ -487,6 +496,8 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function rollBack(): void
     {
+        $this->assertConnected();
+
         $this->linkDB->rollback();
     }
 
@@ -505,6 +516,8 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function getDbInfo(): array
     {
+        $this->assertConnected();
+
         return [
             'dbbserver' => 'MySQL ' . $this->linkDB->server_info,
             'server_version' => $this->linkDB->server_version,
@@ -542,6 +555,10 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function dbExport(string &$fileName, array $tables): bool
     {
+        if (!$this->config instanceof ConnectionParameters) {
+            throw new RuntimeException('Connection parameters not set');
+        }
+
         $dumpBin = new ExecutableFinder()->find($this->dumpBin);
         $dumpParams = [
             $dumpBin,
@@ -578,7 +595,11 @@ class MysqliDriver extends DriverAbstract
     public function dbImport(string $fileName): bool
     {
         if (!in_array(pathinfo($fileName, PATHINFO_EXTENSION), ['sql', 'gz'])) {
-            throw new \RuntimeException(trim($fileName . ' is not a valid import file'));
+            throw new RuntimeException(trim($fileName . ' is not a valid import file'));
+        }
+
+        if (!$this->config instanceof ConnectionParameters) {
+            throw new RuntimeException('Connection parameters not set');
         }
 
         $restoreBin = new ExecutableFinder()->find($this->restoreBin);
@@ -598,7 +619,7 @@ class MysqliDriver extends DriverAbstract
         } elseif (pathinfo($fileName, PATHINFO_EXTENSION) === 'sql') {
             $fileCommand = sprintf('cat %s', escapeshellarg($fileName));
         } else {
-            throw new \RuntimeException(trim($fileName . ' is not a valid import file'));
+            throw new RuntimeException(trim($fileName . ' is not a valid import file'));
         }
 
         $process = new Process([
@@ -635,6 +656,8 @@ class MysqliDriver extends DriverAbstract
 
             $this->statementsCache = [];
         }
+
+        $this->assertConnected();
 
         $statement = $this->linkDB->stmt_init();
 
@@ -676,5 +699,15 @@ class MysqliDriver extends DriverAbstract
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
         return "SUBSTRING_INDEX(SUBSTRING_INDEX($column, '/', -$position), '/', 1)";
+    }
+
+    /**
+     * @phpstan-assert mysqli $this->linkDB
+     */
+    private function assertConnected(): void
+    {
+        if ($this->linkDB === null) {
+            throw new ConnectionException('Database not connected.');
+        }
     }
 }

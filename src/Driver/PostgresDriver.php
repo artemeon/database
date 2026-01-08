@@ -236,7 +236,7 @@ class PostgresDriver extends DriverAbstract
             $table->addColumn(
                 TableColumn::make($column['column_name'])
                     ->setInternalType($this->getCoreTypeForDbType($column))
-                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column)))
+                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column) ?? DataType::CHAR254))
                     ->setNullable($column['is_nullable'] === 'YES'),
             );
         }
@@ -510,6 +510,10 @@ class PostgresDriver extends DriverAbstract
             $tablesString = '-t ' . implode(' -t ', array_map('escapeshellarg', $tables));
         }
 
+        if (!$this->config instanceof ConnectionParameters) {
+            throw new RuntimeException('Connection parameters not set');
+        }
+
         $port = $this->config->getPort();
         if (empty($port)) {
             $port = 5432;
@@ -555,6 +559,10 @@ class PostgresDriver extends DriverAbstract
     {
         if (!in_array(pathinfo($fileName, PATHINFO_EXTENSION), ['sql', 'gz'])) {
             throw new RuntimeException(trim($fileName . ' is not a valid import file'));
+        }
+
+        if (!$this->config instanceof ConnectionParameters) {
+            throw new RuntimeException('Connection parameters not set');
         }
 
         $restoreBin = new ExecutableFinder()->find($this->restoreBin);
@@ -618,7 +626,7 @@ class PostgresDriver extends DriverAbstract
             $i++;
 
             return '$' . $i;
-        }, $query);
+        }, $query) ?? '';
 
         return str_replace(' LIKE ', ' ILIKE ', $query);
     }
