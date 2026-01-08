@@ -44,7 +44,7 @@ use function current;
 class MockConnection implements ConnectionInterface
 {
     /**
-     * @var list<array<array-key, mixed>>
+     * @var list<array<string, mixed>>
      */
     private array $rows = [];
 
@@ -76,13 +76,13 @@ class MockConnection implements ConnectionInterface
     #[Override]
     public function getPRow(string $query, array $params = [], int $number = 0, bool $cache = true, array $escapes = []): array
     {
-        return current($this->rows);
+        return current($this->rows) ?: [];
     }
 
     #[Override]
     public function selectRow(string $tableName, array $columns, array $identifiers, bool $cached = true, ?array $escapes = []): ?array
     {
-        return current($this->rows);
+        return current($this->rows) ?: [];
     }
 
     #[Override]

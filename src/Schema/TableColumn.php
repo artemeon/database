@@ -25,11 +25,17 @@ class TableColumn implements JsonSerializable
     private string $databaseType = '';
     private bool $nullable = true;
 
+    /**
+     * @param non-empty-string $name
+     */
     public static function make(string $name): self
     {
         return new self($name);
     }
 
+    /**
+     * @param non-empty-string $name
+     */
     public function __construct(private string $name)
     {
     }
@@ -38,7 +44,7 @@ class TableColumn implements JsonSerializable
      * @inheritDoc
      *
      * @return array{
-     *     name: string,
+     *     name: non-empty-string,
      *     internalType: string,
      *     databaseType: string,
      *     nullable: bool,
@@ -67,11 +73,17 @@ class TableColumn implements JsonSerializable
         return $this;
     }
 
+    /**
+     * @return non-empty-string
+     */
     public function getName(): string
     {
         return $this->name;
     }
 
+    /**
+     * @param non-empty-string $name
+     */
     public function setName(string $name): self
     {
         $this->name = $name;

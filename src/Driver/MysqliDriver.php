@@ -160,7 +160,7 @@ class MysqliDriver extends DriverAbstract
             throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
-        $this->affectedRowsCount = $statement->affected_rows;
+        $this->affectedRowsCount = (int) $statement->affected_rows;
         $statement->free_result();
 
         return $output;
@@ -192,6 +192,10 @@ class MysqliDriver extends DriverAbstract
         }
 
         $result = $statement->get_result();
+
+        if ($result === false) {
+            return;
+        }
 
         while ($row = $result->fetch_assoc()) {
             yield $row;

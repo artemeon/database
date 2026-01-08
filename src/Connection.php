@@ -28,6 +28,7 @@ use Generator;
 use InvalidArgumentException;
 use Override;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
@@ -154,6 +155,10 @@ class Connection implements ConnectionInterface
         // chunk columns down to less than 1000 params, could lead to errors on Oracle and sqlite otherwise.
         $output = true;
         $setsPerInsert = (int) floor(970 / count($columns));
+
+        if ($setsPerInsert < 1) {
+            throw new RuntimeException('At least one set per insert operation must be performed.');
+        }
 
         foreach (array_chunk($valueSets, $setsPerInsert) as $valueSet) {
             $output = $output && $this->dbDriver->triggerMultiInsert(
@@ -1238,13 +1243,11 @@ class Connection implements ConnectionInterface
      * An internal wrapper to dbsafeString, used to process a complete array of parameters
      * as used by prepared statements.
      *
-     * @template TKey of array-key
-     *
-     * @param array<TKey, mixed> $params
+     * @param array<array-key, mixed> $params
      * @param list<bool>|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                                  If not passed, all params will be cleaned.
      *
-     * @return array<TKey, mixed>
+     * @return list<mixed>
      *
      * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
@@ -1275,7 +1278,7 @@ class Connection implements ConnectionInterface
             $replace[$key] = $param;
         }
 
-        return $replace;
+        return array_values($replace);
     }
 
     /**
