@@ -24,6 +24,7 @@ use Artemeon\Database\Schema\TableIndex;
 use Artemeon\Database\Schema\TableKey;
 use Generator;
 use Override;
+use RuntimeException;
 use SQLite3;
 use SQLite3Stmt;
 use Throwable;
@@ -31,6 +32,8 @@ use Throwable;
 /**
  * DB-driver for sqlite3 using the php-sqlite3-interface.
  * Based on the sqlite2 driver by phwolfer.
+ *
+ * @template-extends DriverAbstract<false | SQLite3Stmt>
  */
 class Sqlite3Driver extends DriverAbstract
 {
@@ -50,7 +53,12 @@ class Sqlite3Driver extends DriverAbstract
         if ($params->getDatabase() === ':memory:') {
             $this->dbFile = ':memory:';
         } else {
-            $this->dbFile = $params->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH) . '/' . $params->getDatabase() . '.db3';
+            $basePath = $params->getAttribute(ConnectionParameters::SQLITE3_BASE_PATH);
+            if (!is_string($basePath)) {
+                throw new RuntimeException('Invalid SQLite base path');
+            }
+
+            $this->dbFile = $basePath . '/' . $params->getDatabase() . '.db3';
         }
 
         try {
@@ -97,6 +105,7 @@ class Sqlite3Driver extends DriverAbstract
         // Get existing table info
         $pragmaTableInfo = $this->getPArray("PRAGMA table_info('$targetTableName')", []);
         $columnsPragma = [];
+        /** @var array{name:int|string,type:string,notnull:int,dflt_value?:scalar|null,pk?:int} $row */
         foreach ($pragmaTableInfo as $row) {
             $columnsPragma[$row['name']] = $row;
         }
@@ -117,8 +126,10 @@ class Sqlite3Driver extends DriverAbstract
         // loop the fields
         $columns = [];
         $pks = [];
+        /** @var array{columnName:string,columnType:string} $column */
         foreach ($targetTableInfo as $column) {
-            $row = null;
+            /** @var array{name:string,type:string} $row */
+            $row = [];
 
             if (array_key_exists($column['columnName'], $columnsPragma)) {
                 $row = $columnsPragma[$column['columnName']];
@@ -367,6 +378,7 @@ class Sqlite3Driver extends DriverAbstract
     {
         $generator = $this->getPArray("SELECT name FROM sqlite_master WHERE type='table'", []);
         $result = [];
+        /** @var array{name:string} $row */
         foreach ($generator as $row) {
             $result[] = ['name' => strtolower((string) $row['name'])];
         }
@@ -385,6 +397,7 @@ class Sqlite3Driver extends DriverAbstract
 
         // fetch all columns
         $columnInfo = $this->getPArray("PRAGMA table_info('$tableName')", []);
+        /** @var array{name:non-empty-string,type:string,notnull:bool|int|numeric-string,pk:bool|int|numeric-string} $column */
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make($column['name'])
@@ -400,6 +413,7 @@ class Sqlite3Driver extends DriverAbstract
 
         // fetch all indexes
         $indexes = $this->getPArray("SELECT * FROM sqlite_master WHERE type = 'index' AND tbl_name = ?", [$tableName]);
+        /** @var array{name:string,sql?:string|null} $indexInfo */
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['name']);
             $index->setDescription($indexInfo['sql'] ?? '');

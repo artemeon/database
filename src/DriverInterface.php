@@ -46,7 +46,7 @@ interface DriverInterface
      * The query is fired to the database by Database.
      *
      * @param list<string> $columns
-     * @param list<array<array-key, mixed>> $valueSets
+     * @param list<array<array-key, scalar|null>> $valueSets
      * @param list<bool> $escapes
      */
     public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool;
@@ -58,7 +58,7 @@ interface DriverInterface
      * otherwise data might be lost.
      *
      * @param list<string> $columns
-     * @param list<mixed> $values
+     * @param list<scalar|null> $values
      * @param list<string> $primaryColumns
      */
     public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool;
@@ -67,7 +67,7 @@ interface DriverInterface
      * Sends a prepared statement to the database. All params must be represented by the "?" char.
      * The params themselves are stored using the second params using the matching order.
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      *
      * @throws QueryException
      */
@@ -77,9 +77,11 @@ interface DriverInterface
      * This method is used to retrieve an array of result-sets from the database using
      * a prepared statement.
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      *
      * @throws QueryException
+     *
+     * @return Generator<array<array-key, mixed>>
      */
     public function getPArray(string $query, array $params): Generator;
 
@@ -107,7 +109,7 @@ interface DriverInterface
      * Used to send a CREATE table statement to the database
      * By passing the query through this method, the driver can add db-specific commands.
      *
-     * @param array<non-empty-string, array{0: DataType, 1: bool, 2?: mixed}> $columns
+     * @param array<non-empty-string, array{0: DataType, 1: bool, 2?: string}> $columns
      * @param list<string> $primaryKeys
      */
     public function createTable(string $name, array $columns, array $primaryKeys): bool;
@@ -244,6 +246,10 @@ interface DriverInterface
      */
     public function flushQueryCache(): void;
 
+    /**
+     * @param scalar|null $value
+     * @return scalar|null
+     */
     public function escape(mixed $value): mixed;
 
     /**
@@ -278,6 +284,9 @@ interface DriverInterface
     /**
      * Convert a PHP value to a value, which can be inserted into a table. I.e. it truncates the value to
      * the fitting length for the provided datatype.
+     *
+     * @param scalar|null $value
+     * @return scalar|null
      */
     public function convertToDatabaseValue(mixed $value, DataType $type): mixed;
 

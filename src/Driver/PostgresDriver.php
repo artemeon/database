@@ -30,6 +30,8 @@ use Symfony\Component\Process\Process;
 
 /**
  * DB-driver for postgres using the php-postgres-interface.
+ *
+ * @template-extends DriverAbstract<string>
  */
 class PostgresDriver extends DriverAbstract
 {
@@ -38,7 +40,7 @@ class PostgresDriver extends DriverAbstract
     private string $restoreBin = 'psql'; // Binary to restore db (if not in path, add the path here)
 
     /**
-     * @var array<string, mixed>
+     * @var array<string, int|string|null>
      */
     private array $cxInfo = [];
 
@@ -152,7 +154,7 @@ class PostgresDriver extends DriverAbstract
     public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool
     {
         // get the current postgres version to validate the upsert features
-        if (version_compare($this->cxInfo['server'], '9.5', '<')) {
+        if (array_key_exists('server', $this->cxInfo) && is_string($this->cxInfo['server']) && version_compare($this->cxInfo['server'], '9.5', '<')) {
             // base implementation
             return parent::insertOrUpdate($table, $columns, $values, $primaryColumns);
         }
@@ -214,6 +216,7 @@ class PostgresDriver extends DriverAbstract
             [],
         );
         $result = [];
+        /** @var array{name:scalar} $row */
         foreach ($generator as $row) {
             $result[] = ['name' => strtolower((string) $row['name'])];
         }
@@ -232,6 +235,7 @@ class PostgresDriver extends DriverAbstract
 
         // fetch all columns
         $columnInfo = $this->getPArray('SELECT * FROM information_schema.columns WHERE table_name = ?', [$tableName]);
+        /** @var array{column_name:non-empty-string,data_type:string,character_maximum_length:int|numeric-string,is_nullable:string} $column */
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make($column['column_name'])
@@ -246,6 +250,7 @@ class PostgresDriver extends DriverAbstract
             "select * from pg_indexes where tablename  = ? AND indexname NOT LIKE '%_pkey'",
             [$tableName],
         );
+        /** @var array{indexname:string,indexdef:scalar} $indexInfo */
         foreach ($indexes as $indexInfo) {
             $index = new TableIndex($indexInfo['indexname']);
             // scrape the columns from the indexdef
@@ -274,6 +279,7 @@ class PostgresDriver extends DriverAbstract
                 ORDER BY t.relname, i.relname";
 
         $keys = $this->getPArray($query, [$tableName]);
+        /** @var array{column_name:string} $keyInfo */
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['column_name']);
             $table->addPrimaryKey($key);

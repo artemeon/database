@@ -119,11 +119,13 @@ class ConnectionPreparedTest extends ConnectionTestCase
         $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['id1']);
 
         $this->assertEquals(123456, $row['temp_bigint']);
+        $this->assertIsScalar($row['temp_float']);
         $this->assertEquals(1.7, round((float) $row['temp_float'], 1));
 
         $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', ['id2']);
 
         $this->assertEquals(123456, $row['temp_bigint']);
+        $this->assertIsScalar($row['temp_float']);
         $this->assertEquals(1.7, round((float) $row['temp_float'], 1));
     }
 }
