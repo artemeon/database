@@ -306,6 +306,8 @@ class Sqlite3Driver extends DriverAbstract
             throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
+        $this->assertConnected();
+
         $this->affectedRowsCount = $this->linkDB->changes();
 
         return true;
@@ -351,6 +353,8 @@ class Sqlite3Driver extends DriverAbstract
     #[Override]
     public function getError(): string
     {
+        $this->assertConnected();
+
         return $this->linkDB->lastErrorMsg();
     }
 
@@ -385,7 +389,7 @@ class Sqlite3Driver extends DriverAbstract
             $table->addColumn(
                 TableColumn::make($column['name'])
                     ->setInternalType($this->getCoreTypeForDbType($column))
-                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column)))
+                    ->setDatabaseType($this->getDatatype($this->getCoreTypeForDbType($column) ?? DataType::CHAR254))
                     ->setNullable($column['notnull'] == 0),
             );
 
@@ -543,6 +547,8 @@ class Sqlite3Driver extends DriverAbstract
     #[Override]
     public function getDbInfo(): array
     {
+        $this->assertConnected();
+
         $timeout = iterator_to_array($this->getPArray('PRAGMA busy_timeout', []), false);
         $encoding = iterator_to_array($this->getPArray('PRAGMA encoding', []), false);
 
@@ -615,7 +621,7 @@ class Sqlite3Driver extends DriverAbstract
             $i++;
 
             return ':param' . $i;
-        }, $query);
+        }, $query) ?? '';
     }
 
     /**
@@ -628,6 +634,8 @@ class Sqlite3Driver extends DriverAbstract
         if (isset($this->statementsCache[$name])) {
             return $this->statementsCache[$name];
         }
+
+        $this->assertConnected();
 
         $statement = $this->linkDB->prepare($query);
         $this->statementsCache[$name] = $statement;
@@ -688,5 +696,15 @@ class Sqlite3Driver extends DriverAbstract
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
         return "extract_nth_last_slug_segment($column, $position)";
+    }
+
+    /**
+     * @phpstan-assert SQLite3 $this->linkDB
+     */
+    private function assertConnected(): void
+    {
+        if (!$this->linkDB instanceof SQLite3) {
+            throw new ConnectionException('Database not connected.');
+        }
     }
 }

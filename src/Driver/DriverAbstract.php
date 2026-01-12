@@ -38,6 +38,9 @@ abstract class DriverAbstract implements DriverInterface
 
     protected ?ConnectionParameters $config = null;
 
+    /**
+     * @phpstan-assert ConnectionParameters $this->config
+     */
     public function setConfig(ConnectionParameters $params): void
     {
         $this->config = $params;
