@@ -646,6 +646,10 @@ class ConnectionTest extends ConnectionTestCase
     {
         // note calculation does not work if we cross a year border.
         $objLeftDate = DateTime::createFromFormat('YmdHis', '' . $date);
+        if ($objLeftDate === false) {
+            self::fail('Invalid date given.');
+        }
+
         $objLeftDate->add(new DateInterval('P1M'));
         $left = $objLeftDate->format('YmdHis');
 

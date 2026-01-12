@@ -26,7 +26,7 @@ class DriverFactory
     public function factory(string $driver): DriverInterface
     {
         $class = 'Artemeon\\Database\\Driver\\' . ucfirst($driver) . 'Driver';
-        if (!class_exists($class)) {
+        if (!class_exists($class) || !is_a($class, DriverInterface::class, true)) {
             throw new DriverNotFoundException('Configured driver ' . $class . ' does not exist');
         }
 

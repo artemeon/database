@@ -97,6 +97,8 @@ class PostgresDriver extends DriverAbstract
             throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
 
+        $this->assertConnected();
+
         $result = pg_execute($this->linkDB, $name, $params);
         if ($result === false) {
             throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
@@ -118,6 +120,8 @@ class PostgresDriver extends DriverAbstract
         if ($name === false) {
             throw new QueryException('Could not prepare statement: ' . $this->getError(), $query, $params);
         }
+
+        $this->assertConnected();
 
         $resultSet = pg_execute($this->linkDB, $name, $params);
 
@@ -193,6 +197,8 @@ class PostgresDriver extends DriverAbstract
     #[Override]
     public function getError(): string
     {
+        $this->assertConnected();
+
         return pg_last_error($this->linkDB);
     }
 
@@ -486,6 +492,8 @@ class PostgresDriver extends DriverAbstract
     #[Override]
     public function getDbInfo(): array
     {
+        $this->assertConnected();
+
         return pg_version($this->linkDB);
     }
 
@@ -626,6 +634,8 @@ class PostgresDriver extends DriverAbstract
             return $sum;
         }
 
+        $this->assertConnected();
+
         if (pg_prepare($this->linkDB, $sum, $query)) {
             $this->statementsCache[] = $sum;
         } else {
@@ -689,5 +699,15 @@ class PostgresDriver extends DriverAbstract
     public function getNthLastElementFromSlug(string $column, int $position): string
     {
         return "SPLIT_PART(REVERSE(SPLIT_PART(REVERSE($column), '/', $position)), '/', 1)";
+    }
+
+    /**
+     * @phpstan-assert Connection $this->linkDB
+     */
+    private function assertConnected(): void
+    {
+        if (!$this->linkDB instanceof Connection) {
+            throw new ConnectionException('Database not connected.');
+        }
     }
 }
