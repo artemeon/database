@@ -46,6 +46,7 @@
     }
   },
   "config": {
+    "process-timeout": 0,
     "allow-plugins": {
       "phpstan/extension-installer": true,
       "pestphp/pest-plugin": true

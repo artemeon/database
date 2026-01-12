@@ -300,6 +300,8 @@ class MysqliDriver extends DriverAbstract
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant.
+     *
+     * @param array{Type:string} $infoSchemaRow
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {

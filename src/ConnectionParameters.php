@@ -20,6 +20,9 @@ final class ConnectionParameters
 {
     public const string SQLITE3_BASE_PATH = 'sqlite3_base_path';
 
+    /**
+     * @var array<string, mixed>
+     */
     private array $attributes = [];
 
     public function __construct(
@@ -74,6 +77,16 @@ final class ConnectionParameters
         return $this->attributes[$key] ?? null;
     }
 
+    /**
+     * @param array{
+     *     dbhost?:string|null,
+     *     dbusername?:string|null,
+     *     dbpassword?:string|null,
+     *     dbname?:string|null,
+     *     dbport?:int|string|null,
+     *     dbdriver?:string|null,
+     * } $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(

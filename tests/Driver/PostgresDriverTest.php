@@ -26,22 +26,30 @@ final class PostgresDriverTest extends TestCase
         self::assertEquals('SUBSTRING(cast ("test value" as text), 1, 1)', $postgresDriver->getSubstringExpression('"test value"', 1, 1));
     }
 
-    public static function provideValidExportFilenameAndPasswordAndExpectedCommandLine()
+    /**
+     * @return array{string,list<string>,string,string}[]
+     */
+    public static function provideValidExportFilenameAndPasswordAndExpectedCommandLine(): array
     {
         return [
             [
-                '/path/to/dump.sql', ['agp_user', 'agp_tours'],
+                '/path/to/dump.sql',
+                ['agp_user', 'agp_tours'],
                 'securepassword',
                 "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p '\''5432'\'' -d '\''testdb'\'' -t '\''agp_user'\'' -t '\''agp_tours'\'' | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
             [
-                '/path/to/dump.sql', [],
+                '/path/to/dump.sql',
+                [],
                 'securepassword',
                 "'bash' '-c' '/usr/bin/pg_dump --clean --no-owner -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p '\''5432'\'' -d '\''testdb'\''  | gzip > '\''/path/to/dump.sql.gz'\'''",
             ],
         ];
     }
 
+    /**
+     * @param list<string> $tables
+     */
     #[DataProvider('provideValidExportFilenameAndPasswordAndExpectedCommandLine')]
     public function testDbExportWillRunProcess(string $fileName, array $tables, string $password, string $expectedCommandLine): void
     {
@@ -77,23 +85,30 @@ final class PostgresDriverTest extends TestCase
         self::assertTrue($result);
     }
 
-    public static function provideValidImportFilenameAndPasswordAndExpectedCommandLine()
+    /**
+     * @return array{string,string,string}[]
+     */
+    public static function provideValidImportFilenameAndPasswordAndExpectedCommandLine(): array
     {
         return [
             [
-                '/path/to/dump.sql', 'securepassword',
+                '/path/to/dump.sql',
+                'securepassword',
                 "'/usr/bin/psql' '-q' '-h' 'localhost' '-U' 'sebastian_bergmann' '-p5432' '-d' 'testdb' '-f' '/path/to/dump.sql'",
             ],
             [
-                '/path/to/dump.sql.gz', 'securepassword',
+                '/path/to/dump.sql.gz',
+                'securepassword',
                 "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/psql -q -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p5432 -d '\''testdb'\'''",
             ],
             [
-                '/path/to/dump.sql', '',
+                '/path/to/dump.sql',
+                '',
                 "'/usr/bin/psql' '-q' '-h' 'localhost' '-U' 'sebastian_bergmann' '-p5432' '-d' 'testdb' '-f' '/path/to/dump.sql'",
             ],
             [
-                '/path/to/dump.sql.gz', '',
+                '/path/to/dump.sql.gz',
+                '',
                 "'bash' '-c' 'gunzip -c '\''/path/to/dump.sql.gz'\'' | /usr/bin/psql -q -h '\''localhost'\'' -U '\''sebastian_bergmann'\'' -p5432 -d '\''testdb'\'''",
             ],
         ];

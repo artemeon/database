@@ -44,6 +44,10 @@ interface DriverInterface
      * INSERT INTO $table ($columns) VALUES (?, ?), (?, ?)...
      * Please note that this method is used to create the query itself, based on the Kajona-internal syntax.
      * The query is fired to the database by Database.
+     *
+     * @param list<string> $columns
+     * @param list<array<array-key, mixed>> $valueSets
+     * @param list<bool> $escapes
      */
     public function triggerMultiInsert(string $table, array $columns, array $valueSets, ConnectionInterface $database, ?array $escapes): bool;
 
@@ -52,12 +56,18 @@ interface DriverInterface
      * to detect whether a row is already present or not.
      * Please note: since some dbrms fire a delete && insert, make sure to pass ALL colums and values,
      * otherwise data might be lost.
+     *
+     * @param list<string> $columns
+     * @param list<mixed> $values
+     * @param list<string> $primaryColumns
      */
     public function insertOrUpdate(string $table, array $columns, array $values, array $primaryColumns): bool;
 
     /**
      * Sends a prepared statement to the database. All params must be represented by the "?" char.
      * The params themselves are stored using the second params using the matching order.
+     *
+     * @param list<mixed> $params
      *
      * @throws QueryException
      */
@@ -66,6 +76,8 @@ interface DriverInterface
     /**
      * This method is used to retrieve an array of result-sets from the database using
      * a prepared statement.
+     *
+     * @param list<mixed> $params
      *
      * @throws QueryException
      */
@@ -81,6 +93,8 @@ interface DriverInterface
      * Returns ALL tables in the database currently connected to.
      * The method should return an array using the following keys:
      * name => Table name.
+     *
+     * @return list<array{name:string}>
      */
     public function getTables(): array;
 
@@ -93,13 +107,16 @@ interface DriverInterface
      * Used to send a CREATE table statement to the database
      * By passing the query through this method, the driver can add db-specific commands.
      *
-     * @param array<non-falsy-string, array{0: DataType, 1?: bool, 2?: mixed}> $columns
+     * @param array<non-empty-string, array{0: DataType, 1: bool, 2?: mixed}> $columns
+     * @param list<string> $primaryKeys
      */
     public function createTable(string $name, array $columns, array $primaryKeys): bool;
 
     /**
      * Creates a new index on the provided table over the given columns. If unique is true we create a unique index
      * where each index can only occur once in the table.
+     *
+     * @param list<string> $columns
      */
     public function createIndex(string $table, string $name, array $columns, bool $unique = false): bool;
 
@@ -183,6 +200,8 @@ interface DriverInterface
      * Returns an array of key value pairs with infos about the current database
      * The array returned should have tho following structure:
      *  property name => value.
+     *
+     * @return array<string, mixed>
      */
     public function getDbInfo(): array;
 
@@ -191,6 +210,7 @@ interface DriverInterface
      * The dump must include, and ONLY include the pass tables.
      *
      * @param string &$fileName passed by reference so that the driver is able to update the filename, e.g. in order to add a .gz suffix.
+     * @param list<string> $tables
      */
     public function dbExport(string &$fileName, array $tables): bool;
 
@@ -238,6 +258,8 @@ interface DriverInterface
      * <code>
      *  $connection->getConcatExpression(['user_kajona.user_forename', '\' \'', 'user_kajona.user_name'])
      * </code>.
+     *
+     * @param list<string> $parts
      */
     public function getConcatExpression(array $parts): string;
 
@@ -264,6 +286,8 @@ interface DriverInterface
      * <code>
      *  $connection->getLeastExpression(['column1','column2', ...])
      * </code>.
+     *
+     * @param list<string> $parts
      */
     public function getLeastExpression(array $parts): string;
 

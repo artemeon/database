@@ -18,6 +18,9 @@ use Throwable;
 
 class QueryException extends Exception
 {
+    /**
+     * @param list<mixed> $params
+     */
     public function __construct(string $message, private readonly string $query, private readonly array $params, ?Throwable $previous = null)
     {
         parent::__construct($message, 0, $previous);
@@ -28,6 +31,9 @@ class QueryException extends Exception
         return $this->query;
     }
 
+    /**
+     * @return list<mixed>
+     */
     public function getParams(): array
     {
         return $this->params;

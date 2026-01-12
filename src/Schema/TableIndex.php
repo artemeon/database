@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Artemeon\Database\Schema;
 
 use JsonSerializable;
+use Override;
 
 /**
  * Base information about a table's index.
@@ -28,8 +29,10 @@ class TableIndex implements JsonSerializable
 
     /**
      * @inheritDoc
+     *
+     * @return array{name:string, description:string}
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return [

@@ -87,6 +87,9 @@ class Sqlite3Driver extends DriverAbstract
     }
 
     /**
+     * @param list<array{columnName:string,columnType:DataType|string|null}> $sourceTableInfo
+     * @param list<array{columnName:string,columnType:DataType|string|null}> $targetTableInfo
+     *
      * @throws QueryException
      */
     private function buildAndCopyTempTables(string $targetTableName, array $sourceTableInfo, array $targetTableInfo): bool
@@ -404,6 +407,8 @@ class Sqlite3Driver extends DriverAbstract
 
     /**
      * Tries to convert a column provided by the database back to the Kajona internal type constant.
+     *
+     * @param array{type:string} $infoSchemaRow
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
