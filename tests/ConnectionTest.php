@@ -125,12 +125,18 @@ class ConnectionTest extends ConnectionTestCase
         $connection->insert(self::TEST_TABLE_NAME, ['temp_id' => 'id2', 'temp_float' => 1000.8]);
 
         $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' where temp_id = ?', ['id1']);
+        if (!array_key_exists('temp_float', $row) || !is_numeric($row['temp_float'])) {
+            self::fail('Invalid temp_float value received.');
+        }
         // MSSQL returns 16.799999237061 instead of 16.8
-        $this->assertEquals(16.8, round((float) $row['temp_float'], 1));
+        $this->assertSame(16.8, round((float) $row['temp_float'], 1));
         $this->assertEquals('16.8', round((float) $row['temp_float'], 1));
 
         $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' where temp_id = ?', ['id2']);
-        $this->assertEquals(1000.8, round((float) $row['temp_float'], 1));
+        if (!array_key_exists('temp_float', $row) || !is_numeric($row['temp_float'])) {
+            self::fail('Invalid temp_float value received.');
+        }
+        $this->assertSame(1000.8, round((float) $row['temp_float'], 1));
         $this->assertEquals('1000.8', round((float) $row['temp_float'], 1));
     }
 
@@ -240,6 +246,9 @@ class ConnectionTest extends ConnectionTestCase
         $this->assertTrue(count($row) >= 9, 'testDataBase getRow count');
 
         $this->assertEquals('20200508095301', $row['temp_bigint'], 'testDataBase getRow content');
+        if (!array_key_exists('temp_float', $row) || !is_numeric($row['temp_float'])) {
+            self::fail('Invalid temp_float value received.');
+        }
         $this->assertEquals(23.45, round((float) $row['temp_float'], 2), 'testDataBase getRow content');
         $this->assertEquals('char10-1', $row['temp_char10'], 'testDataBase getRow content');
         $this->assertEquals('char20-1', $row['temp_char20'], 'testDataBase getRow content');
@@ -517,6 +526,7 @@ class ConnectionTest extends ConnectionTestCase
         $i = 0;
 
         foreach ($result as $rows) {
+            /** @var array{temp_id:string} $row */
             foreach ($rows as $row) {
                 $database->_pQuery('DELETE FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_id = ?', [$row['temp_id']]);
                 $i++;
@@ -707,6 +717,8 @@ class ConnectionTest extends ConnectionTestCase
     }
 
     /**
+     * @param scalar $value
+     *
      * @throws ConnectionException
      * @throws QueryException
      */
@@ -744,7 +756,7 @@ class ConnectionTest extends ConnectionTestCase
             $expect = substr((string) $expect, 0, 254);
         } elseif ($type === DataType::CHAR500) {
             $expect = substr((string) $expect, 0, 500);
-        } elseif ($type === DataType::FLOAT) {
+        } elseif ($type === DataType::FLOAT && is_scalar($actual)) {
             $actual = round((float) $actual, 1);
         }
 
@@ -752,7 +764,7 @@ class ConnectionTest extends ConnectionTestCase
     }
 
     /**
-     * @return array{mixed, DataType}[]
+     * @return array{scalar, DataType}[]
      */
     public static function databaseValueProvider(): array
     {
@@ -849,6 +861,10 @@ class ConnectionTest extends ConnectionTestCase
         $results = $connection->getPArray($query);
 
         foreach ($results as $result) {
+            if ((!is_int($result['temp_id']) && !is_string($result['temp_id'])) || !array_key_exists($result['temp_id'], $expected)) {
+                self::fail('Invalid temp id received.');
+            }
+
             $this->assertEquals($expected[$result['temp_id']], $result['extracted_value']);
         }
     }
@@ -875,6 +891,10 @@ class ConnectionTest extends ConnectionTestCase
         ];
 
         foreach ($results as $result) {
+            if ((!is_int($result['temp_id']) && !is_string($result['temp_id'])) || !array_key_exists($result['temp_id'], $expected)) {
+                self::fail('Invalid temp id received.');
+            }
+
             $this->assertEquals($expected[$result['temp_id']], $result['temp_text']);
         }
 
@@ -889,6 +909,10 @@ class ConnectionTest extends ConnectionTestCase
         ];
 
         foreach ($results as $result) {
+            if ((!is_int($result['temp_id']) && !is_string($result['temp_id'])) || !array_key_exists($result['temp_id'], $expected)) {
+                self::fail('Invalid temp id received.');
+            }
+
             $this->assertEquals($expected[$result['temp_id']], $result['temp_text']);
         }
     }

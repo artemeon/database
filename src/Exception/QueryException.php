@@ -19,7 +19,7 @@ use Throwable;
 class QueryException extends Exception
 {
     /**
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      */
     public function __construct(string $message, private readonly string $query, private readonly array $params, ?Throwable $previous = null)
     {
@@ -32,7 +32,7 @@ class QueryException extends Exception
     }
 
     /**
-     * @return list<mixed>
+     * @return list<scalar|null>
      */
     public function getParams(): array
     {

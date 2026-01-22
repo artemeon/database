@@ -25,12 +25,12 @@ use Symfony\Component\Process\Process;
 /**
  * Base class for all database-drivers, holds methods to be used by all drivers.
  *
- * @author sidler@mulchprod.de
+ * @template CacheType
  */
 abstract class DriverAbstract implements DriverInterface
 {
     /**
-     * @var array<array-key, mixed>
+     * @var array<array-key, CacheType>
      */
     protected array $statementsCache = [];
 
@@ -225,6 +225,7 @@ abstract class DriverAbstract implements DriverInterface
 
         $enclosedTableName = $this->encloseTableName($table);
 
+        /** @var list<array{cnt:numeric-string}>|false $rows */
         $rows = $this->getPArray("SELECT COUNT(*) AS cnt FROM $enclosedTableName WHERE " . implode(' AND ', $primaryCompares), $primaryValues)->current();
 
         if ($rows === false) {

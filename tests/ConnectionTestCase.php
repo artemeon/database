@@ -111,7 +111,7 @@ abstract class ConnectionTestCase extends TestCase
     }
 
     /**
-     * @return ($assoc is true ? list<array<string, mixed>> : list<list<mixed>>)
+     * @return ($assoc is true ? list<array<non-empty-string, scalar|null>> : list<list<scalar|null>>)
      */
     protected function getRows(int $count, bool $assoc = true): array
     {

@@ -31,6 +31,7 @@ class ConnectionStringLengthTest extends ConnectionTestCase
             . ' WHERE temp_char10 = ?';
         $row = $this->getConnection()->getPRow($query, ['char10-3']);
 
+        $this->assertIsScalar($row['val']);
         $this->assertEquals(8, (int) $row['val']);
     }
 }

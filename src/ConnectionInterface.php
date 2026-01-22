@@ -36,7 +36,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      * @param list<bool> $escapes
      *
      * @throws QueryException
@@ -54,7 +54,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Returns one row from a result-set.
      * Makes use of prepared statements.
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      * @param list<bool> $escapes
      *
      * @throws QueryException
@@ -69,7 +69,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      *
      * @param string $tableName the table name from which to select the row
      * @param list<string> $columns a flat list of column names to select
-     * @param array<string, mixed> $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
+     * @param array<string, scalar|null> $identifiers mapping of column name to value to search for (e.g. ["id" => 1])
      * @param bool $cached whether a previously selected result can be reused
      * @param list<bool>|null $escapes which parameters to escape (described in {@see dbsafeParams})
      * @throws QueryException
@@ -91,7 +91,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * false and don't modify the result set you will get an endless loop, so you must get sure that in the end the
      * result set will be empty.
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      *
      * @throws QueryException
      * @see iterateAssociative
@@ -103,7 +103,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      *
      * Sending a prepared statement to the database
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      * @param list<bool> $escapes An array of booleans for each param, used to block the escaping of html-special chars.
      *                            If not passed, all params will be cleaned.
      * @throws QueryException
@@ -122,7 +122,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * INSERT INTO $table ($columns) VALUES (?, ?), (?, ?)...
      *
      * @param list<string> $columns
-     * @param list<mixed> $valueSets
+     * @param list<array<scalar|null>> $valueSets
      * @param list<bool>|null $escapes
      * @throws QueryException
      */
@@ -135,7 +135,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * otherwise data might be lost. And: params are sent to the database unescaped.
      *
      * @param list<string> $columns
-     * @param list<mixed> $values
+     * @param list<scalar|null> $values
      * @param list<string> $primaryColumns
      *
      * @throws QueryException
@@ -196,7 +196,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Used to send a `CREATE TABLE` statement to the database.
      * By passing the query through this method, the driver can add db-specific commands.
      *
-     * @param array<non-empty-string, array{0: DataType, 1: bool, 2?: mixed}> $columns
+     * @param array<non-empty-string, array{0: DataType, 1: bool, 2?: string}> $columns
      * @param list<string> $keys
      * @param list<list<string>|string> $indices
      *
@@ -312,7 +312,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Helper to replace all param-placeholder with the matching value, only to be used
      * to render a debuggable-statement.
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      */
     public function prettifyQuery(string $query, array $params): string;
 
@@ -349,6 +349,10 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     /**
      * Converts a PHP value to a value, which can be inserted into a table. I.e. it truncates the value to
      * the fitting length for the provided datatype.
+     *
+     * @param scalar|null $value
+     *
+     * @return scalar|null
      */
     public function convertToDatabaseValue(mixed $value, DataType $type): mixed;
 
@@ -427,6 +431,10 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      */
     public function getColumnsOfTable(string $tableName): array;
 
+    /**
+     * @param scalar|null $value
+     * @return scalar|null
+     */
     public function escape(mixed $value): mixed;
 
     public function hasOpenTransactions(): bool;

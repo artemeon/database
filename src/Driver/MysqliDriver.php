@@ -33,6 +33,8 @@ use Symfony\Component\Process\Process;
 
 /**
  * DB-driver for MySQL using the php-mysqli-interface.
+ *
+ * @template-extends DriverAbstract<false|mysqli_stmt>
  */
 class MysqliDriver extends DriverAbstract
 {
@@ -257,6 +259,7 @@ class MysqliDriver extends DriverAbstract
     {
         $generator = $this->getPArray('SHOW TABLE STATUS', []);
         $result = [];
+        /** @var array{Name:string} $row */
         foreach ($generator as $row) {
             $result[] = ['name' => $row['Name']];
         }
@@ -275,6 +278,7 @@ class MysqliDriver extends DriverAbstract
 
         // fetch all columns
         $columnInfo = $this->getPArray("SHOW COLUMNS FROM $tableName", []);
+        /** @var array{Field:non-empty-string,Type:string,Null:string} $column */
         foreach ($columnInfo as $column) {
             $table->addColumn(
                 TableColumn::make($column['Field'])
@@ -287,6 +291,7 @@ class MysqliDriver extends DriverAbstract
         // fetch all indexes
         $indexes = $this->getPArray("SHOW INDEX FROM $tableName WHERE Key_name != 'PRIMARY'", []);
         $indexAggr = [];
+        /** @var array{Key_name:string,Column_name:string} $indexInfo */
         foreach ($indexes as $indexInfo) {
             $indexAggr[$indexInfo['Key_name']] ??= [];
             $indexAggr[$indexInfo['Key_name']][] = $indexInfo['Column_name'];
@@ -299,6 +304,7 @@ class MysqliDriver extends DriverAbstract
 
         // fetch all keys
         $keys = $this->getPArray("SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'", []);
+        /** @var array{Column_name:string} $keyInfo */
         foreach ($keys as $keyInfo) {
             $key = new TableKey($keyInfo['Column_name']);
             $table->addPrimaryKey($key);

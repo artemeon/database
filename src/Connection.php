@@ -24,6 +24,7 @@ use Artemeon\Database\Exception\TableNotFoundException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use BackedEnum;
 use Generator;
 use InvalidArgumentException;
 use Override;
@@ -45,7 +46,7 @@ class Connection implements ConnectionInterface
     /**
      * Array to cache queries.
      *
-     * @var array<string, list<mixed>>
+     * @var array<string, array<int, array<string, mixed>>>
      */
     private array $queryCache = [];
 
@@ -310,8 +311,6 @@ class Connection implements ConnectionInterface
             $this->dbconnect();
         }
 
-        $output = false;
-
         $query = $this->processQuery($query);
 
         // Increasing the counter
@@ -445,6 +444,8 @@ class Connection implements ConnectionInterface
     /**
      * @inheritDoc
      * @throws ConnectionException
+     *
+     * @return Generator<list<array<non-empty-string, mixed>>>
      */
     #[Override]
     public function getGenerator(string $query, array $params = [], int $chunkSize = 2048, bool $paging = true): Generator
@@ -605,7 +606,7 @@ class Connection implements ConnectionInterface
     /**
      * Writes the last DB-Error to the screen.
      *
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      *
      * @throws QueryException
      * @throws ConnectionException
@@ -1149,7 +1150,7 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * @param list<mixed> $params
+     * @param list<scalar|null> $params
      */
     private function addQueryToList(string $query, array $params, bool $cached, float $startTime): void
     {
@@ -1220,11 +1221,11 @@ class Connection implements ConnectionInterface
      * An internal wrapper to dbsafeString, used to process a complete array of parameters
      * as used by prepared statements.
      *
-     * @param array<array-key, mixed> $params
+     * @param array<array-key, BackedEnum|EscapeableParameterInterface|scalar|null> $params
      * @param list<bool>|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                                  If not passed, all params will be cleaned.
      *
-     * @return list<mixed>
+     * @return list<scalar|null>
      *
      * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
@@ -1232,7 +1233,7 @@ class Connection implements ConnectionInterface
     {
         $replace = [];
         foreach ($params as $key => $param) {
-            if ($param instanceof \BackedEnum) {
+            if ($param instanceof BackedEnum) {
                 $replace[$key] = $param->value;
 
                 continue;
@@ -1261,7 +1262,7 @@ class Connection implements ConnectionInterface
     /**
      * Makes a string db-safe.
      *
-     * @return int|float|null|string
+     * @return ($input is float ? float : ($input is int ? int : ($input is bool ? int<0,1> : ($input is null ? null : ($input is scalar ? string : mixed)))))
      * @deprecated we need to get rid of this
      */
     public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
@@ -1284,12 +1285,12 @@ class Connection implements ConnectionInterface
         }
 
         // escape special chars
-        if ($htmlSpecialChars) {
+        if (is_scalar($input) && $htmlSpecialChars) {
             $input = html_entity_decode((string) $input, ENT_COMPAT, 'UTF-8');
             $input = htmlspecialchars($input, ENT_COMPAT, 'UTF-8');
         }
 
-        if ($addSlashes) {
+        if (is_scalar($input) && $addSlashes) {
             $input = addslashes((string) $input);
         }
 
@@ -1392,7 +1393,7 @@ class Connection implements ConnectionInterface
     public function prettifyQuery(string $query, array $params): string
     {
         foreach ($params as $param) {
-            if (!is_numeric($param) && $param !== null) {
+            if (is_string($param)) {
                 $param = "'$param'";
             }
 
@@ -1403,7 +1404,7 @@ class Connection implements ConnectionInterface
             }
 
             $pos = strpos($query, '?');
-            if ($pos !== false) {
+            if ($pos !== false && is_string($param)) {
                 $query = substr_replace($query, $param, $pos, 1);
             }
         }
