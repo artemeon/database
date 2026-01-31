@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use SensitiveParameter;
+
 /**
  * Simple DTO to hold all relevant params required to open a db connection.
  */
@@ -28,7 +30,7 @@ final class ConnectionParameters
     public function __construct(
         private readonly string $host,
         private readonly string $username,
-        private readonly string $password,
+        #[SensitiveParameter] private readonly string $password,
         private readonly string $database,
         private readonly ?int $port,
         private readonly string $driver,
