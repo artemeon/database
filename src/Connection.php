@@ -30,6 +30,7 @@ use InvalidArgumentException;
 use Override;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Stringable;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
@@ -606,7 +607,7 @@ class Connection implements ConnectionInterface
     /**
      * Writes the last DB-Error to the screen.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      *
      * @throws QueryException
      * @throws ConnectionException
@@ -1150,7 +1151,7 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      */
     private function addQueryToList(string $query, array $params, bool $cached, float $startTime): void
     {

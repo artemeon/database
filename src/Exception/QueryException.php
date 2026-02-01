@@ -14,12 +14,13 @@ declare(strict_types=1);
 namespace Artemeon\Database\Exception;
 
 use Exception;
+use Stringable;
 use Throwable;
 
 class QueryException extends Exception
 {
     /**
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      */
     public function __construct(string $message, private readonly string $query, private readonly array $params, ?Throwable $previous = null)
     {
@@ -32,7 +33,7 @@ class QueryException extends Exception
     }
 
     /**
-     * @return list<scalar|null>
+     * @return list<scalar|Stringable|null>
      */
     public function getParams(): array
     {

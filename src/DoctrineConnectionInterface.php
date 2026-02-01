@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Artemeon\Database;
 
 use Generator;
+use Stringable;
 
 /**
  * Interface, which is compatible to the Doctrine DBAL Connection class
@@ -27,7 +28,7 @@ interface DoctrineConnectionInterface
     /**
      * Prepares and executes an SQL query and returns the result as an array of associative arrays.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      *
      * @return list<array<string, mixed>>
      */
@@ -37,7 +38,7 @@ interface DoctrineConnectionInterface
      * Prepares and executes an SQL query and returns the first row of the result
      * as an associative array.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      *
      * @return array<string, mixed>|false
      */
@@ -46,7 +47,7 @@ interface DoctrineConnectionInterface
     /**
      * Prepares and executes an SQL query and returns the result as an array of the first column values.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      *
      * @return list<mixed>
      */
@@ -55,7 +56,7 @@ interface DoctrineConnectionInterface
     /**
      * Prepares and executes an SQL query and returns the value of a single column of the first row of the result.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      */
     public function fetchOne(string $query, array $params = []): mixed;
 
@@ -63,14 +64,14 @@ interface DoctrineConnectionInterface
      * Prepares and executes an SQL query and returns the result as an iterator over rows represented
      * as associative arrays.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      */
     public function iterateAssociative(string $query, array $params = []): Generator;
 
     /**
      * Prepares and executes an SQL query and returns the result as an iterator over the first column values.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      */
     public function iterateColumn(string $query, array $params = []): Generator;
 

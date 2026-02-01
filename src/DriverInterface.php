@@ -19,6 +19,7 @@ use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use Generator;
+use Stringable;
 
 /**
  * Interface to specify the layout of db-drivers.
@@ -67,7 +68,7 @@ interface DriverInterface
      * Sends a prepared statement to the database. All params must be represented by the "?" char.
      * The params themselves are stored using the second params using the matching order.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      *
      * @throws QueryException
      */
@@ -77,7 +78,7 @@ interface DriverInterface
      * This method is used to retrieve an array of result-sets from the database using
      * a prepared statement.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      *
      * @throws QueryException
      *

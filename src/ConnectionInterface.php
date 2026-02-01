@@ -21,6 +21,7 @@ use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use Generator;
+use Stringable;
 
 /**
  * Interface of our internal database abstraction layer.
@@ -36,7 +37,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Method to get an array of rows for a given query from the database.
      * Makes use of prepared statements.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      * @param list<bool> $escapes
      *
      * @throws QueryException
@@ -54,7 +55,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Returns one row from a result-set.
      * Makes use of prepared statements.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      * @param list<bool> $escapes
      *
      * @throws QueryException
@@ -91,7 +92,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * false and don't modify the result set you will get an endless loop, so you must get sure that in the end the
      * result set will be empty.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      *
      * @throws QueryException
      * @see iterateAssociative
@@ -103,7 +104,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      *
      * Sending a prepared statement to the database
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      * @param list<bool> $escapes An array of booleans for each param, used to block the escaping of html-special chars.
      *                            If not passed, all params will be cleaned.
      * @throws QueryException
@@ -312,7 +313,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Helper to replace all param-placeholder with the matching value, only to be used
      * to render a debuggable-statement.
      *
-     * @param list<scalar|null> $params
+     * @param list<scalar|Stringable|null> $params
      */
     public function prettifyQuery(string $query, array $params): string;
 
