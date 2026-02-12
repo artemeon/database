@@ -177,7 +177,7 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function getPArray(string $query, array $params): Generator
     {
-        $statement = $this->getPreparedStatement($query, true);
+        $statement = $this->getPreparedStatement($query);
         $types = '';
 
         if ($statement === false) {
@@ -204,6 +204,8 @@ class MysqliDriver extends DriverAbstract
         $columnNames = array_column($meta->fetch_fields(), 'name');
 
         $meta->free();
+
+        $statement->store_result();
 
         $boundValues = array_fill(0, count($columnNames), null);
 
@@ -658,11 +660,11 @@ class MysqliDriver extends DriverAbstract
     /**
      * Prepares a statement or uses an instance from the cache.
      */
-    private function getPreparedStatement(string $query, bool $ignoreCache = false): false | mysqli_stmt
+    private function getPreparedStatement(string $query): false | mysqli_stmt
     {
         $name = $this->getPreparedStatementName($query);
 
-        if ($ignoreCache === false && isset($this->statementsCache[$name])) {
+        if (isset($this->statementsCache[$name])) {
             return $this->statementsCache[$name];
         }
 
