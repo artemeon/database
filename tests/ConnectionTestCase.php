@@ -19,6 +19,7 @@ use Artemeon\Database\DriverFactory;
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
+use Override;
 use PHPUnit\Framework\TestCase;
 
 abstract class ConnectionTestCase extends TestCase
@@ -27,7 +28,7 @@ abstract class ConnectionTestCase extends TestCase
 
     protected const string TEST_TABLE_NAME = 'agp_test_table';
 
-    #[\Override]
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -36,7 +37,7 @@ abstract class ConnectionTestCase extends TestCase
         $this->setupFixture();
     }
 
-    #[\Override]
+    #[Override]
     protected function tearDown(): void
     {
         parent::tearDown();
