@@ -7,8 +7,10 @@ namespace Artemeon\Database\Tests\Driver;
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Driver\PostgresDriver;
 use Mockery;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -16,6 +18,15 @@ use Symfony\Component\Process\Process;
  */
 final class PostgresDriverTest extends TestCase
 {
+    #[Override]
+    protected function setUp(): void
+    {
+        $dumpBin = new ExecutableFinder()->find('pg_dump');
+        if ($dumpBin === null) {
+            self::markTestSkipped('pg_dump not available');
+        }
+    }
+
     public function testBuildsDatabaseSpecificSubstringExpression(): void
     {
         $postgresDriver = new PostgresDriver();

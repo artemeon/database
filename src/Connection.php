@@ -1222,11 +1222,11 @@ class Connection implements ConnectionInterface
      * An internal wrapper to dbsafeString, used to process a complete array of parameters
      * as used by prepared statements.
      *
-     * @param array<array-key, BackedEnum|EscapeableParameterInterface|scalar|null> $params
+     * @param array<array-key, BackedEnum|EscapeableParameterInterface|Stringable|scalar|null> $params
      * @param list<bool>|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                                  If not passed, all params will be cleaned.
      *
-     * @return list<scalar|null>
+     * @return list<scalar|Stringable|null>
      *
      * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
@@ -1257,6 +1257,7 @@ class Connection implements ConnectionInterface
             $replace[$key] = $param;
         }
 
+        /** @var list<scalar|Stringable|null> */
         return array_values($replace);
     }
 
