@@ -196,17 +196,29 @@ class MysqliDriver extends DriverAbstract
             throw new QueryException('Could not execute statement: ' . $this->getError(), $query, $params);
         }
 
-        $result = $statement->get_result();
-
-        if ($result === false) {
-            return;
+        $meta = $statement->result_metadata();
+        if ($meta === false) {
+            throw new QueryException('Could not get result meta', $query, $params);
         }
 
-        while ($row = $result->fetch_assoc()) {
-            yield $row;
-        }
+        $columnNames = array_column($meta->fetch_fields(), 'name');
 
-        $result->free_result();
+        $meta->free();
+
+        $boundValues = array_fill(0, count($columnNames), null);
+
+        $refs = &$boundValues;
+
+        $statement->bind_result(...$refs);
+
+        while ($statement->fetch()) {
+            $values = [];
+            foreach ($boundValues as $value) {
+                $values[] = $value;
+            }
+
+            yield array_combine($columnNames, $values);
+        }
     }
 
     /**
