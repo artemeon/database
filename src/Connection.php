@@ -1226,7 +1226,7 @@ class Connection implements ConnectionInterface
      * @param list<bool>|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                                  If not passed, all params will be cleaned.
      *
-     * @return list<scalar|null>
+     * @return list<mixed>
      *
      * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
