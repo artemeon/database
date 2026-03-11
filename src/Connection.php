@@ -1226,7 +1226,7 @@ class Connection implements ConnectionInterface
      * @param list<bool>|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                                  If not passed, all params will be cleaned.
      *
-     * @return list<mixed>
+     * @return list<scalar|Stringable|null>
      *
      * @see Db::dbsafeString($string, $htmlSpecialChars = true)
      */
@@ -1243,6 +1243,10 @@ class Connection implements ConnectionInterface
             if ($param instanceof EscapeableParameterInterface && !$param->isEscape()) {
                 $replace[$key] = $param->getValue();
 
+                continue;
+            }
+
+            if ($param instanceof EscapeableParameterInterface) {
                 continue;
             }
 
@@ -1263,7 +1267,11 @@ class Connection implements ConnectionInterface
     /**
      * Makes a string db-safe.
      *
-     * @return ($input is float ? float : ($input is int ? int : ($input is bool ? int<0,1> : ($input is null ? null : ($input is scalar ? string : mixed)))))
+     * @template T
+     *
+     * @param T $input
+     *
+     * @return ($input is float ? float : ($input is int ? int : ($input is bool ? int<0,1> : ($input is null ? null : ($input is scalar ? string : ($input is Stringable ? string : T))))))
      * @deprecated we need to get rid of this
      */
     public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
@@ -1283,6 +1291,10 @@ class Connection implements ConnectionInterface
 
         if (!self::$dbSafeStringEnabled) {
             return $input;
+        }
+
+        if ($input instanceof Stringable) {
+            return (string) $input;
         }
 
         // escape special chars
