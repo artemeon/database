@@ -43,7 +43,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * @throws QueryException
      * @return array<int, array<string, mixed>>
      *
-     * @see fetchAllAssociative
+     * @deprecated Use {@see self::fetchAllAssociative()} instead.
      */
     public function getPArray(string $query, array $params = [], ?int $start = null, ?int $end = null, bool $cache = true, array $escapes = []): array;
 
@@ -61,7 +61,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * @throws QueryException
      * @return array<string, mixed>
      *
-     * @see fetchAssociative
+     * @deprecated Use {@see self::fetchAssociative()} instead.
      */
     public function getPRow(string $query, array $params = [], int $number = 0, bool $cache = true, array $escapes = []): array;
 
@@ -108,7 +108,8 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * @param list<bool> $escapes An array of booleans for each param, used to block the escaping of html-special chars.
      *                            If not passed, all params will be cleaned.
      * @throws QueryException
-     * @see executeStatement
+     *
+     * @deprecated Use {@see self::executeStatement()} instead.
      */
     public function _pQuery(string $query, array $params = [], array $escapes = []): bool;
 
