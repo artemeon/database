@@ -444,7 +444,17 @@ class MysqliDriver extends DriverAbstract
     #[Override]
     public function hasIndex(string $table, string $name): bool
     {
-        $index = iterator_to_array($this->getPArray("SHOW INDEX FROM $table WHERE Key_name = ?", [$name]), false);
+        $index = iterator_to_array(
+            $this->getPArray(
+                'SELECT 1 FROM information_schema.statistics
+                 WHERE table_schema = DATABASE()
+                   AND table_name = ?
+                   AND index_name = ?
+                 LIMIT 1',
+                [$table, $name],
+            ),
+            false,
+        );
 
         return count($index) > 0;
     }
