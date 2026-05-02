@@ -16,6 +16,7 @@ namespace Artemeon\Database\Tests;
 use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Exception\TableNotFoundException;
+use Artemeon\Database\Schema\DataType;
 
 /**
  * @internal
@@ -42,5 +43,16 @@ class ConnectionColumnTypeTest extends ConnectionTestCase
                 $this->getConnection()->getDatatype($details['columnType']),
             );
         }
+    }
+
+    public function testMapsToSameDatatype(): void
+    {
+        $connection = $this->getConnection();
+
+        $this->assertTrue($connection->mapsToSameDatatype(DataType::INT, DataType::INT));
+        $this->assertTrue($connection->mapsToSameDatatype(DataType::TEXT, DataType::TEXT));
+
+        // distinct types must not collapse on any backend
+        $this->assertFalse($connection->mapsToSameDatatype(DataType::INT, DataType::TEXT));
     }
 }

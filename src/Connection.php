@@ -865,6 +865,15 @@ class Connection implements ConnectionInterface
 
     /**
      * @inheritDoc
+     */
+    #[Override]
+    public function mapsToSameDatatype(DataType $a, DataType $b): bool
+    {
+        return $this->getDatatype($a) === $this->getDatatype($b);
+    }
+
+    /**
+     * @inheritDoc
      * @throws ConnectionException
      */
     #[Override]

@@ -245,6 +245,12 @@ class MockConnection implements ConnectionInterface
     }
 
     #[Override]
+    public function mapsToSameDatatype(DataType $a, DataType $b): bool
+    {
+        return $this->getDatatype($a) === $this->getDatatype($b);
+    }
+
+    #[Override]
     public function createTable(string $tableName, array $columns, array $keys, array $indices = []): bool
     {
         return true;

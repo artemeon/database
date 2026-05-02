@@ -295,6 +295,10 @@ class PostgresDriver extends DriverAbstract
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
+        if ($infoSchemaRow['data_type'] === 'smallint') {
+            return DataType::SMALLINT;
+        }
+
         if ($infoSchemaRow['data_type'] === 'integer') {
             return DataType::INT;
         }
@@ -341,6 +345,7 @@ class PostgresDriver extends DriverAbstract
     public function getDatatype(DataType $type): string
     {
         return match ($type) {
+            DataType::TINYINT, DataType::SMALLINT => ' SMALLINT ',
             DataType::INT => ' INT ',
             DataType::BIGINT => ' BIGINT ',
             DataType::FLOAT => ' NUMERIC ',
