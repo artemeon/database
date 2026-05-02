@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Artemeon\Database\Tests\Driver;
 
 use Artemeon\Database\Driver\Sqlite3Driver;
+use Artemeon\Database\Schema\DataType;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,5 +21,15 @@ final class Sqlite3DriverTest extends TestCase
         self::assertEquals('SUBSTR(test_column, 1, 1)', $sqlite3Driver->getSubstringExpression('test_column', 1, 1));
         self::assertEquals('SUBSTR("test value", 1)', $sqlite3Driver->getSubstringExpression('"test value"', 1, null));
         self::assertEquals('SUBSTR("test value", 1, 1)', $sqlite3Driver->getSubstringExpression('"test value"', 1, 1));
+    }
+
+    public function testCollapsesAllIntegerTypesToInteger(): void
+    {
+        $driver = new Sqlite3Driver();
+
+        self::assertSame(' INTEGER ', $driver->getDatatype(DataType::TINYINT));
+        self::assertSame(' INTEGER ', $driver->getDatatype(DataType::SMALLINT));
+        self::assertSame(' INTEGER ', $driver->getDatatype(DataType::INT));
+        self::assertSame(' INTEGER ', $driver->getDatatype(DataType::BIGINT));
     }
 }
