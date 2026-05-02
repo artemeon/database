@@ -18,6 +18,7 @@ use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use BackedEnum;
 use Generator;
 use Stringable;
 
@@ -68,7 +69,7 @@ interface DriverInterface
      * Sends a prepared statement to the database. All params must be represented by the "?" char.
      * The params themselves are stored using the second params using the matching order.
      *
-     * @param list<scalar|Stringable|null> $params
+     * @param list<BackedEnum|EscapeableParameterInterface|scalar|Stringable|null> $params
      *
      * @throws QueryException
      */

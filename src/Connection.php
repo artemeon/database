@@ -1222,7 +1222,7 @@ class Connection implements ConnectionInterface
      * An internal wrapper to dbsafeString, used to process a complete array of parameters
      * as used by prepared statements.
      *
-     * @param array<array-key, BackedEnum|EscapeableParameterInterface|scalar|null> $params
+     * @param array<array-key, BackedEnum|EscapeableParameterInterface|scalar|Stringable|null> $params
      * @param list<bool>|false $escapes An array of boolean for each param, used to block the escaping of html-special chars.
      *                                  If not passed, all params will be cleaned.
      *
@@ -1257,7 +1257,7 @@ class Connection implements ConnectionInterface
             $replace[$key] = $param;
         }
 
-        return array_values($replace);
+        return array_values($replace); // @phpstan-ignore return.type (Unable to fix right now)
     }
 
     /**
@@ -1268,6 +1268,14 @@ class Connection implements ConnectionInterface
      */
     public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
     {
+        if ($input instanceof BackedEnum) {
+            $input = $input->value;
+        }
+
+        if ($input instanceof EscapeableParameterInterface) {
+            $input = $input->getValue();
+        }
+
         // skip for numeric values to avoid php type juggling/autoboxing
         if (is_float($input) || is_int($input)) {
             return $input;
