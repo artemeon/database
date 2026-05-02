@@ -28,7 +28,6 @@ use mysqli_sql_exception;
 use mysqli_stmt;
 use Override;
 use RuntimeException;
-use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -565,7 +564,7 @@ class MysqliDriver extends DriverAbstract
             throw new RuntimeException('Connection parameters not set');
         }
 
-        $dumpBin = new ExecutableFinder()->find($this->dumpBin);
+        $dumpBin = $this->findExecutable($this->dumpBin);
         $dumpParams = [
             $dumpBin,
             '-h', escapeshellarg($this->config->getHost()),
@@ -608,7 +607,7 @@ class MysqliDriver extends DriverAbstract
             throw new RuntimeException('Connection parameters not set');
         }
 
-        $restoreBin = new ExecutableFinder()->find($this->restoreBin);
+        $restoreBin = $this->findExecutable($this->restoreBin);
 
         $restoreParams = [
             $restoreBin,

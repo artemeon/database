@@ -65,6 +65,12 @@ final class MysqliDriverTest extends TestCase
             ->makePartial();
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('mysqldump')
+            ->andReturn('/usr/bin/mysqldump');
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')
             ->once()
             ->withArgs(static function (Process $process) use ($expectedCommandLine): bool {
@@ -127,6 +133,12 @@ final class MysqliDriverTest extends TestCase
         $dbServiceMock->shouldReceive('handlesDumpCompression')
             ->once()
             ->andReturn(true);
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('mysql')
+            ->andReturn('/usr/bin/mysql');
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')
