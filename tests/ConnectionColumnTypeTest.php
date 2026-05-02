@@ -17,6 +17,7 @@ use Artemeon\Database\Exception\ConnectionException;
 use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Exception\TableNotFoundException;
 use Artemeon\Database\Schema\DataType;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * @internal
@@ -45,14 +46,22 @@ class ConnectionColumnTypeTest extends ConnectionTestCase
         }
     }
 
-    public function testMapsToSameDatatype(): void
+    /**
+     * @return iterable<string, array{DataType, DataType, bool}>
+     */
+    public static function provideMapsToSameDatatypeCases(): iterable
     {
-        $connection = $this->getConnection();
+        yield 'INT == INT' => [DataType::INT, DataType::INT, true];
+        yield 'TEXT == TEXT' => [DataType::TEXT, DataType::TEXT, true];
+        yield 'INT vs TEXT must stay distinct on every backend' => [DataType::INT, DataType::TEXT, false];
+    }
 
-        $this->assertTrue($connection->mapsToSameDatatype(DataType::INT, DataType::INT));
-        $this->assertTrue($connection->mapsToSameDatatype(DataType::TEXT, DataType::TEXT));
-
-        // distinct types must not collapse on any backend
-        $this->assertFalse($connection->mapsToSameDatatype(DataType::INT, DataType::TEXT));
+    #[DataProvider('provideMapsToSameDatatypeCases')]
+    public function testMapsToSameDatatype(DataType $a, DataType $b, bool $expected): void
+    {
+        $this->assertSame(
+            $expected,
+            $this->getConnection()->mapsToSameDatatype($a, $b),
+        );
     }
 }
