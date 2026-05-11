@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Artemeon\Database\Exception;
 
+use Artemeon\Database\EscapeableParameterInterface;
+use BackedEnum;
 use Exception;
 use Stringable;
 use Throwable;
@@ -20,7 +22,7 @@ use Throwable;
 class QueryException extends Exception
 {
     /**
-     * @param list<scalar|Stringable|null> $params
+     * @param list<BackedEnum|EscapeableParameterInterface|scalar|Stringable|null> $params
      */
     public function __construct(string $message, private readonly string $query, private readonly array $params, ?Throwable $previous = null)
     {
@@ -33,7 +35,7 @@ class QueryException extends Exception
     }
 
     /**
-     * @return list<scalar|Stringable|null>
+     * @return list<BackedEnum|EscapeableParameterInterface|scalar|Stringable|null>
      */
     public function getParams(): array
     {

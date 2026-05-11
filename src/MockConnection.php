@@ -17,6 +17,7 @@ use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use BackedEnum;
 use Generator;
 use Override;
 
@@ -342,6 +343,14 @@ class MockConnection implements ConnectionInterface
     public function prettifyQuery(string $query, array $params): string
     {
         foreach ($params as $param) {
+            if ($param instanceof BackedEnum) {
+                $param = $param->value;
+            }
+
+            if ($param instanceof EscapeableParameterInterface) {
+                $param = $param->getValue();
+            }
+
             $query = (string) preg_replace('/\?/', isset($param) ? '"' . $param . '"' : 'NULL', $query, 1);
         }
 
