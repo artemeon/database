@@ -20,6 +20,7 @@ use Artemeon\Database\Exception\RemoveColumnException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
+use BackedEnum;
 use Generator;
 use Stringable;
 
@@ -313,7 +314,7 @@ interface ConnectionInterface extends DoctrineConnectionInterface
      * Helper to replace all param-placeholder with the matching value, only to be used
      * to render a debuggable-statement.
      *
-     * @param list<scalar|Stringable|null> $params
+     * @param list<BackedEnum|EscapeableParameterInterface|scalar|Stringable|null> $params
      */
     public function prettifyQuery(string $query, array $params): string;
 
