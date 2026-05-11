@@ -1268,14 +1268,6 @@ class Connection implements ConnectionInterface
      */
     public function dbsafeString(mixed $input, bool $htmlSpecialChars = true, bool $addSlashes = true): mixed
     {
-        if ($input instanceof BackedEnum) {
-            $input = $input->value;
-        }
-
-        if ($input instanceof EscapeableParameterInterface) {
-            $input = $input->getValue();
-        }
-
         // skip for numeric values to avoid php type juggling/autoboxing
         if (is_float($input) || is_int($input)) {
             return $input;
