@@ -13,8 +13,14 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Stringable;
+
 interface EscapeableParameterInterface
 {
     public function isEscape(): bool;
+
+    /**
+     * @return scalar|Stringable|null
+     */
     public function getValue(): mixed;
 }
