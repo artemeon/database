@@ -20,6 +20,7 @@ use Artemeon\Database\Exception\QueryException;
 use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\TableIndex;
 use Override;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -364,5 +365,21 @@ abstract class DriverAbstract implements DriverInterface
         }
 
         return true;
+    }
+
+    /**
+     * Resolves an executable on $PATH.
+     *
+     * @throws \RuntimeException if the binary is not found
+     */
+    protected function findExecutable(string $name): string
+    {
+        $path = new ExecutableFinder()->find($name);
+
+        if ($path === null) {
+            throw new \RuntimeException("Executable '{$name}' not found in PATH");
+        }
+
+        return $path;
     }
 }

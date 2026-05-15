@@ -69,6 +69,12 @@ final class PostgresDriverTest extends TestCase
             ->andReturn(true);
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('pg_dump')
+            ->andReturn('/usr/bin/pg_dump');
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')
             ->once()
             ->withArgs(function (Process $process) use ($expectedCommandLine): bool {
@@ -131,6 +137,12 @@ final class PostgresDriverTest extends TestCase
         $dbServiceMock->shouldReceive('handlesDumpCompression')
             ->once()
             ->andReturn(true);
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('psql')
+            ->andReturn('/usr/bin/psql');
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')
