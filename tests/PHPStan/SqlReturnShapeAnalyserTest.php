@@ -17,6 +17,7 @@ $keysOf = static function (string $sql) use ($analyser): array {
     if (count($arrays) !== 1) {
         return [];
     }
+
     return array_map(static fn ($k) => $k->getValue(), $arrays[0]->getKeyTypes());
 };
 

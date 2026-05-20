@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Artemeon\Database\Tests\PHPStan\Data;
 
 use Artemeon\Database\ConnectionInterface;
+
 use function PHPStan\Testing\assertType;
 
 function selectList(ConnectionInterface $conn): void
@@ -23,6 +24,7 @@ function selectGenerator(ConnectionInterface $conn): \Generator
 {
     $gen = $conn->getGenerator('SELECT id FROM users');
     assertType('Generator<int, array{id: mixed}>', $gen);
+
     return $gen;
 }
 
@@ -37,4 +39,3 @@ function dynamicSqlFallsBack(ConnectionInterface $conn, string $sql): void
     $rows = $conn->getPArray($sql);
     assertType('array<int, array<string, mixed>>', $rows);
 }
-

@@ -10,6 +10,7 @@ use PHPStan\Testing\RuleTestCase;
 
 /**
  * @extends RuleTestCase<PlaceholderCountRule>
+ * @internal
  */
 final class PlaceholderCountRuleTest extends RuleTestCase
 {

@@ -49,6 +49,7 @@ final class PlaceholderCountRule implements Rule
         foreach ($callerType->getObjectClassReflections() as $classReflection) {
             if ($classReflection->getName() === $interface->getName() || $classReflection->is($interface->getName())) {
                 $isConnection = true;
+
                 break;
             }
         }
@@ -108,6 +109,7 @@ final class PlaceholderCountRule implements Rule
                 if ($char === "\n") {
                     $inLineComment = false;
                 }
+
                 continue;
             }
 
@@ -116,58 +118,69 @@ final class PlaceholderCountRule implements Rule
                     $inBlockComment = false;
                     $i++;
                 }
+
                 continue;
             }
 
             if ($inSingle) {
                 if ($char === '\\' && $next !== '') {
                     $i++;
+
                     continue;
                 }
                 if ($char === "'") {
                     if ($next === "'") {
                         $i++;
+
                         continue;
                     }
                     $inSingle = false;
                 }
+
                 continue;
             }
 
             if ($inDouble) {
                 if ($char === '\\' && $next !== '') {
                     $i++;
+
                     continue;
                 }
                 if ($char === '"') {
                     if ($next === '"') {
                         $i++;
+
                         continue;
                     }
                     $inDouble = false;
                 }
+
                 continue;
             }
 
             if ($char === "'") {
                 $inSingle = true;
+
                 continue;
             }
 
             if ($char === '"') {
                 $inDouble = true;
+
                 continue;
             }
 
             if ($char === '-' && $next === '-') {
                 $inLineComment = true;
                 $i++;
+
                 continue;
             }
 
             if ($char === '/' && $next === '*') {
                 $inBlockComment = true;
                 $i++;
+
                 continue;
             }
 
