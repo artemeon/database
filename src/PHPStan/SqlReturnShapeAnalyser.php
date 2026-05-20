@@ -101,7 +101,39 @@ final class SqlReturnShapeAnalyser
             return null;
         }
 
-        return $rendered;
+        return $this->stripWrappingParens($rendered);
+    }
+
+    private function stripWrappingParens(string $expression): string
+    {
+        while (strlen($expression) >= 2 && $expression[0] === '(' && substr($expression, -1) === ')') {
+            $inner = trim(substr($expression, 1, -1));
+            if ($inner === '' || !$this->parensBalancedAtTopLevel($inner)) {
+                break;
+            }
+            $expression = $inner;
+        }
+
+        return $this->unquote($expression);
+    }
+
+    private function parensBalancedAtTopLevel(string $expression): bool
+    {
+        $depth = 0;
+        $length = strlen($expression);
+        for ($i = 0; $i < $length; $i++) {
+            $char = $expression[$i];
+            if ($char === '(') {
+                $depth++;
+            } elseif ($char === ')') {
+                $depth--;
+                if ($depth < 0) {
+                    return false;
+                }
+            }
+        }
+
+        return $depth === 0;
     }
 
     private function unquote(string $identifier): string

@@ -38,6 +38,11 @@ it('lets later JOIN columns overwrite earlier ones with the same name', function
     expect($keysOf('SELECT a.id, b.id FROM a JOIN b ON a.id = b.id'))->toBe(['id']);
 });
 
+it('strips wrapping parentheses around column references', function () use ($keysOf): void {
+    expect($keysOf('SELECT DISTINCT(stats_handler) FROM cache'))->toBe(['stats_handler']);
+    expect($keysOf('SELECT (`name`) FROM users'))->toBe(['name']);
+});
+
 it('falls back to array<string, mixed> for SELECT *', function () use ($analyser): void {
     $type = $analyser->analyseRow('SELECT * FROM users');
     expect($type)->not()->toBeNull();
