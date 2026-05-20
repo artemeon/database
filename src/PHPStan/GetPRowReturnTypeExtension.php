@@ -11,6 +11,7 @@ use PHPStan\Reflection\MethodReflection;
 use PHPStan\Type\Constant\ConstantArrayTypeBuilder;
 use PHPStan\Type\DynamicMethodReturnTypeExtension;
 use PHPStan\Type\Type;
+use PHPStan\Type\TypeCombinator;
 
 final class GetPRowReturnTypeExtension implements DynamicMethodReturnTypeExtension
 {
@@ -46,17 +47,12 @@ final class GetPRowReturnTypeExtension implements DynamicMethodReturnTypeExtensi
             return null;
         }
 
-        $constantArrays = $rowType->getConstantArrays();
-        if (count($constantArrays) !== 1) {
-            return null;
+        if ($rowType->getConstantArrays() === []) {
+            return $rowType;
         }
 
-        $constant = $constantArrays[0];
-        $optional = ConstantArrayTypeBuilder::createEmpty();
-        foreach ($constant->getKeyTypes() as $i => $keyType) {
-            $optional->setOffsetValueType($keyType, $constant->getValueTypes()[$i], true);
-        }
+        $empty = ConstantArrayTypeBuilder::createEmpty()->getArray();
 
-        return $optional->getArray();
+        return TypeCombinator::union($rowType, $empty);
     }
 }

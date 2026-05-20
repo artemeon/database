@@ -1,13 +1,13 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Offset ''cnt'' might not exist on array\{cnt\?\: mixed\}\.$#'
+			message: '#^Offset ''cnt'' might not exist on array\{\}\|array\{cnt\: mixed\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 2
 			path: tests/ConnectionMultiInsertTest.php
 
 		-
-			message: '#^Offset ''val'' might not exist on array\{val\?\: mixed\}\.$#'
+			message: '#^Offset ''val'' might not exist on array\{\}\|array\{val\: mixed\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 2
 			path: tests/ConnectionRoundTest.php
@@ -25,13 +25,13 @@ parameters:
 			path: tests/ConnectionTest.php
 
 		-
-			message: '#^Offset ''temp_bigint_new'' might not exist on array\{temp_id\?\: mixed, temp_bigint_new\?\: mixed\}\.$#'
+			message: '#^Offset ''temp_bigint_new'' might not exist on array\{\}\|array\{temp_id\: mixed, temp_bigint_new\: mixed\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 2
 			path: tests/ConnectionTest.php
 
 		-
-			message: '#^Offset ''temp_id'' might not exist on array\{temp_id\?\: mixed, temp_bigint_new\?\: mixed\}\.$#'
+			message: '#^Offset ''temp_id'' might not exist on array\{\}\|array\{temp_id\: mixed, temp_bigint_new\: mixed\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 2
 			path: tests/ConnectionTest.php
@@ -43,7 +43,7 @@ parameters:
 			path: tests/ConnectionTest.php
 
 		-
-			message: '#^Offset ''cnt'' might not exist on array\{cnt\?\: mixed\}\.$#'
+			message: '#^Offset ''cnt'' might not exist on array\{\}\|array\{cnt\: mixed\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 2
 			path: tests/ConnectionTxTest.php
@@ -61,7 +61,7 @@ parameters:
 			path: tests/ConnectionUpsertTest.php
 
 		-
-			message: '#^Offset ''cnt'' might not exist on array\{cnt\?\: mixed\}\.$#'
+			message: '#^Offset ''cnt'' might not exist on array\{\}\|array\{cnt\: mixed\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 1
 			path: tests/ConnectionUpsertTest.php

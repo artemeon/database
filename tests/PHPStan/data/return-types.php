@@ -17,7 +17,7 @@ function selectList(ConnectionInterface $conn): void
 function selectRow(ConnectionInterface $conn): void
 {
     $row = $conn->getPRow('SELECT id, name FROM users');
-    assertType('array{id?: mixed, name?: mixed}', $row);
+    assertType('array{}|array{id: mixed, name: mixed}', $row);
 }
 
 function selectGenerator(ConnectionInterface $conn): \Generator
