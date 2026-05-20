@@ -1,8 +1,11 @@
 includes:
     - phpstan-baseline.neon
+    - phpstan-extension.neon
 
 parameters:
     level: 9
     paths:
         - src
         - tests
+    excludePaths:
+        - tests/PHPStan/data

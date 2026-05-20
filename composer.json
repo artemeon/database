@@ -16,6 +16,7 @@
   "require": {
     "php": ">=8.4",
     "psr/log": "^1|^2|^3",
+    "phpmyadmin/sql-parser": "^5.10",
     "symfony/process": "^5.0|^6.0|^7.0",
     "symfony/polyfill-mbstring": "^1.15"
   },
@@ -50,6 +51,13 @@
     "allow-plugins": {
       "phpstan/extension-installer": true,
       "pestphp/pest-plugin": true
+    }
+  },
+  "extra": {
+    "phpstan": {
+      "includes": [
+        "phpstan-extension.neon"
+      ]
     }
   }
 }

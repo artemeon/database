@@ -1,2 +1,79 @@
 parameters:
 	ignoreErrors:
+		-
+			message: '#^Method Artemeon\\Database\\Connection\:\:dbsafeParams\(\) should return list\<bool\|float\|int\|string\|null\> but returns list\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Connection.php
+
+		-
+			message: '#^Parameter \#1 \$params of method Artemeon\\Database\\Connection\:\:dbsafeParams\(\) expects array\<Artemeon\\Database\\EscapeableParameterInterface\|BackedEnum\|bool\|float\|int\|string\|null\>, list\<bool\|float\|int\|string\|Stringable\|null\> given\.$#'
+			identifier: argument.type
+			count: 9
+			path: src/Connection.php
+
+		-
+			message: '#^Offset ''cnt'' might not exist on array\{cnt\?\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionMultiInsertTest.php
+
+		-
+			message: '#^Offset ''val'' might not exist on array\{val\?\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionRoundTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 12 and array\{temp_char10\: mixed\} will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 16 and array\{temp_char10\: mixed\} will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset ''temp_bigint_new'' might not exist on array\{temp_id\?\: mixed, temp_bigint_new\?\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset ''temp_id'' might not exist on array\{temp_id\?\: mixed, temp_bigint_new\?\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset int\<0, 15\> does not exist on array\{temp_char10\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset ''cnt'' might not exist on array\{cnt\?\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionTxTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 3 and \*NEVER\* will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionUpsertTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 3 and array\{array\<string, mixed\>\} will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionUpsertTest.php
+
+		-
+			message: '#^Offset ''cnt'' might not exist on array\{cnt\?\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/ConnectionUpsertTest.php
