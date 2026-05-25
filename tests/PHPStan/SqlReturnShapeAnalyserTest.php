@@ -43,6 +43,15 @@ it('strips wrapping parentheses around column references', function () use ($key
     expect($keysOf('SELECT (`name`) FROM users'))->toBe(['name']);
 });
 
+it('infers shape from GROUP BY queries with aggregates', function () use ($keysOf): void {
+    expect($keysOf('SELECT user_id, COUNT(*) AS total FROM orders GROUP BY user_id'))
+        ->toBe(['user_id', 'total']);
+    expect($keysOf('SELECT category, MAX(price) AS max_p, MIN(price) AS min_p FROM products GROUP BY category'))
+        ->toBe(['category', 'max_p', 'min_p']);
+    expect($keysOf('SELECT user_id, SUM(amount) AS total FROM o GROUP BY user_id HAVING SUM(amount) > 100'))
+        ->toBe(['user_id', 'total']);
+});
+
 it('falls back to array<string, mixed> for SELECT *', function () use ($analyser): void {
     $type = $analyser->analyseRow('SELECT * FROM users');
     expect($type)->not()->toBeNull();
