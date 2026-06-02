@@ -195,6 +195,17 @@ interface ConnectionInterface extends DoctrineConnectionInterface
     public function getDatatype(DataType $type): string;
 
     /**
+     * Returns true when both datatypes resolve to the same backend SQL via
+     * {@see self::getDatatype()}.
+     *
+     * Useful for schema-drift checks: e.g. on Postgres, TINYINT and SMALLINT
+     * both map to "SMALLINT", and on SQLite all integer types collapse to
+     * "INTEGER". A naive enum comparison would falsely report drift after a
+     * round-trip through such a backend.
+     */
+    public function mapsToSameDatatype(DataType $a, DataType $b): bool;
+
+    /**
      * Used to send a `CREATE TABLE` statement to the database.
      * By passing the query through this method, the driver can add db-specific commands.
      *

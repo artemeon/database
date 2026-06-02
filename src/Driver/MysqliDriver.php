@@ -319,6 +319,14 @@ class MysqliDriver extends DriverAbstract
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
+        if ($infoSchemaRow['Type'] === 'tinyint(4)' || $infoSchemaRow['Type'] === 'tinyint') {
+            return DataType::TINYINT;
+        }
+
+        if ($infoSchemaRow['Type'] === 'smallint(6)' || $infoSchemaRow['Type'] === 'smallint') {
+            return DataType::SMALLINT;
+        }
+
         if ($infoSchemaRow['Type'] === 'int(11)' || $infoSchemaRow['Type'] === 'int') {
             return DataType::INT;
         }
@@ -373,6 +381,8 @@ class MysqliDriver extends DriverAbstract
     public function getDatatype(DataType $type): string
     {
         return match ($type) {
+            DataType::TINYINT => ' TINYINT ',
+            DataType::SMALLINT => ' SMALLINT ',
             DataType::INT => ' INT ',
             DataType::BIGINT => ' BIGINT ',
             DataType::FLOAT => ' DOUBLE ',
