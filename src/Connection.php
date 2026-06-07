@@ -25,12 +25,14 @@ use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use BackedEnum;
+use Closure;
 use Generator;
 use InvalidArgumentException;
 use Override;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Stringable;
+use Throwable;
 
 /**
  * This class handles all traffic from and to the database and takes care of a correct tx-handling
@@ -739,6 +741,24 @@ class Connection implements ConnectionInterface
             $this->currentTransactionIsDirty = true;
         }
         $this->numberOfOpenTransactions--;
+    }
+
+    #[Override]
+    public function transaction(Closure $callback): mixed
+    {
+        $this->beginTransaction();
+
+        try {
+            $callbackResult = $callback();
+        } catch (Throwable $exception) {
+            $this->rollBack();
+
+            throw $exception;
+        }
+
+        $this->commit();
+
+        return $callbackResult;
     }
 
     /**

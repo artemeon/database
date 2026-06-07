@@ -18,6 +18,7 @@ use Artemeon\Database\Schema\DataType;
 use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use BackedEnum;
+use Closure;
 use Generator;
 use Override;
 
@@ -219,6 +220,12 @@ class MockConnection implements ConnectionInterface
     #[Override]
     public function transactionRollback(): void
     {
+    }
+
+    #[Override]
+    public function transaction(Closure $callback): mixed
+    {
+        return $callback();
     }
 
     #[Override]

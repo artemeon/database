@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Closure;
 use Generator;
 use Stringable;
+use Throwable;
 
 /**
  * Interface, which is compatible to the Doctrine DBAL Connection class
@@ -128,4 +130,16 @@ interface DoctrineConnectionInterface
      * Rollback of the current transaction.
      */
     public function rollBack(): void;
+
+    /**
+     * Execute a Closure within a transaction.
+     *
+     * @template TReturn of mixed
+     *
+     * @param Closure():TReturn $callback
+     *
+     * @throws Throwable
+     * @return TReturn
+     */
+    public function transaction(Closure $callback): mixed;
 }
