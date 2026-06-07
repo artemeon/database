@@ -6,6 +6,7 @@ namespace Artemeon\Database\Tests\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Driver\PostgresDriver;
+use Artemeon\Database\Schema\DataType;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +25,17 @@ final class PostgresDriverTest extends TestCase
         self::assertEquals('SUBSTRING(cast (test_column as text), 1, 1)', $postgresDriver->getSubstringExpression('test_column', 1, 1));
         self::assertEquals('SUBSTRING(cast ("test value" as text), 1)', $postgresDriver->getSubstringExpression('"test value"', 1, null));
         self::assertEquals('SUBSTRING(cast ("test value" as text), 1, 1)', $postgresDriver->getSubstringExpression('"test value"', 1, 1));
+    }
+
+    public function testCollapsesTinyintToSmallint(): void
+    {
+        $driver = new PostgresDriver();
+
+        // Postgres has no 1-byte integer type, so TINYINT round-trips as SMALLINT.
+        self::assertSame(' SMALLINT ', $driver->getDatatype(DataType::TINYINT));
+        self::assertSame(' SMALLINT ', $driver->getDatatype(DataType::SMALLINT));
+        self::assertSame(' INT ', $driver->getDatatype(DataType::INT));
+        self::assertSame(' BIGINT ', $driver->getDatatype(DataType::BIGINT));
     }
 
     /**
@@ -67,6 +79,12 @@ final class PostgresDriverTest extends TestCase
         $dbServiceMock->shouldReceive('handlesDumpCompression')
             ->once()
             ->andReturn(true);
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('pg_dump')
+            ->andReturn('/usr/bin/pg_dump');
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')
@@ -131,6 +149,12 @@ final class PostgresDriverTest extends TestCase
         $dbServiceMock->shouldReceive('handlesDumpCompression')
             ->once()
             ->andReturn(true);
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('psql')
+            ->andReturn('/usr/bin/psql');
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')

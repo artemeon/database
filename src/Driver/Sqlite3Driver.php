@@ -610,7 +610,7 @@ class Sqlite3Driver extends DriverAbstract
     public function getDatatype(DataType $type): string
     {
         return match ($type) {
-            DataType::INT, DataType::BIGINT => ' INTEGER ',
+            DataType::TINYINT, DataType::SMALLINT, DataType::INT, DataType::BIGINT => ' INTEGER ',
             DataType::FLOAT => ' REAL ',
             default => ' TEXT ',
         };

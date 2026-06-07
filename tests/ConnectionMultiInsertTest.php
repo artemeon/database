@@ -52,6 +52,8 @@ class ConnectionMultiInsertTest extends ConnectionTestCase
         for ($i = 1; $i <= 50; $i++) {
             $row = $connection->getPRow('SELECT * FROM ' . self::TEST_TABLE_NAME . ' WHERE temp_int = ?', [123456 + $i]);
 
+            $this->assertEquals($i % 128, $row['temp_tinyint']);
+            $this->assertEquals(1000 + $i, $row['temp_smallint']);
             $this->assertEquals(123456 + $i, $row['temp_int']);
             $this->assertEquals(20200508095300 + $i, $row['temp_bigint']);
             $this->assertIsScalar($row['temp_float']);

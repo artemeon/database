@@ -6,6 +6,7 @@ namespace Artemeon\Database\Tests\Driver;
 
 use Artemeon\Database\ConnectionParameters;
 use Artemeon\Database\Driver\MysqliDriver;
+use Artemeon\Database\Schema\DataType;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +25,16 @@ final class MysqliDriverTest extends TestCase
         self::assertEquals('SUBSTRING(test_column, 1, 1)', $mysqliDriver->getSubstringExpression('test_column', 1, 1));
         self::assertEquals('SUBSTRING("test value", 1)', $mysqliDriver->getSubstringExpression('"test value"', 1, null));
         self::assertEquals('SUBSTRING("test value", 1, 1)', $mysqliDriver->getSubstringExpression('"test value"', 1, 1));
+    }
+
+    public function testKeepsIntegerTypesDistinct(): void
+    {
+        $driver = new MysqliDriver();
+
+        self::assertSame(' TINYINT ', $driver->getDatatype(DataType::TINYINT));
+        self::assertSame(' SMALLINT ', $driver->getDatatype(DataType::SMALLINT));
+        self::assertSame(' INT ', $driver->getDatatype(DataType::INT));
+        self::assertSame(' BIGINT ', $driver->getDatatype(DataType::BIGINT));
     }
 
     /**
@@ -63,6 +74,12 @@ final class MysqliDriverTest extends TestCase
 
         $dbServiceMock = Mockery::mock(MysqliDriver::class)
             ->makePartial();
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('mysqldump')
+            ->andReturn('/usr/bin/mysqldump');
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')
@@ -127,6 +144,12 @@ final class MysqliDriverTest extends TestCase
         $dbServiceMock->shouldReceive('handlesDumpCompression')
             ->once()
             ->andReturn(true);
+
+        $dbServiceMock->shouldAllowMockingProtectedMethods()
+            ->shouldReceive('findExecutable')
+            ->once()
+            ->with('mysql')
+            ->andReturn('/usr/bin/mysql');
 
         $dbServiceMock->shouldAllowMockingProtectedMethods()
             ->shouldReceive('runProcess')

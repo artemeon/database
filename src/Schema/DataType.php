@@ -18,6 +18,8 @@ namespace Artemeon\Database\Schema;
  */
 enum DataType: string
 {
+    case TINYINT = 'tinyint';
+    case SMALLINT = 'smallint';
     case INT = 'int';
     case BIGINT = 'long';
     case FLOAT = 'double';
