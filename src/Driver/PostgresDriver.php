@@ -25,7 +25,6 @@ use Generator;
 use Override;
 use PgSql\Connection;
 use RuntimeException;
-use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -295,6 +294,10 @@ class PostgresDriver extends DriverAbstract
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
+        if ($infoSchemaRow['data_type'] === 'smallint') {
+            return DataType::SMALLINT;
+        }
+
         if ($infoSchemaRow['data_type'] === 'integer') {
             return DataType::INT;
         }
@@ -341,6 +344,7 @@ class PostgresDriver extends DriverAbstract
     public function getDatatype(DataType $type): string
     {
         return match ($type) {
+            DataType::TINYINT, DataType::SMALLINT => ' SMALLINT ',
             DataType::INT => ' INT ',
             DataType::BIGINT => ' BIGINT ',
             DataType::FLOAT => ' NUMERIC ',
@@ -525,7 +529,7 @@ class PostgresDriver extends DriverAbstract
             $port = 5432;
         }
 
-        $dumpBin = new ExecutableFinder()->find($this->dumpBin);
+        $dumpBin = $this->findExecutable($this->dumpBin);
         $dumpParams = [
             $dumpBin,
             '--clean',
@@ -571,7 +575,7 @@ class PostgresDriver extends DriverAbstract
             throw new RuntimeException('Connection parameters not set');
         }
 
-        $restoreBin = new ExecutableFinder()->find($this->restoreBin);
+        $restoreBin = $this->findExecutable($this->restoreBin);
         if ($this->handlesDumpCompression() && pathinfo($fileName, PATHINFO_EXTENSION) === 'gz') {
             $restoreParams = [
                 $restoreBin,

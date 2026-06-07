@@ -11,16 +11,9 @@
 
 declare(strict_types=1);
 
-namespace Artemeon\Database;
+namespace Artemeon\Database\Tests\Fixtures;
 
-use Stringable;
-
-interface EscapeableParameterInterface
+enum IntBackedEnum: int
 {
-    public function isEscape(): bool;
-
-    /**
-     * @return scalar|Stringable|null
-     */
-    public function getValue(): mixed;
+    case Forty = 40;
 }

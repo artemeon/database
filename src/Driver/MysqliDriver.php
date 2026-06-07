@@ -28,7 +28,6 @@ use mysqli_sql_exception;
 use mysqli_stmt;
 use Override;
 use RuntimeException;
-use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -320,6 +319,14 @@ class MysqliDriver extends DriverAbstract
      */
     private function getCoreTypeForDbType(array $infoSchemaRow): ?DataType
     {
+        if ($infoSchemaRow['Type'] === 'tinyint(4)' || $infoSchemaRow['Type'] === 'tinyint') {
+            return DataType::TINYINT;
+        }
+
+        if ($infoSchemaRow['Type'] === 'smallint(6)' || $infoSchemaRow['Type'] === 'smallint') {
+            return DataType::SMALLINT;
+        }
+
         if ($infoSchemaRow['Type'] === 'int(11)' || $infoSchemaRow['Type'] === 'int') {
             return DataType::INT;
         }
@@ -374,6 +381,8 @@ class MysqliDriver extends DriverAbstract
     public function getDatatype(DataType $type): string
     {
         return match ($type) {
+            DataType::TINYINT => ' TINYINT ',
+            DataType::SMALLINT => ' SMALLINT ',
             DataType::INT => ' INT ',
             DataType::BIGINT => ' BIGINT ',
             DataType::FLOAT => ' DOUBLE ',
@@ -565,7 +574,7 @@ class MysqliDriver extends DriverAbstract
             throw new RuntimeException('Connection parameters not set');
         }
 
-        $dumpBin = new ExecutableFinder()->find($this->dumpBin);
+        $dumpBin = $this->findExecutable($this->dumpBin);
         $dumpParams = [
             $dumpBin,
             '-h', escapeshellarg($this->config->getHost()),
@@ -608,7 +617,7 @@ class MysqliDriver extends DriverAbstract
             throw new RuntimeException('Connection parameters not set');
         }
 
-        $restoreBin = new ExecutableFinder()->find($this->restoreBin);
+        $restoreBin = $this->findExecutable($this->restoreBin);
 
         $restoreParams = [
             $restoreBin,

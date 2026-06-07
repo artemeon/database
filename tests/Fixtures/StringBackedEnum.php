@@ -11,16 +11,11 @@
 
 declare(strict_types=1);
 
-namespace Artemeon\Database;
+namespace Artemeon\Database\Tests\Fixtures;
 
-use Stringable;
-
-interface EscapeableParameterInterface
+enum StringBackedEnum: string
 {
-    public function isEscape(): bool;
-
-    /**
-     * @return scalar|Stringable|null
-     */
-    public function getValue(): mixed;
+    case Foo = 'foo';
+    case WithHtml = '<a>';
+    case WithQuote = "O'Brien";
 }

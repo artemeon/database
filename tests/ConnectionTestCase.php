@@ -92,6 +92,8 @@ abstract class ConnectionTestCase extends TestCase
     {
         return [
             'temp_id' => [DataType::CHAR20, false],
+            'temp_tinyint' => [DataType::TINYINT, true],
+            'temp_smallint' => [DataType::SMALLINT, true],
             'temp_int' => [DataType::INT, true],
             'temp_bigint' => [DataType::BIGINT, true],
             'temp_float' => [DataType::FLOAT, true],
@@ -119,6 +121,8 @@ abstract class ConnectionTestCase extends TestCase
         for ($i = 1; $i <= $count; $i++) {
             $row = [
                 'temp_id' => $this->generateSystemid(),
+                'temp_tinyint' => $i % 128,
+                'temp_smallint' => 1000 + $i,
                 'temp_int' => 123456 + $i,
                 'temp_bigint' => 20200508095300 + $i,
                 'temp_float' => 23.45,
@@ -144,6 +148,8 @@ abstract class ConnectionTestCase extends TestCase
     {
         return [
             'temp_id',
+            'temp_tinyint',
+            'temp_smallint',
             'temp_int',
             'temp_bigint',
             'temp_float',
