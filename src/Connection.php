@@ -750,13 +750,13 @@ class Connection implements ConnectionInterface
 
         try {
             $callbackResult = $callback();
+
+            $this->commit();
         } catch (Throwable $exception) {
             $this->rollBack();
 
             throw $exception;
         }
-
-        $this->commit();
 
         return $callbackResult;
     }
