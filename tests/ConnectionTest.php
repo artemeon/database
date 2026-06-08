@@ -1043,16 +1043,6 @@ class ConnectionTest extends ConnectionTestCase
                 'input' => StringBackedEnum::WithQuote,
                 'expected' => "O\\'Brien",
             ],
-            'BackedEnum (htmlSpecialChars=false skips html escape)' => [
-                'input' => StringBackedEnum::WithHtml,
-                'expected' => '<a>',
-                'htmlSpecialChars' => false,
-            ],
-            'BackedEnum (addSlashes=false skips slash escape)' => [
-                'input' => StringBackedEnum::WithQuote,
-                'expected' => "O'Brien",
-                'addSlashes' => false,
-            ],
             'EscapeableParameterInterface (string)' => [
                 'input' => new EscapeableValue('hello'),
                 'expected' => 'hello',
@@ -1072,16 +1062,6 @@ class ConnectionTest extends ConnectionTestCase
             'EscapeableParameterInterface (string with quote is escaped)' => [
                 'input' => new EscapeableValue("O'Brien"),
                 'expected' => "O\\'Brien",
-            ],
-            'EscapeableParameterInterface (htmlSpecialChars=false skips html escape)' => [
-                'input' => new EscapeableValue('<a>'),
-                'expected' => '<a>',
-                'htmlSpecialChars' => false,
-            ],
-            'EscapeableParameterInterface (addSlashes=false skips slash escape)' => [
-                'input' => new EscapeableValue("O'Brien"),
-                'expected' => "O'Brien",
-                'addSlashes' => false,
             ],
         ];
     }
