@@ -141,5 +141,5 @@ interface DoctrineConnectionInterface
      * @throws Throwable
      * @return TReturn
      */
-    public function transaction(Closure $callback): mixed;
+    public function transactional(Closure $callback): mixed;
 }

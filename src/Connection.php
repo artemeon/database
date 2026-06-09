@@ -744,7 +744,7 @@ class Connection implements ConnectionInterface
     }
 
     #[Override]
-    public function transaction(Closure $callback): mixed
+    public function transactional(Closure $callback): mixed
     {
         $this->beginTransaction();
 

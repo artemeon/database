@@ -223,7 +223,7 @@ class MockConnection implements ConnectionInterface
     }
 
     #[Override]
-    public function transaction(Closure $callback): mixed
+    public function transactional(Closure $callback): mixed
     {
         return $callback();
     }
