@@ -1,2 +1,67 @@
 parameters:
 	ignoreErrors:
+		-
+			message: '#^Offset ''cnt'' might not exist on array\{\}\|array\{cnt\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionMultiInsertTest.php
+
+		-
+			message: '#^Offset ''val'' might not exist on array\{\}\|array\{val\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionRoundTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 12 and array\{temp_char10\: mixed\} will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 16 and array\{temp_char10\: mixed\} will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset ''temp_bigint_new'' might not exist on array\{\}\|array\{temp_id\: mixed, temp_bigint_new\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset ''temp_id'' might not exist on array\{\}\|array\{temp_id\: mixed, temp_bigint_new\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset int\<0, 15\> does not exist on array\{temp_char10\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/ConnectionTest.php
+
+		-
+			message: '#^Offset ''cnt'' might not exist on array\{\}\|array\{cnt\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/ConnectionTxTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 3 and \*NEVER\* will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionUpsertTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertCount\(\) with 3 and array\{array\<string, mixed\>\} will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/ConnectionUpsertTest.php
+
+		-
+			message: '#^Offset ''cnt'' might not exist on array\{\}\|array\{cnt\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/ConnectionUpsertTest.php

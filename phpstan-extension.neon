@@ -1,0 +1,23 @@
+services:
+    -
+        class: Artemeon\Database\PHPStan\SqlReturnShapeAnalyser
+
+    -
+        class: Artemeon\Database\PHPStan\GetPArrayReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: Artemeon\Database\PHPStan\GetPRowReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: Artemeon\Database\PHPStan\GetGeneratorReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: Artemeon\Database\PHPStan\PlaceholderCountRule
+        tags:
+            - phpstan.rules.rule
