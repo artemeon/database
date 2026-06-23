@@ -121,3 +121,32 @@ $count = $connection->createQueryBuilder()
     ->fetchOne();
 
 printf("  Total books in table: %d\n", $count);
+
+echo "\n5) Complex WHERE with AND, OR, and IN\n";
+echo "---------------------------------------\n";
+// Books published before 2000 OR after 2010, but only from a specific id set
+$qb = $connection->createQueryBuilder();
+$rows = $qb
+    ->select('title', 'author', 'year')
+    ->from($table)
+    ->where(
+        $qb->expr()->and(
+            $qb->expr()->or(
+                $qb->expr()->lt('year', ':cutoff_low'),
+                $qb->expr()->gt('year', ':cutoff_high'),
+            ),
+            $qb->expr()->in('id', [':b1', ':b2', ':b3']),
+        ),
+    )
+    ->setParameter('cutoff_low', 2000)
+    ->setParameter('cutoff_high', 2010)
+    ->setParameter('b1', 'b-1')
+    ->setParameter('b2', 'b-3')
+    ->setParameter('b3', 'b-5')
+    ->orderBy('year', 'ASC')
+    ->executeQuery()
+    ->fetchAllAssociative();
+
+foreach ($rows as $row) {
+    printf("  %d  %-45s  %s\n", $row['year'], $row['title'], $row['author']);
+}
