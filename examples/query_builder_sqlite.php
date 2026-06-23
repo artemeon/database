@@ -42,27 +42,53 @@ $connection = new Connection($params, new DriverFactory());
 // --- Schema + seed -----------------------------------------------------------
 
 $table = 'demo_books';
+$tableReviews = 'demo_reviews';
+
 $connection->dropTable($table);
+$connection->dropTable($tableReviews);
+
 $connection->createTable(
     $table,
     [
-        'id' => [DataType::CHAR20, false],
-        'title' => [DataType::CHAR100, false],
+        'id'     => [DataType::CHAR20, false],
+        'title'  => [DataType::CHAR100, false],
         'author' => [DataType::CHAR100, false],
-        'year' => [DataType::INT, true],
+        'year'   => [DataType::INT, true],
+    ],
+    ['id'],
+);
+
+$connection->createTable(
+    $tableReviews,
+    [
+        'id'      => [DataType::CHAR20, false],
+        'book_id' => [DataType::CHAR20, false],
+        'stars'   => [DataType::INT, true],
+        'comment' => [DataType::CHAR100, true],
     ],
     ['id'],
 );
 
 $books = [
-    ['id' => 'b-1', 'title' => 'The Pragmatic Programmer', 'author' => 'Andy Hunt',     'year' => 1999],
-    ['id' => 'b-2', 'title' => 'Refactoring',              'author' => 'Martin Fowler', 'year' => 1999],
-    ['id' => 'b-3', 'title' => 'Domain-Driven Design',     'author' => 'Eric Evans',    'year' => 2003],
-    ['id' => 'b-4', 'title' => 'Clean Code',               'author' => 'Robert Martin', 'year' => 2008],
+    ['id' => 'b-1', 'title' => 'The Pragmatic Programmer',              'author' => 'Andy Hunt',        'year' => 1999],
+    ['id' => 'b-2', 'title' => 'Refactoring',                           'author' => 'Martin Fowler',    'year' => 1999],
+    ['id' => 'b-3', 'title' => 'Domain-Driven Design',                  'author' => 'Eric Evans',       'year' => 2003],
+    ['id' => 'b-4', 'title' => 'Clean Code',                            'author' => 'Robert Martin',    'year' => 2008],
     ['id' => 'b-5', 'title' => 'Designing Data-Intensive Applications', 'author' => 'Martin Kleppmann', 'year' => 2017],
 ];
 foreach ($books as $book) {
     $connection->insert($table, $book);
+}
+
+$reviews = [
+    ['id' => 'r-1', 'book_id' => 'b-1', 'stars' => 5, 'comment' => 'Essential read'],
+    ['id' => 'r-2', 'book_id' => 'b-1', 'stars' => 4, 'comment' => 'Very practical'],
+    ['id' => 'r-3', 'book_id' => 'b-3', 'stars' => 5, 'comment' => 'Changed how I think'],
+    ['id' => 'r-4', 'book_id' => 'b-4', 'stars' => 3, 'comment' => 'Good but dated'],
+    ['id' => 'r-5', 'book_id' => 'b-5', 'stars' => 5, 'comment' => 'Comprehensive'],
+];
+foreach ($reviews as $review) {
+    $connection->insert($tableReviews, $review);
 }
 
 // --- Build queries via the Doctrine DBAL QueryBuilder ------------------------
@@ -149,4 +175,21 @@ $rows = $qb
 
 foreach ($rows as $row) {
     printf("  %d  %-45s  %s\n", $row['year'], $row['title'], $row['author']);
+}
+
+echo "\n6) JOIN books with reviews, filter by minimum rating\n";
+echo "------------------------------------------------------\n";
+$qb = $connection->createQueryBuilder();
+$rows = $qb
+    ->select('b.title', 'b.author', 'r.stars', 'r.comment')
+    ->from($table, 'b')
+    ->innerJoin('b', $tableReviews, 'r', 'r.book_id = b.id')
+    ->where($qb->expr()->gte('r.stars', ':min_stars'))
+    ->setParameter('min_stars', 5)
+    ->orderBy('b.year', 'ASC')
+    ->executeQuery()
+    ->fetchAllAssociative();
+
+foreach ($rows as $row) {
+    printf("  %-45s  %d★  %s\n", $row['title'], $row['stars'], $row['comment']);
 }
