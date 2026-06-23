@@ -50,10 +50,10 @@ $connection->dropTable($tableReviews);
 $connection->createTable(
     $table,
     [
-        'id'     => [DataType::CHAR20, false],
-        'title'  => [DataType::CHAR100, false],
+        'id' => [DataType::CHAR20, false],
+        'title' => [DataType::CHAR100, false],
         'author' => [DataType::CHAR100, false],
-        'year'   => [DataType::INT, true],
+        'year' => [DataType::INT, true],
     ],
     ['id'],
 );
@@ -61,19 +61,19 @@ $connection->createTable(
 $connection->createTable(
     $tableReviews,
     [
-        'id'      => [DataType::CHAR20, false],
+        'id' => [DataType::CHAR20, false],
         'book_id' => [DataType::CHAR20, false],
-        'stars'   => [DataType::INT, true],
+        'stars' => [DataType::INT, true],
         'comment' => [DataType::CHAR100, true],
     ],
     ['id'],
 );
 
 $books = [
-    ['id' => 'b-1', 'title' => 'The Pragmatic Programmer',              'author' => 'Andy Hunt',        'year' => 1999],
-    ['id' => 'b-2', 'title' => 'Refactoring',                           'author' => 'Martin Fowler',    'year' => 1999],
-    ['id' => 'b-3', 'title' => 'Domain-Driven Design',                  'author' => 'Eric Evans',       'year' => 2003],
-    ['id' => 'b-4', 'title' => 'Clean Code',                            'author' => 'Robert Martin',    'year' => 2008],
+    ['id' => 'b-1', 'title' => 'The Pragmatic Programmer', 'author' => 'Andy Hunt', 'year' => 1999],
+    ['id' => 'b-2', 'title' => 'Refactoring', 'author' => 'Martin Fowler', 'year' => 1999],
+    ['id' => 'b-3', 'title' => 'Domain-Driven Design', 'author' => 'Eric Evans', 'year' => 2003],
+    ['id' => 'b-4', 'title' => 'Clean Code', 'author' => 'Robert Martin', 'year' => 2008],
     ['id' => 'b-5', 'title' => 'Designing Data-Intensive Applications', 'author' => 'Martin Kleppmann', 'year' => 2017],
 ];
 foreach ($books as $book) {

@@ -150,7 +150,7 @@ class MockConnection implements ConnectionInterface
         return 1;
     }
 
-#[Override]
+    #[Override]
     public function getAffectedRowsCount(): int
     {
         return 1;

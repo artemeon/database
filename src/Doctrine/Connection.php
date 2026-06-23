@@ -47,7 +47,7 @@ final class Connection implements DriverConnection
 
     public function quote(string $value): string
     {
-        return "'" . str_replace(["\\", "'"], ["\\\\", "''"], $value) . "'";
+        return "'" . str_replace(['\\', "'"], ['\\\\', "''"], $value) . "'";
     }
 
     public function exec(string $sql): int
@@ -55,7 +55,7 @@ final class Connection implements DriverConnection
         return $this->connection->executeStatement($sql);
     }
 
-    public function lastInsertId(): int|string
+    public function lastInsertId(): int | string
     {
         throw NoIdentityValue::new();
     }

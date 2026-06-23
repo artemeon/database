@@ -38,7 +38,7 @@ final class Statement implements DriverStatement
     ) {
     }
 
-    public function bindValue(int|string $param, mixed $value, ParameterType $type): void
+    public function bindValue(int | string $param, mixed $value, ParameterType $type): void
     {
         if (is_string($param)) {
             throw new LogicException(
