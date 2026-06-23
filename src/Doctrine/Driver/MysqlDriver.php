@@ -30,8 +30,8 @@ final class MysqlDriver extends AbstractMySQLDriver
 
     public function connect(#[SensitiveParameter] array $params): DriverConnection
     {
-        $version = (string) $this->connection->fetchOne('SELECT VERSION()');
+        $version = $this->connection->fetchOne('SELECT VERSION()');
 
-        return new DriverConnectionAdapter($this->connection, $version);
+        return new DriverConnectionAdapter($this->connection, is_string($version) ? $version : '8.0.0');
     }
 }
