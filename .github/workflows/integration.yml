@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 5.x
       - 4.0.x
       - 3.0.x
       - 2.0.x
@@ -15,15 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version:
-          - "8.4"
+        php: [ 8.4, 8.5 ]
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
-          php-version: "${{ matrix.php-version }}"
+          php-version: "${{ matrix.php }}"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
         with:
@@ -40,8 +40,7 @@ jobs:
     needs: smoke-check
     strategy:
       matrix:
-        php-version:
-          - "8.4"
+        php: [ 8.4, 8.5 ]
         postgres-version:
           - "13"
           - "14"
@@ -60,7 +59,7 @@ jobs:
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
-          php-version: "${{ matrix.php-version }}"
+          php-version: "${{ matrix.php }}"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
         with:
@@ -79,8 +78,7 @@ jobs:
     needs: smoke-check
     strategy:
       matrix:
-        php-version:
-          - "8.4"
+        php: [ 8.4, 8.5 ]
         mariadb-version:
           - "10.6"
           - "10.8"
@@ -102,7 +100,7 @@ jobs:
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
-          php-version: "${{ matrix.php-version }}"
+          php-version: "${{ matrix.php }}"
           extensions: "mysqli"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
@@ -122,8 +120,7 @@ jobs:
     needs: smoke-check
     strategy:
       matrix:
-        php-version:
-          - "8.4"
+        php-version: [ 8.4, 8.5 ]
         mysql-version:
           - "8.0"
           - "9.0"
@@ -148,7 +145,7 @@ jobs:
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
-          php-version: "${{ matrix.php-version }}"
+          php-version: "${{ matrix.php }}"
           extensions: "mysqli"
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
