@@ -15,6 +15,7 @@
   ],
   "require": {
     "php": ">=8.4",
+    "doctrine/dbal": "^4",
     "psr/log": "^1|^2|^3",
     "phpmyadmin/sql-parser": "^5.10",
     "symfony/process": "^5.0|^6.0|^7.0|^8.0",

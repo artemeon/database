@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace Artemeon\Database;
 
+use Artemeon\Database\Doctrine\Driver\MysqlDriver as DoctrineMysqlDriver;
+use Artemeon\Database\Doctrine\Driver\PostgresDriver as DoctrinePostgresDriver;
+use Artemeon\Database\Doctrine\Driver\SqliteDriver as DoctrineSqliteDriver;
 use Artemeon\Database\Exception\AddColumnException;
 use Artemeon\Database\Exception\ChangeColumnException;
 use Artemeon\Database\Exception\CommitException;
@@ -26,6 +29,9 @@ use Artemeon\Database\Schema\Table;
 use Artemeon\Database\Schema\TableIndex;
 use BackedEnum;
 use Closure;
+use Doctrine\DBAL\Configuration as DbalConfiguration;
+use Doctrine\DBAL\Connection as DbalConnection;
+use Doctrine\DBAL\Query\QueryBuilder;
 use Generator;
 use InvalidArgumentException;
 use Override;
@@ -72,6 +78,8 @@ class Connection implements ConnectionInterface
      * Number of queries returned from cache.
      */
     private int $numberCache = 0;
+
+    private ?DbalConnection $dbalConnection = null;
 
     /**
      * Instance of the db-driver defined in the configs.
@@ -348,6 +356,21 @@ class Connection implements ConnectionInterface
         $this->_pQuery($query, $params);
 
         return $this->dbDriver->getAffectedRowsCount();
+    }
+
+    public function createQueryBuilder(): QueryBuilder
+    {
+        if ($this->dbalConnection === null) {
+            $driver = match ($this->connectionParams->getDriver()) {
+                'mysqli' => new DoctrineMysqlDriver($this),
+                'postgres' => new DoctrinePostgresDriver($this),
+                default => new DoctrineSqliteDriver($this),
+            };
+
+            $this->dbalConnection = new DbalConnection([], $driver, new DbalConfiguration());
+        }
+
+        return $this->dbalConnection->createQueryBuilder();
     }
 
     /**
