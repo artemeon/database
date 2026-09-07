@@ -3,6 +3,7 @@ on:
   pull_request:
   push:
     branches:
+      - 5.x
       - 4.0.x
 jobs:
   phpstan:
