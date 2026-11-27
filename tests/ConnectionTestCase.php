@@ -25,6 +25,8 @@ abstract class ConnectionTestCase extends TestCase
 {
     private static ?Connection $connection = null;
 
+    private static ?RecordingLogger $logger = null;
+
     protected const string TEST_TABLE_NAME = 'agp_test_table';
 
     #[\Override]
@@ -58,9 +60,14 @@ abstract class ConnectionTestCase extends TestCase
         $params = new ConnectionParameters($host, $user, $password, $database, $port, $driver);
         $factory = new DriverFactory();
 
-        self::$connection = new Connection($params, $factory);
+        self::$connection = new Connection($params, $factory, self::getLogger());
 
         return self::$connection;
+    }
+
+    protected static function getLogger(): RecordingLogger
+    {
+        return self::$logger ??= new RecordingLogger();
     }
 
     protected function flushDBCache(): void

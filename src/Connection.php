@@ -691,6 +691,12 @@ class Connection implements ConnectionInterface
     #[Override]
     public function commit(): void
     {
+        if ($this->numberOfOpenTransactions === 0) {
+            $this->logUnbalancedTransactionCall('Commit without an open transaction was ignored');
+
+            return;
+        }
+
         if (!$this->connected) {
             $this->dbconnect();
         }
@@ -702,8 +708,8 @@ class Connection implements ConnectionInterface
             if (!$this->currentTransactionIsDirty) {
                 $this->dbDriver->commit();
             } else {
-                $this->dbDriver->rollBack();
                 $this->currentTransactionIsDirty = false;
+                $this->dbDriver->rollBack();
 
                 throw new CommitException('Could not commit transaction because a rollback occurred inside a nested transaction, because of this we have have executed a rollback on the complete outer transaction which may result in data loss');
             }
@@ -730,6 +736,12 @@ class Connection implements ConnectionInterface
     #[Override]
     public function rollBack(): void
     {
+        if ($this->numberOfOpenTransactions === 0) {
+            $this->logUnbalancedTransactionCall('Rollback without an open transaction was ignored. This is expected right after a failed commit.');
+
+            return;
+        }
+
         if (!$this->connected) {
             $this->dbconnect();
         }
@@ -750,13 +762,13 @@ class Connection implements ConnectionInterface
 
         try {
             $callbackResult = $callback();
-
-            $this->commit();
         } catch (Throwable $exception) {
             $this->rollBack();
 
             throw $exception;
         }
+
+        $this->commit();
 
         return $callbackResult;
     }
@@ -775,6 +787,15 @@ class Connection implements ConnectionInterface
     public function hasOpenTransactions(): bool
     {
         return $this->numberOfOpenTransactions > 0;
+    }
+
+    /**
+     * commit() and rollBack() ignore a call without an open transaction, because counting below zero would leave
+     * the connection without real transactions for the rest of the process. The trace points to the caller.
+     */
+    private function logUnbalancedTransactionCall(string $message): void
+    {
+        $this->logger?->warning($message, ['trace' => new RuntimeException()->getTraceAsString()]);
     }
 
     /**
